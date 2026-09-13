@@ -17,3 +17,6 @@
 1. Responder siempre en español.
 2. Priorizar una experiencia de usuario fluida, limpia y adaptada a la estética del cuidado personal / K-Beauty.
 3. Manejar el estado global del carrito y la sesión de usuario mediante tiendas de Pinia de forma estricta.
+
+## Documentación del Proyecto
+- **Especificaciones de la Fase 1:** Consulta `.agents/docs/especificacion-fase1.md` para verificar los requisitos funcionales, historias de usuario y requerimientos de la base de datos/UI antes de implementar nuevas características.
