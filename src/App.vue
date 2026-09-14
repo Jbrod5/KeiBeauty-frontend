@@ -276,6 +276,7 @@ body {
   border: none;
   border-top: 1px solid #eee;
   margin: 0.5rem 0.
+
 }
 
 .dropdown-item {

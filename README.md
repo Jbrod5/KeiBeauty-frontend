@@ -37,7 +37,10 @@ KeiBeauty-frontend/
     ├── views/
     │   ├── HomeView.vue       # Página de inicio (hero, features)
     │   ├── CatalogView.vue    # Catálogo de productos
+<<<<<<< HEAD
     │   ├── ProductDetailView.vue # Detalle de producto
+=======
+>>>>>>> feat/auth
     │   ├── LoginView.vue      # Formulario de login
     │   └── RegisterView.vue   # Formulario de registro
     ├── components/            # Componentes reutilizables (futuro)
@@ -156,6 +159,84 @@ npm run preview  # Previsualizar build de producción localmente
 | `getProfile()` | `/auth/perfil` | GET | Obtener perfil (requiere JWT) |
 | `refreshToken(refresh)` | `/auth/refresh` | POST | Renovar access token |
 
+<<<<<<< HEAD
+=======
+### JSON de Request/Response
+
+#### POST /api/auth/registro
+
+**Request:**
+```json
+{
+  "nombre": "Juan Perez",
+  "email": "juan@test.com",
+  "password": "password123",
+  "telefono": "+34600111222",
+  "direccion_envio": "Calle Test 123"
+}
+```
+
+**Response (201):**
+```json
+{
+  "mensaje": "Usuario registrado exitosamente.",
+  "usuario": {
+    "id": 2,
+    "nombre": "Juan Perez",
+    "email": "juan@test.com",
+    "telefono": "+34600111222",
+    "direccion_envio": "Calle Test 123",
+    "rol": "cliente",
+    "fecha_registro": "2026-09-14T02:23:46.506030"
+  },
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+#### POST /api/auth/login
+
+**Request:**
+```json
+{
+  "email": "juan@test.com",
+  "password": "password123"
+}
+```
+
+**Response (200):**
+```json
+{
+  "mensaje": "Login exitoso.",
+  "usuario": { ... },
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+#### GET /api/auth/perfil
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+```json
+{
+  "usuario": {
+    "id": 2,
+    "nombre": "Juan Perez",
+    "email": "juan@test.com",
+    "telefono": "+34600111222",
+    "direccion_envio": "Calle Test 123",
+    "rol": "cliente",
+    "fecha_registro": "2026-09-14T02:23:46.506030"
+  }
+}
+```
+
+>>>>>>> feat/auth
 ### Store de Autenticación (`src/stores/authStore.js`)
 
 ```javascript
@@ -181,7 +262,11 @@ await authStore.initAuth()      // Llamar al montar app (en router guard)
 
 ### Guards de Ruta (`src/router/index.js`)
 
+<<<<<<< HEAD
 - **Rutas públicas**: `/`, `/catalogo`, `/producto/:id`, `/carrito`, `/login`, `/registro`
+=======
+- **Rutas públicas**: `/`, `/catalogo`, `/login`, `/registro`
+>>>>>>> feat/auth
 - **Rutas protegidas**: Requieren `meta.requiresAuth !== false` (por defecto true)
 - **Solo invitados**: `meta.guest: true` (login, registro) → Redirige a `/` si autenticado
 - **Redirección post-login**: Guarda `redirect` en query params
@@ -212,17 +297,24 @@ await authStore.initAuth()      // Llamar al montar app (en router guard)
       "estado": "activo",
       "marca_id": 1,
       "categoria_id": 1,
+<<<<<<< HEAD
       "marca_nombre": "COSRX",
       "categoria_nombre": "Limpieza",
       "fecha_creacion": "2026-09-14T01:46:23.411889"
     }
   ],
   "message": "Productos obtenidos exitosamente."
+=======
+      "fecha_creacion": "2026-09-14T01:46:23.411889"
+    }
+  ]
+>>>>>>> feat/auth
 }
 ```
 
 ### Vista Catálogo (`src/views/CatalogView.vue`)
 
+<<<<<<< HEAD
 - Grid responsivo de productos con imagen, nombre, marca, descripción, precio en GTQ (Q)
 - Botón "Añadir" → Llama a `cartStore.addItem(product)` con campos: id, nombre, marca_nombre, precio, imagen_url, quantity
 - Loading state por producto mientras se añade
@@ -238,6 +330,12 @@ await authStore.initAuth()      // Llamar al montar app (en router guard)
 - Selector de cantidad con validación contra stock disponible
 - Botón "Añadir al carrito" (respeta stock)
 - Botón wishlist (placeholder)
+=======
+- Grid responsivo de productos
+- Botón "Añadir" → Llama a `cartStore.addItem(product)`
+- Loading state por producto mientras se añade
+- Filtros preparados (comentados, por categoría)
+>>>>>>> feat/auth
 
 ## Carrito de Compras
 
@@ -249,9 +347,15 @@ import { useCartStore } from '@/stores/cartStore'
 const cartStore = useCartStore()
 
 // Estado reactivo
+<<<<<<< HEAD
 cartStore.items          // Array de items { id, nombre, marca_nombre, precio, imagen_url, quantity }
 cartStore.totalItems     // Computed: suma de quantities
 cartStore.totalPrice     // Computed: suma de precio * quantity
+=======
+cartStore.items          // Array de items { id, name, brand, price, emoji, quantity }
+cartStore.totalItems     // Computed: suma de quantities
+cartStore.totalPrice     // Computed: suma de price * quantity
+>>>>>>> feat/auth
 
 // Acciones
 cartStore.addItem(product)           // Añadir o incrementar quantity
@@ -262,6 +366,7 @@ cartStore.clearCart()                // Vaciar carrito
 
 ### Flujo "Añadir al Carrito"
 
+<<<<<<< HEAD
 1. Usuario clicca "Añadir" en `CatalogView.vue` o `ProductDetailView.vue`
 2. `cartStore.addItem(product)` añade al estado Pinia
 3. Badge en header actualiza `cartCount` reactivamente
@@ -278,6 +383,12 @@ new Intl.NumberFormat('es-GT', {
 })
 ```
 Ejemplo de salida: `Q 149.00`
+=======
+1. Usuario clicca "Añadir" en `CatalogView.vue`
+2. `cartStore.addItem(product)` añade al estado Pinia
+3. Badge en header actualiza `cartCount` reactivamente
+4. Persistencia: implementar `localStorage` en `cartStore` (futuro)
+>>>>>>> feat/auth
 
 ## Docker - Multi-stage Build
 
@@ -371,6 +482,10 @@ release/*      # Preparación releases
 
 ## Próximos Pasos (Roadmap)
 
+<<<<<<< HEAD
+=======
+- [ ] Vista Detalle de Producto (`/producto/:id`)
+>>>>>>> feat/auth
 - [ ] Vista Carrito (`/carrito`) con cantidades, totales, checkout
 - [ ] Checkout: dirección, envío, pago (Stripe/MercadoPago)
 - [ ] Historial de Pedidos (`/mis-pedidos`)

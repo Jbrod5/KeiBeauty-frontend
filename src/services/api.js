@@ -25,7 +25,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
+<<<<<<< HEAD
       window.location.href = '/login'
+=======
+>>>>>>> feat/auth
     }
     return Promise.reject(error)
   }
