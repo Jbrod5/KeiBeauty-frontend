@@ -30,14 +30,21 @@
       <main class="products-grid">
         <div class="product-card" v-for="product in products" :key="product.id">
           <div class="product-image">
-            <span class="product-placeholder">{{ product.emoji }}</span>
+            <img 
+              v-if="product.imagen_url" 
+              :src="product.imagen_url" 
+              :alt="product.nombre" 
+              class="product-img"
+              @error="handleImageError($event)"
+            />
+            <span v-else class="product-placeholder">{{ product.nombre.charAt(0) }}</span>
           </div>
           <div class="product-info">
-            <h3 class="product-name">{{ product.name }}</h3>
-            <p class="product-brand">{{ product.brand }}</p>
-            <p class="product-description">{{ product.description }}</p>
+            <h3 class="product-name">{{ product.nombre }}</h3>
+            <p class="product-brand">{{ product.marca_nombre }}</p>
+            <p class="product-description">{{ product.descripcion }}</p>
             <div class="product-footer">
-              <span class="product-price">{{ product.price }}€</span>
+              <span class="product-price">{{ formatPrice(product.precio) }}</span>
               <button 
                 class="add-to-cart-btn" 
                 @click="addToCart(product)"
@@ -72,11 +79,25 @@ const filters = ref({
   category: []
 })
 
+const priceFormatter = new Intl.NumberFormat('es-GT', {
+  style: 'currency',
+  currency: 'GTQ',
+  minimumFractionDigits: 2
+})
+
+function formatPrice(price) {
+  return priceFormatter.format(price)
+}
+
+function handleImageError(event) {
+  event.target.style.display = 'none'
+  event.target.nextElementSibling.style.display = 'flex'
+}
+
 async function loadProducts() {
   try {
     loading.value = true
-    const response = await getProducts()
-    products.value = response.data
+    products.value = await getProducts()
   } catch (error) {
     console.error('Error loading products:', error)
   } finally {
@@ -87,7 +108,7 @@ async function loadProducts() {
 async function addToCart(product) {
   addingToCart.value = product.id
   try {
-    await cartStore.addItem(product)
+    cartStore.addItem(product)
   } catch (error) {
     console.error('Error adding to cart:', error)
   } finally {
@@ -178,10 +199,26 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .product-placeholder {
-  font-size: 4rem;
+  display: none;
+  font-size: 3rem;
+  font-weight: 600;
+  color: #e91e63;
+  background: white;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  align-items: center;
+  justify-content: center;
 }
 
 .product-info {

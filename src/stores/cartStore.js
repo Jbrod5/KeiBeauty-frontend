@@ -9,7 +9,7 @@ export const useCartStore = defineStore('cart', () => {
   )
 
   const totalPrice = computed(() =>
-    items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    items.value.reduce((sum, item) => sum + item.precio * item.quantity, 0)
   )
 
   function addItem(product) {
@@ -20,10 +20,10 @@ export const useCartStore = defineStore('cart', () => {
     } else {
       items.value.push({
         id: product.id,
-        name: product.name,
-        brand: product.brand,
-        price: product.price,
-        emoji: product.emoji,
+        nombre: product.nombre,
+        marca_nombre: product.marca_nombre,
+        precio: product.precio,
+        imagen_url: product.imagen_url,
         quantity: 1
       })
     }
