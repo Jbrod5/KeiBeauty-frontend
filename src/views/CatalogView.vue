@@ -37,13 +37,13 @@
           <div class="product-card">
           <div class="product-image">
             <img 
-              v-if="product.imagen_url" 
+              v-show="product.imagen_url" 
               :src="product.imagen_url" 
               :alt="product.nombre" 
               class="product-img"
-              @error="handleImageError($event)"
+              @error="handleImageError($event, product)"
             />
-            <span v-else class="product-placeholder">{{ product.nombre.charAt(0) }}</span>
+            <span v-show="!product.imagen_url || product.imageError" class="product-placeholder">{{ product.nombre.charAt(0) }}</span>
           </div>
           <div class="product-info">
             <h3 class="product-name">{{ product.nombre }}</h3>
@@ -96,15 +96,15 @@ function formatPrice(price) {
   return priceFormatter.format(price)
 }
 
-function handleImageError(event) {
-  event.target.style.display = 'none'
-  event.target.nextElementSibling.style.display = 'flex'
+function handleImageError(event, product) {
+  product.imageError = true
 }
 
 async function loadProducts() {
   try {
     loading.value = true
-    products.value = await getProducts()
+    const data = await getProducts()
+    products.value = data.map(p => ({ ...p, imageError: false }))
   } catch (error) {
     console.error('Error loading products:', error)
   } finally {
