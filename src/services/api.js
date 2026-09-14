@@ -31,6 +31,30 @@ api.interceptors.response.use(
   }
 )
 
+export async function login(credentials) {
+  const response = await api.post('/auth/login', credentials)
+  return response
+}
+
+export async function register(userData) {
+  const response = await api.post('/auth/registro', userData)
+  return response
+}
+
+export async function getProfile() {
+  const response = await api.get('/auth/perfil')
+  return response
+}
+
+export async function refreshToken(refreshTokenValue) {
+  const response = await api.post('/auth/refresh', {}, {
+    headers: {
+      Authorization: `Bearer ${refreshTokenValue}`
+    }
+  })
+  return response
+}
+
 export async function getProducts() {
   const response = await api.get('/products')
   return response.data.data
