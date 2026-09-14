@@ -28,7 +28,13 @@
       </aside>
 
       <main class="products-grid">
-        <div class="product-card" v-for="product in products" :key="product.id">
+        <router-link 
+          v-for="product in products" 
+          :key="product.id" 
+          :to="`/producto/${product.id}`"
+          class="product-card-link"
+        >
+          <div class="product-card">
           <div class="product-image">
             <img 
               v-if="product.imagen_url" 
@@ -47,7 +53,7 @@
               <span class="product-price">{{ formatPrice(product.precio) }}</span>
               <button 
                 class="add-to-cart-btn" 
-                @click="addToCart(product)"
+                @click.stop="addToCart(product)"
                 :disabled="addingToCart === product.id"
               >
                 <span v-if="addingToCart !== product.id">Añadir</span>
@@ -56,6 +62,7 @@
             </div>
           </div>
         </div>
+        </router-link>
       </main>
     </div>
 
@@ -188,11 +195,6 @@ onMounted(() => {
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-}
-
 .product-image {
   aspect-ratio: 1;
   background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
@@ -269,6 +271,17 @@ onMounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.product-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.product-card-link:hover .product-card {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
 }
 
 .add-to-cart-btn:hover:not(:disabled) {
