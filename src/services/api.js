@@ -67,8 +67,24 @@ export async function getProductById(id) {
 }
 
 export async function createOrder(orderData) {
-  const response = await api.post('/orders', orderData)
+  const response = await api.post('/pedidos', orderData)
+  return response.data.data
+}
+
+export async function getOrders(params = {}) {
+  const queryString = new URLSearchParams(params).toString()
+  const response = await api.get(`/pedidos?${queryString}`)
   return response.data
+}
+
+export async function getOrderById(id) {
+  const response = await api.get(`/pedidos/${id}`)
+  return response.data.data
+}
+
+export async function updateOrderStatus(id, estado) {
+  const response = await api.patch(`/pedidos/${id}/estado`, { estado })
+  return response.data.data
 }
 
 

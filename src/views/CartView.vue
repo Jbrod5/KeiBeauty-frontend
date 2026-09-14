@@ -82,8 +82,10 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
 
+const router = useRouter()
 const cartStore = useCartStore()
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
@@ -101,7 +103,7 @@ onMounted(() => {
 })
 
 function goToCheckout() {
-  alert('Checkout pendiente de implementar (Paso 3B)')
+  router.push('/checkout')
 }
 </script>
 

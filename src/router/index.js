@@ -6,11 +6,12 @@ const CatalogView = () => import('../views/CatalogView.vue')
 const CartView = () => import('../views/CartView.vue')
 const LoginView = () => import('../views/LoginView.vue')
 const RegisterView = () => import('../views/RegisterView.vue')
-
 const ProductDetailView = () => import('../views/ProductDetailView.vue')
-
 const ForgotPasswordView = () => import('../views/ForgotPasswordView.vue')
 const ResetPasswordView = () => import('../views/ResetPasswordView.vue')
+const CheckoutView = () => import('../views/CheckoutView.vue')
+const OrderHistoryView = () => import('../views/OrderHistoryView.vue')
+const AdminOrdersView = () => import('../views/AdminOrdersView.vue')
 
 
 const routes = [
@@ -27,18 +28,34 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-
     path: '/producto/:id',
     name: 'product-detail',
     component: ProductDetailView,
     meta: { requiresAuth: false }
   },
   {
-
     path: '/carrito',
     name: 'cart',
     component: CartView,
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/checkout',
+    name: 'checkout',
+    component: CheckoutView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/mis-pedidos',
+    name: 'order-history',
+    component: OrderHistoryView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/pedidos',
+    name: 'admin-orders',
+    component: AdminOrdersView,
+    meta: { requiresAuth: true }
   },
   {
     path: '/login',
