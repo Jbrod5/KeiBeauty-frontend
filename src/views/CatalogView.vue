@@ -5,8 +5,8 @@
       <p class="catalog-subtitle">Descubre nuestra selección de K-Beauty auténtico</p>
     </header>
 
-    <div class="catalog-content">
-      <aside class="filters" v-if="false">
+    <div class="catalog-content" :class="{ 'full-width': !showFilters }">
+      <aside class="filters" v-if="showFilters">
         <h3>Filtros</h3>
         <div class="filter-group">
           <label>
@@ -86,6 +86,8 @@ const filters = ref({
   category: []
 })
 
+const showFilters = ref(false)
+
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
   currency: 'GTQ',
@@ -97,6 +99,7 @@ function formatPrice(price) {
 }
 
 function handleImageError(event, product) {
+  if (!event?.target) return
   product.imageError = true
 }
 
@@ -157,6 +160,10 @@ onMounted(() => {
   gap: 2rem;
 }
 
+.catalog-content.full-width {
+  grid-template-columns: 1fr;
+}
+
 .filters {
   background: white;
   padding: 1.5rem;
@@ -183,7 +190,7 @@ onMounted(() => {
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1.5rem;
 }
 
