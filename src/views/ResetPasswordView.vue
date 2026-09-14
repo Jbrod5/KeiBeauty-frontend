@@ -3,48 +3,47 @@
     <div class="auth-container">
       <div class="auth-card">
         <header class="auth-header">
-          <h1>Iniciar Sesión</h1>
-          <p>Accede a tu cuenta KeiBeauty</p>
+          <h1>Restablecer Contraseña</h1>
+          <p>Ingresa tu nueva contraseña</p>
         </header>
 
-        <form @submit.prevent="handleLogin" class="auth-form" novalidate>
+        <form @submit.prevent="handleSubmit" class="auth-form" novalidate>
           <div class="form-group">
-            <label for="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              v-model="form.email"
-              required
-              autocomplete="email"
-              :aria-invalid="errors.email ? 'true' : 'false'"
-            />
-            <span v-if="errors.email" class="error-message" role="alert">{{ errors.email }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="password">Contraseña</label>
+            <label for="password">Nueva contraseña</label>
             <input
               id="password"
               type="password"
               v-model="form.password"
               required
-              autocomplete="current-password"
+              autocomplete="new-password"
               :aria-invalid="errors.password ? 'true' : 'false'"
             />
             <span v-if="errors.password" class="error-message" role="alert">{{ errors.password }}</span>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirmar contraseña</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              v-model="form.confirmPassword"
+              required
+              autocomplete="new-password"
+              :aria-invalid="errors.confirmPassword ? 'true' : 'false'"
+            />
+            <span v-if="errors.confirmPassword" class="error-message" role="alert">{{ errors.confirmPassword }}</span>
           </div>
 
           <div v-if="authError" class="auth-error" role="alert">{{ authError }}</div>
 
           <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
             <span v-if="loading" class="spinner"></span>
-            <span v-else>Iniciar Sesión</span>
+            <span v-else>Restablecer contraseña</span>
           </button>
         </form>
 
         <footer class="auth-footer">
-          <p>¿No tienes cuenta? <router-link to="/registro">Regístrate</router-link></p>
-          <p class="forgot-password"><router-link to="/olvide-contrasena">¿Olvidaste tu contraseña?</router-link></p>
+          <p>¿Recordaste tu contraseña? <router-link to="/login">Inicia sesión</router-link></p>
         </footer>
       </div>
     </div>
@@ -52,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 
@@ -61,25 +60,18 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 const form = ref({
-  email: '',
-  password: ''
+  password: '',
+  confirmPassword: ''
 })
 
 const errors = ref({})
 const authError = ref('')
 const loading = ref(false)
+const tokenValid = ref(true)
 
 function validateForm() {
   errors.value = {}
   let isValid = true
-
-  if (!form.value.email) {
-    errors.value.email = 'El email es obligatorio'
-    isValid = false
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-    errors.value.email = 'Formato de email inválido'
-    isValid = false
-  }
 
   if (!form.value.password) {
     errors.value.password = 'La contraseña es obligatoria'
@@ -89,24 +81,48 @@ function validateForm() {
     isValid = false
   }
 
+  if (!form.value.confirmPassword) {
+    errors.value.confirmPassword = 'Confirma tu contraseña'
+    isValid = false
+  } else if (form.value.password !== form.value.confirmPassword) {
+    errors.value.confirmPassword = 'Las contraseñas no coinciden'
+    isValid = false
+  }
+
   return isValid
 }
 
-async function handleLogin() {
+async function handleSubmit() {
   authError.value = ''
   if (!validateForm()) return
+  if (!tokenValid.value) return
 
   loading.value = true
-  const result = await authStore.login(form.value)
-
-  if (result.success) {
-    const redirect = route.query.redirect || '/'
-    router.push(redirect)
-  } else {
-    authError.value = result.error
+  try {
+    const token = route.query.token || route.params.token
+    const result = await authStore.resetPassword(token, form.value.password, form.value.confirmPassword)
+    if (result.success) {
+      router.push({ name: 'login', query: { passwordReset: 'success' } })
+    } else {
+      authError.value = result.error
+      if (result.error?.includes('expirado') || result.error?.includes('inválido')) {
+        tokenValid.value = false
+      }
+    }
+  } catch (err) {
+    authError.value = err.response?.data?.message || 'Error al restablecer contraseña'
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 }
+
+onMounted(() => {
+  const token = route.query.token || route.params.token
+  if (!token) {
+    tokenValid.value = false
+    authError.value = 'Token no proporcionado. Solicita un nuevo enlace de recuperación.'
+  }
+})
 </script>
 
 <style scoped>
@@ -255,15 +271,5 @@ async function handleLogin() {
 
 .auth-footer a:hover {
   text-decoration: underline;
-}
-
-.forgot-password {
-  margin-top: 1rem;
-  font-size: 0.9rem;
-}
-
-.forgot-password a {
-  color: #e91e63;
-  font-weight: 500;
 }
 </style>

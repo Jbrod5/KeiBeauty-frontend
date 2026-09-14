@@ -7,6 +7,8 @@ const CartView = () => import('../views/CartView.vue')
 const LoginView = () => import('../views/LoginView.vue')
 const RegisterView = () => import('../views/RegisterView.vue')
 const ProductDetailView = () => import('../views/ProductDetailView.vue')
+const ForgotPasswordView = () => import('../views/ForgotPasswordView.vue')
+const ResetPasswordView = () => import('../views/ResetPasswordView.vue')
 
 const routes = [
   {
@@ -43,6 +45,18 @@ const routes = [
     path: '/registro',
     name: 'register',
     component: RegisterView,
+    meta: { guest: true }
+  },
+  {
+    path: '/olvide-contrasena',
+    name: 'forgot-password',
+    component: ForgotPasswordView,
+    meta: { guest: true }
+  },
+  {
+    path: '/reestablecer-contrasena',
+    name: 'reset-password',
+    component: ResetPasswordView,
     meta: { guest: true }
   }
 ]

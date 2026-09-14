@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { login as apiLogin, register as apiRegister, getProfile, refreshToken } from '../services/api'
+import { login as apiLogin, register as apiRegister, getProfile, refreshToken, forgotPassword as apiForgotPassword, resetPassword as apiResetPassword } from '../services/api'
+import { useCartStore } from './cartStore'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -43,6 +44,8 @@ export const useAuthStore = defineStore('auth', () => {
       const { access_token, refresh_token, usuario } = response.data
       setTokens(access_token, refresh_token)
       setUser(usuario)
+      const cartStore = useCartStore()
+      await cartStore.fetchCart()
       return { success: true }
     } catch (err) {
       const message = err.response?.data?.error || 'Error al iniciar sesión'
@@ -61,9 +64,41 @@ export const useAuthStore = defineStore('auth', () => {
       const { access_token, refresh_token, usuario } = response.data
       setTokens(access_token, refresh_token)
       setUser(usuario)
+      const cartStore = useCartStore()
+      await cartStore.fetchCart()
       return { success: true }
     } catch (err) {
       const message = err.response?.data?.error || 'Error al registrarse'
+      error.value = message
+      return { success: false, error: message }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function forgotPassword(email) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiForgotPassword(email)
+      return { success: true, message: response.message }
+    } catch (err) {
+      const message = err.response?.data?.message || 'Error al solicitar recuperación'
+      error.value = message
+      return { success: false, error: message }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function resetPassword(token, password, confirmPassword) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiResetPassword(token, password, confirmPassword)
+      return { success: true, message: response.message }
+    } catch (err) {
+      const message = err.response?.data?.error || 'Error al restablecer contraseña'
       error.value = message
       return { success: false, error: message }
     } finally {
@@ -102,11 +137,15 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     clearTokens()
     clearUser()
+    const cartStore = useCartStore()
+    cartStore.setItems([])
   }
 
   async function initAuth() {
     if (accessToken.value && !user.value) {
       await fetchProfile()
+      const cartStore = useCartStore()
+      await cartStore.fetchCart()
     }
   }
 
@@ -121,6 +160,8 @@ export const useAuthStore = defineStore('auth', () => {
     userName,
     login,
     register,
+    forgotPassword,
+    resetPassword,
     fetchProfile,
     logout,
     initAuth

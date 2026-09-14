@@ -70,4 +70,14 @@ export async function createOrder(orderData) {
   return response.data
 }
 
+export async function forgotPassword(email) {
+  const response = await api.post('/auth/olvide-contrasena', { email })
+  return response.data
+}
+
+export async function resetPassword(token, password, confirmPassword) {
+  const response = await api.post('/auth/reestablecer-contrasena', { token, password, confirm_password: confirmPassword })
+  return response.data
+}
+
 export default api
