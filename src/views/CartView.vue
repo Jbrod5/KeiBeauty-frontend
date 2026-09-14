@@ -23,7 +23,6 @@
       <div class="cart-items">
         <div class="cart-item" v-for="item in cartStore.items" :key="item.id">
           <div class="item-info">
-<<<<<<< HEAD
             <div class="item-image">
               <img 
                 v-if="item.imagen_url" 
@@ -31,7 +30,7 @@
                 :alt="item.nombre" 
                 class="cart-item-img"
               />
-              <span v-else class="item-placeholder">{{ item.nombre.charAt(0) }}</span>
+              <span v-else class="item-placeholder">{{ item.nombre ? item.nombre.charAt(0) : '?' }}</span>
             </div>
             <div class="item-details">
               <h3>{{ item.nombre }}</h3>
@@ -40,30 +39,20 @@
           </div>
           <div class="item-price">{{ formatPrice(item.precio) }}</div>
           <div class="item-quantity">
-            <button @click="cartStore.updateQuantity(item.id, item.cantidad - 1)" class="qty-btn" :disabled="item.cantidad <= 1" aria-label="Disminuir">−</button>
+            <button 
+              @click="cartStore.updateQuantity(item.id, item.cantidad - 1)" 
+              class="qty-btn" 
+              :disabled="item.cantidad <= 1" 
+              aria-label="Disminuir"
+            >−</button>
             <span class="qty">{{ item.cantidad }}</span>
-            <button @click="cartStore.updateQuantity(item.id, item.cantidad + 1)" class="qty-btn" aria-label="Aumentar">+</button>
+            <button 
+              @click="cartStore.updateQuantity(item.id, item.cantidad + 1)" 
+              class="qty-btn" 
+              aria-label="Aumentar"
+            >+</button>
           </div>
-<<<<<<< HEAD
-          <div class="item-subtotal">{{ formatPrice(item.precio * item.quantity) }}</div>
-=======
-            <span class="item-emoji">{{ item.emoji }}</span>
-            <div class="item-details">
-              <h3>{{ item.name }}</h3>
-              <p class="item-brand">{{ item.brand }}</p>
-            </div>
-          </div>
-          <div class="item-price">{{ item.price.toFixed(2) }}€</div>
-          <div class="item-quantity">
-            <button @click="cartStore.updateQuantity(item.id, item.quantity - 1)" class="qty-btn">−</button>
-            <span class="qty">{{ item.quantity }}</span>
-            <button @click="cartStore.updateQuantity(item.id, item.quantity + 1)" class="qty-btn">+</button>
-          </div>
-          <div class="item-subtotal">{{ (item.price * item.quantity).toFixed(2) }}€</div>
->>>>>>> feat/auth
-=======
-          <div class="item-subtotal">{{ formatPrice(item.subtotal) }}</div>
->>>>>>> feature/carrito-backend
+          <div class="item-subtotal">{{ formatPrice(item.subtotal ?? (item.precio * item.cantidad)) }}</div>
           <button @click="cartStore.removeItem(item.id)" class="remove-btn" aria-label="Eliminar">✕</button>
         </div>
       </div>
@@ -72,11 +61,7 @@
         <h2>Resumen</h2>
         <div class="summary-row">
           <span>Subtotal ({{ cartStore.totalItems }} items)</span>
-<<<<<<< HEAD
           <span>{{ formatPrice(cartStore.totalPrice) }}</span>
-=======
-          <span>{{ cartStore.totalPrice.toFixed(2) }}€</span>
->>>>>>> feat/auth
         </div>
         <div class="summary-row">
           <span>Envío</span>
@@ -84,11 +69,7 @@
         </div>
         <div class="summary-row total">
           <span>Total</span>
-<<<<<<< HEAD
           <span>{{ formatPrice(cartStore.totalPrice) }}</span>
-=======
-          <span>{{ cartStore.totalPrice.toFixed(2) }}€</span>
->>>>>>> feat/auth
         </div>
         <button class="btn btn-primary btn-block checkout-btn" @click="goToCheckout">
           Proceder al Pago
@@ -105,7 +86,6 @@ import { useCartStore } from '../stores/cartStore'
 
 const cartStore = useCartStore()
 
-<<<<<<< HEAD
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
   currency: 'GTQ',
@@ -113,7 +93,7 @@ const priceFormatter = new Intl.NumberFormat('es-GT', {
 })
 
 function formatPrice(price) {
-  return priceFormatter.format(price)
+  return priceFormatter.format(price || 0)
 }
 
 onMounted(() => {
@@ -121,13 +101,7 @@ onMounted(() => {
 })
 
 function goToCheckout() {
-  // TODO: Implementar checkout (Paso 3B)
   alert('Checkout pendiente de implementar (Paso 3B)')
-=======
-function goToCheckout() {
-  // TODO: Implementar checkout
-  alert('Checkout pendiente de implementar')
->>>>>>> feat/auth
 }
 </script>
 
@@ -192,7 +166,6 @@ function goToCheckout() {
   gap: 1rem;
 }
 
-<<<<<<< HEAD
 .item-image {
   width: 60px;
   height: 60px;
@@ -214,10 +187,6 @@ function goToCheckout() {
   font-size: 1.5rem;
   font-weight: 600;
   color: #e91e63;
-=======
-.item-emoji {
-  font-size: 2rem;
->>>>>>> feat/auth
 }
 
 .item-details h3 {
@@ -235,10 +204,7 @@ function goToCheckout() {
 .item-price {
   font-weight: 600;
   color: #333;
-<<<<<<< HEAD
   white-space: nowrap;
-=======
->>>>>>> feat/auth
 }
 
 .item-quantity {
@@ -261,23 +227,16 @@ function goToCheckout() {
   transition: all 0.2s;
 }
 
-<<<<<<< HEAD
 .qty-btn:hover:not(:disabled) {
-=======
-.qty-btn:hover {
->>>>>>> feat/auth
   background: #f5f5f5;
   border-color: #e91e63;
 }
 
-<<<<<<< HEAD
 .qty-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-=======
->>>>>>> feat/auth
 .qty {
   min-width: 2rem;
   text-align: center;
@@ -287,14 +246,9 @@ function goToCheckout() {
 .item-subtotal {
   font-weight: 600;
   color: #2c3e50;
-<<<<<<< HEAD
   min-width: 90px;
   text-align: right;
   white-space: nowrap;
-=======
-  min-width: 70px;
-  text-align: right;
->>>>>>> feat/auth
 }
 
 .remove-btn {
@@ -361,11 +315,7 @@ function goToCheckout() {
   text-decoration: none;
   transition: all 0.2s;
   border: none;
-<<<<<<< HEAD
-  cursor: pointer
-=======
   cursor: pointer;
->>>>>>> feat/auth
 }
 
 .btn-primary {

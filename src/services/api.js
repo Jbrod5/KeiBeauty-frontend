@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
@@ -25,10 +25,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
-<<<<<<< HEAD
       window.location.href = '/login'
-=======
->>>>>>> feat/auth
+
     }
     return Promise.reject(error)
   }
@@ -73,7 +71,7 @@ export async function createOrder(orderData) {
   return response.data
 }
 
-<<<<<<< HEAD
+
 export async function getCart() {
   const response = await api.get('/carrito')
   return response.data.data
@@ -97,7 +95,8 @@ export async function removeCartItem(itemId) {
 export async function clearCart() {
   const response = await api.delete('/carrito')
   return response.data.data
-=======
+}
+
 export async function forgotPassword(email) {
   const response = await api.post('/auth/olvide-contrasena', { email })
   return response.data
@@ -106,7 +105,6 @@ export async function forgotPassword(email) {
 export async function resetPassword(token, password, confirmPassword) {
   const response = await api.post('/auth/reestablecer-contrasena', { token, password, confirm_password: confirmPassword })
   return response.data
->>>>>>> feature/recuperar-contrasena
-}
+} 
 
 export default api

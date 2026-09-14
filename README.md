@@ -156,7 +156,6 @@ npm run preview  # Previsualizar build de producción localmente
 | `getProfile()` | `/auth/perfil` | GET | Obtener perfil (requiere JWT) |
 | `refreshToken(refresh)` | `/auth/refresh` | POST | Renovar access token |
 
-
 ### JSON de Request/Response
 
 #### POST /api/auth/registro
@@ -257,7 +256,6 @@ await authStore.initAuth()      // Llamar al montar app (en router guard)
 
 ### Guards de Ruta (`src/router/index.js`)
 
-
 - **Rutas públicas**: `/`, `/catalogo`, `/producto/:id`, `/carrito`, `/login`, `/registro`
 - **Rutas protegidas**: Requieren `meta.requiresAuth !== false` (por defecto true)
 - **Solo invitados**: `meta.guest: true` (login, registro) → Redirige a `/` si autenticado
@@ -289,29 +287,23 @@ await authStore.initAuth()      // Llamar al montar app (en router guard)
       "estado": "activo",
       "marca_id": 1,
       "categoria_id": 1,
-
       "marca_nombre": "COSRX",
       "categoria_nombre": "Limpieza",
       "fecha_creacion": "2026-09-14T01:46:23.411889"
     }
   ],
   "message": "Productos obtenidos exitosamente."
-
-      "fecha_creacion": "2026-09-14T01:46:23.411889"
-    }
-  ]
-
 }
 ```
 
 ### Vista Catálogo (`src/views/CatalogView.vue`)
-
 
 - Grid responsivo de productos con imagen, nombre, marca, descripción, precio en GTQ (Q)
 - Botón "Añadir" → Llama a `cartStore.addItem(product)` con campos: id, nombre, marca_nombre, precio, imagen_url, quantity
 - Loading state por producto mientras se añade
 - Formato de moneda: `Intl.NumberFormat('es-GT', {style: 'currency', currency: 'GTQ'})`
 - Fallback visual para productos sin imagen_url
+- Filtros preparados (comentados, por categoría)
 
 ### Vista Detalle de Producto (`src/views/ProductDetailView.vue`)
 
@@ -323,12 +315,6 @@ await authStore.initAuth()      // Llamar al montar app (en router guard)
 - Botón "Añadir al carrito" (respeta stock)
 - Botón wishlist (placeholder)
 
-- Grid responsivo de productos
-- Botón "Añadir" → Llama a `cartStore.addItem(product)`
-- Loading state por producto mientras se añade
-- Filtros preparados (comentados, por categoría)
-
-
 ## Carrito de Compras
 
 ### Store (`src/stores/cartStore.js`)
@@ -339,35 +325,22 @@ import { useCartStore } from '@/stores/cartStore'
 const cartStore = useCartStore()
 
 // Estado reactivo
-<<<<<<< HEAD
-<<<<<<< HEAD
-cartStore.items          // Array de items { id, nombre, marca_nombre, precio, imagen_url, quantity }
-cartStore.totalItems     // Computed: suma de quantities
-cartStore.totalPrice     // Computed: suma de precio * quantity
-=======
-cartStore.items          // Array de items { id, name, brand, price, emoji, quantity }
-cartStore.totalItems     // Computed: suma de quantities
-cartStore.totalPrice     // Computed: suma de price * quantity
->>>>>>> feat/auth
-=======
 cartStore.items          // Array de items { id, producto_id, nombre, marca_nombre, precio, imagen_url, cantidad, subtotal }
-cartStore.totalItems     // Computed: suma de quantities
-cartStore.totalPrice     // Computed: suma de subtotal
+cartStore.totalItems     // Computed: suma de cantidades
+cartStore.totalPrice     // Computed: suma de subtotales
 cartStore.loading        // boolean: carga en curso
 cartStore.error          // string: último error
->>>>>>> feature/carrito-backend
 
 // Acciones (sincronizan con backend)
-await cartStore.fetchCart()           // Cargar carrito desde backend
-await cartStore.addItem(product)      // Añadir item (POST /api/carrito/items)
+await cartStore.fetchCart()             // Cargar carrito desde backend
+await cartStore.addItem(product)        // Añadir item (POST /api/carrito/items)
 await cartStore.updateQuantity(id, qty) // Actualizar cantidad (PUT /api/carrito/items/<id>)
-await cartStore.removeItem(itemId)    // Eliminar item (DELETE /api/carrito/items/<id>)
-await cartStore.clearCart()           // Vaciar carrito (DELETE /api/carrito)
-cartStore.setItems([])                // Sincronizar manualmente
+await cartStore.removeItem(itemId)      // Eliminar item (DELETE /api/carrito/items/<id>)
+await cartStore.clearCart()             // Vaciar carrito (DELETE /api/carrito)
+cartStore.setItems([])                  // Sincronizar manualmente
 ```
 
 ### Flujo "Añadir al Carrito" (con backend)
-
 
 1. Usuario clicca "Añadir" en `CatalogView.vue` o `ProductDetailView.vue`
 2. `cartStore.addItem(product)` → actualización optimista en UI + POST /api/carrito/items
@@ -386,6 +359,7 @@ cartStore.setItems([])                // Sincronizar manualmente
 ## Formato de Moneda
 
 Todos los precios se muestran en **Quetzales Guatemaltecos (GTQ)** usando:
+
 ```javascript
 new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -393,13 +367,8 @@ new Intl.NumberFormat('es-GT', {
   minimumFractionDigits: 2
 })
 ```
+
 Ejemplo de salida: `Q 149.00`
-
-1. Usuario clicca "Añadir" en `CatalogView.vue`
-2. `cartStore.addItem(product)` añade al estado Pinia
-3. Badge en header actualiza `cartCount` reactivamente
-4. Persistencia: implementar `localStorage` en `cartStore` (futuro)
-
 
 ## Docker - Multi-stage Build
 
@@ -493,10 +462,6 @@ release/*      # Preparación releases
 
 ## Próximos Pasos (Roadmap)
 
-<<<<<<< HEAD
-=======
-- [ ] Vista Detalle de Producto (`/producto/:id`)
->>>>>>> feat/auth
 - [ ] Vista Carrito (`/carrito`) con cantidades, totales, checkout
 - [ ] Checkout: dirección, envío, pago (Stripe/MercadoPago)
 - [ ] Historial de Pedidos (`/mis-pedidos`)

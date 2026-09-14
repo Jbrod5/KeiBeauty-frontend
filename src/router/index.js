@@ -6,15 +6,12 @@ const CatalogView = () => import('../views/CatalogView.vue')
 const CartView = () => import('../views/CartView.vue')
 const LoginView = () => import('../views/LoginView.vue')
 const RegisterView = () => import('../views/RegisterView.vue')
-<<<<<<< HEAD
+
 const ProductDetailView = () => import('../views/ProductDetailView.vue')
-<<<<<<< HEAD
-=======
->>>>>>> feat/auth
-=======
+
 const ForgotPasswordView = () => import('../views/ForgotPasswordView.vue')
 const ResetPasswordView = () => import('../views/ResetPasswordView.vue')
->>>>>>> feature/recuperar-contrasena
+
 
 const routes = [
   {
@@ -30,15 +27,14 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-<<<<<<< HEAD
+
     path: '/producto/:id',
     name: 'product-detail',
     component: ProductDetailView,
     meta: { requiresAuth: false }
   },
   {
-=======
->>>>>>> feat/auth
+
     path: '/carrito',
     name: 'cart',
     component: CartView,
