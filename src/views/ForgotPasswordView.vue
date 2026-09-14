@@ -3,11 +3,11 @@
     <div class="auth-container">
       <div class="auth-card">
         <header class="auth-header">
-          <h1>Iniciar Sesión</h1>
-          <p>Accede a tu cuenta KeiBeauty</p>
+          <h1>¿Olvidaste tu contraseña?</h1>
+          <p>Te enviaremos un enlace para restablecerla</p>
         </header>
 
-        <form @submit.prevent="handleLogin" class="auth-form" novalidate>
+        <form @submit.prevent="handleSubmit" class="auth-form" novalidate>
           <div class="form-group">
             <label for="email">Email</label>
             <input
@@ -21,30 +21,17 @@
             <span v-if="errors.email" class="error-message" role="alert">{{ errors.email }}</span>
           </div>
 
-          <div class="form-group">
-            <label for="password">Contraseña</label>
-            <input
-              id="password"
-              type="password"
-              v-model="form.password"
-              required
-              autocomplete="current-password"
-              :aria-invalid="errors.password ? 'true' : 'false'"
-            />
-            <span v-if="errors.password" class="error-message" role="alert">{{ errors.password }}</span>
-          </div>
-
           <div v-if="authError" class="auth-error" role="alert">{{ authError }}</div>
+          <div v-if="successMessage" class="success-message" role="alert">{{ successMessage }}</div>
 
           <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
             <span v-if="loading" class="spinner"></span>
-            <span v-else>Iniciar Sesión</span>
+            <span v-else>Enviar enlace</span>
           </button>
         </form>
 
         <footer class="auth-footer">
-          <p>¿No tienes cuenta? <router-link to="/registro">Regístrate</router-link></p>
-          <p class="forgot-password"><router-link to="/olvide-contrasena">¿Olvidaste tu contraseña?</router-link></p>
+          <p>¿Recordaste tu contraseña? <router-link to="/login">Inicia sesión</router-link></p>
         </footer>
       </div>
     </div>
@@ -53,20 +40,19 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 
 const router = useRouter()
-const route = useRoute()
 const authStore = useAuthStore()
 
 const form = ref({
-  email: '',
-  password: ''
+  email: ''
 })
 
 const errors = ref({})
 const authError = ref('')
+const successMessage = ref('')
 const loading = ref(false)
 
 function validateForm() {
@@ -81,31 +67,28 @@ function validateForm() {
     isValid = false
   }
 
-  if (!form.value.password) {
-    errors.value.password = 'La contraseña es obligatoria'
-    isValid = false
-  } else if (form.value.password.length < 6) {
-    errors.value.password = 'La contraseña debe tener al menos 6 caracteres'
-    isValid = false
-  }
-
   return isValid
 }
 
-async function handleLogin() {
+async function handleSubmit() {
   authError.value = ''
+  successMessage.value = ''
   if (!validateForm()) return
 
   loading.value = true
-  const result = await authStore.login(form.value)
-
-  if (result.success) {
-    const redirect = route.query.redirect || '/'
-    router.push(redirect)
-  } else {
-    authError.value = result.error
+  try {
+    const result = await authStore.forgotPassword(form.value.email)
+    if (result.success) {
+      successMessage.value = result.message
+      form.value.email = ''
+    } else {
+      authError.value = result.error
+    }
+  } catch (err) {
+    authError.value = err.response?.data?.message || 'Error al enviar solicitud'
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 }
 </script>
 
@@ -196,6 +179,16 @@ async function handleLogin() {
   text-align: center;
 }
 
+.success-message {
+  padding: 0.75rem 1rem;
+  background: #e8f5e9;
+  border: 1px solid #c8e6c9;
+  border-radius: 0.5rem;
+  color: #2e7d32;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -255,15 +248,5 @@ async function handleLogin() {
 
 .auth-footer a:hover {
   text-decoration: underline;
-}
-
-.forgot-password {
-  margin-top: 1rem;
-  font-size: 0.9rem;
-}
-
-.forgot-password a {
-  color: #e91e63;
-  font-weight: 500;
 }
 </style>

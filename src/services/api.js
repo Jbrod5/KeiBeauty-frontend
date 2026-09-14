@@ -73,6 +73,7 @@ export async function createOrder(orderData) {
   return response.data
 }
 
+<<<<<<< HEAD
 export async function getCart() {
   const response = await api.get('/carrito')
   return response.data.data
@@ -96,6 +97,16 @@ export async function removeCartItem(itemId) {
 export async function clearCart() {
   const response = await api.delete('/carrito')
   return response.data.data
+=======
+export async function forgotPassword(email) {
+  const response = await api.post('/auth/olvide-contrasena', { email })
+  return response.data
+}
+
+export async function resetPassword(token, password, confirmPassword) {
+  const response = await api.post('/auth/reestablecer-contrasena', { token, password, confirm_password: confirmPassword })
+  return response.data
+>>>>>>> feature/recuperar-contrasena
 }
 
 export default api
