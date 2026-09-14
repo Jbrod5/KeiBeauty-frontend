@@ -1,63 +1,170 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { 
+  getCart as apiGetCart, 
+  addToCart as apiAddToCart, 
+  updateCartItem as apiUpdateCartItem, 
+  removeCartItem as apiRemoveCartItem, 
+  clearCart as apiClearCart 
+} from '../services/api'
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref([])
+  const loading = ref(false)
+  const error = ref(null)
 
   const totalItems = computed(() => 
-    items.value.reduce((sum, item) => sum + item.quantity, 0)
+    items.value.reduce((sum, item) => sum + item.cantidad, 0)
   )
 
   const totalPrice = computed(() =>
-    items.value.reduce((sum, item) => sum + item.precio * item.quantity, 0)
+    items.value.reduce((sum, item) => sum + item.precio * item.cantidad, 0)
   )
 
-  function addItem(product) {
-    const existingItem = items.value.find(item => item.id === product.id)
-    
+  function setItemsFromBackend(cartData) {
+    if (cartData && cartData.detalles) {
+      items.value = cartData.detalles.map(d => ({
+        id: d.id,
+        producto_id: d.producto_id,
+        nombre: d.producto.nombre,
+        marca_nombre: d.producto.marca_nombre,
+        precio: d.producto.precio,
+        imagen_url: d.producto.imagen_url,
+        cantidad: d.cantidad,
+        subtotal: d.subtotal
+      }))
+    } else {
+      items.value = []
+    }
+  }
+
+  function addLocalItem(product) {
+    const existingItem = items.value.find(item => item.producto_id === product.id)
     if (existingItem) {
-      existingItem.quantity++
+      existingItem.cantidad++
+      existingItem.subtotal = existingItem.precio * existingItem.cantidad
     } else {
       items.value.push({
-        id: product.id,
+        id: Date.now(), // temp id until backend responds
+        producto_id: product.id,
         nombre: product.nombre,
         marca_nombre: product.marca_nombre,
         precio: product.precio,
         imagen_url: product.imagen_url,
-        quantity: 1
+        cantidad: 1,
+        subtotal: product.precio
       })
     }
   }
 
-  function removeItem(productId) {
-    const index = items.value.findIndex(item => item.id === productId)
-    if (index !== -1) {
-      items.value.splice(index, 1)
+  async function syncWithBackend() {
+    if (!loading.value) {
+      await fetchCart()
     }
   }
 
-  function updateQuantity(productId, quantity) {
-    const item = items.value.find(item => item.id === productId)
-    if (item) {
-      if (quantity <= 0) {
-        removeItem(productId)
-      } else {
-        item.quantity = quantity
+  async function fetchCart() {
+    loading.value = true
+    error.value = null
+    try {
+      const cartData = await apiGetCart()
+      setItemsFromBackend(cartData)
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Error al cargar carrito'
+      console.error('Error fetching cart:', err)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function addItem(product) {
+    // Optimistic update for immediate UI feedback
+    addLocalItem(product)
+    
+    try {
+      const cartData = await apiAddToCart(product.id, 1)
+      // Replace with backend response
+      setItemsFromBackend(cartData)
+    } catch (err) {
+      // Rollback on error
+      error.value = err.response?.data?.message || 'Error al añadir al carrito'
+      // Remove the optimistic item
+      const tempItem = items.value.find(i => i.producto_id === product.id && i.id > 1000000000000)
+      if (tempItem) {
+        items.value = items.value.filter(i => i !== tempItem)
       }
+      throw err
     }
   }
 
-  function clearCart() {
+  async function updateQuantity(itemId, cantidad) {
+    const item = items.value.find(i => i.id === itemId)
+    if (!item) return
+    
+    const oldCantidad = item.cantidad
+    item.cantidad = cantidad
+    item.subtotal = item.precio * cantidad
+    
+    try {
+      const cartData = await apiUpdateCartItem(itemId, cantidad)
+      setItemsFromBackend(cartData)
+    } catch (err) {
+      // Rollback
+      item.cantidad = oldCantidad
+      item.subtotal = item.precio * oldCantidad
+      error.value = err.response?.data?.message || 'Error al actualizar cantidad'
+      throw err
+    }
+  }
+
+  async function removeItem(itemId) {
+    const itemIndex = items.value.findIndex(i => i.id === itemId)
+    if (itemIndex === -1) return
+    
+    const removedItem = items.value.splice(itemIndex, 1)[0]
+    
+    try {
+      const cartData = await apiRemoveCartItem(itemId)
+      setItemsFromBackend(cartData)
+    } catch (err) {
+      // Rollback
+      items.value.splice(itemIndex, 0, removedItem)
+      error.value = err.response?.data?.message || 'Error al eliminar item'
+      throw err
+    }
+  }
+
+  async function clearCartItems() {
+    const oldItems = [...items.value]
     items.value = []
+    
+    try {
+      const cartData = await apiClearCart()
+      setItemsFromBackend(cartData)
+    } catch (err) {
+      // Rollback
+      items.value = oldItems
+      error.value = err.response?.data?.message || 'Error al vaciar carrito'
+      throw err
+    }
+  }
+
+  function setItems(newItems) {
+    items.value = newItems
   }
 
   return {
     items,
+    loading,
+    error,
     totalItems,
     totalPrice,
+    fetchCart,
     addItem,
-    removeItem,
     updateQuantity,
-    clearCart
+    removeItem,
+    clearCart: clearCartItems,
+    setItems,
+    syncWithBackend
   }
 })

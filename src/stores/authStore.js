@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { login as apiLogin, register as apiRegister, getProfile, refreshToken } from '../services/api'
+import { useCartStore } from './cartStore'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -43,6 +44,9 @@ export const useAuthStore = defineStore('auth', () => {
       const { access_token, refresh_token, usuario } = response.data
       setTokens(access_token, refresh_token)
       setUser(usuario)
+      // Cargar carrito del usuario desde backend
+      const cartStore = useCartStore()
+      await cartStore.fetchCart()
       return { success: true }
     } catch (err) {
       const message = err.response?.data?.error || 'Error al iniciar sesión'
@@ -61,6 +65,9 @@ export const useAuthStore = defineStore('auth', () => {
       const { access_token, refresh_token, usuario } = response.data
       setTokens(access_token, refresh_token)
       setUser(usuario)
+      // Cargar carrito del usuario desde backend
+      const cartStore = useCartStore()
+      await cartStore.fetchCart()
       return { success: true }
     } catch (err) {
       const message = err.response?.data?.error || 'Error al registrarse'
@@ -102,11 +109,17 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     clearTokens()
     clearUser()
+    // Limpiar carrito local al cerrar sesión
+    const cartStore = useCartStore()
+    cartStore.setItems([])
   }
 
   async function initAuth() {
     if (accessToken.value && !user.value) {
       await fetchProfile()
+      // Cargar carrito si hay usuario autenticado
+      const cartStore = useCartStore()
+      await cartStore.fetchCart()
     }
   }
 

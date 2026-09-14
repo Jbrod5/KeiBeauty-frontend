@@ -73,4 +73,29 @@ export async function createOrder(orderData) {
   return response.data
 }
 
+export async function getCart() {
+  const response = await api.get('/carrito')
+  return response.data.data
+}
+
+export async function addToCart(productoId, cantidad = 1) {
+  const response = await api.post('/carrito/items', { producto_id: productoId, cantidad })
+  return response.data.data
+}
+
+export async function updateCartItem(itemId, cantidad) {
+  const response = await api.put(`/carrito/items/${itemId}`, { cantidad })
+  return response.data.data
+}
+
+export async function removeCartItem(itemId) {
+  const response = await api.delete(`/carrito/items/${itemId}`)
+  return response.data.data
+}
+
+export async function clearCart() {
+  const response = await api.delete('/carrito')
+  return response.data.data
+}
+
 export default api

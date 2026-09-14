@@ -37,10 +37,7 @@ KeiBeauty-frontend/
     ├── views/
     │   ├── HomeView.vue       # Página de inicio (hero, features)
     │   ├── CatalogView.vue    # Catálogo de productos
-<<<<<<< HEAD
     │   ├── ProductDetailView.vue # Detalle de producto
-=======
->>>>>>> feat/auth
     │   ├── LoginView.vue      # Formulario de login
     │   └── RegisterView.vue   # Formulario de registro
     ├── components/            # Componentes reutilizables (futuro)
@@ -159,8 +156,7 @@ npm run preview  # Previsualizar build de producción localmente
 | `getProfile()` | `/auth/perfil` | GET | Obtener perfil (requiere JWT) |
 | `refreshToken(refresh)` | `/auth/refresh` | POST | Renovar access token |
 
-<<<<<<< HEAD
-=======
+
 ### JSON de Request/Response
 
 #### POST /api/auth/registro
@@ -236,7 +232,6 @@ Authorization: Bearer <access_token>
 }
 ```
 
->>>>>>> feat/auth
 ### Store de Autenticación (`src/stores/authStore.js`)
 
 ```javascript
@@ -262,11 +257,8 @@ await authStore.initAuth()      // Llamar al montar app (en router guard)
 
 ### Guards de Ruta (`src/router/index.js`)
 
-<<<<<<< HEAD
+
 - **Rutas públicas**: `/`, `/catalogo`, `/producto/:id`, `/carrito`, `/login`, `/registro`
-=======
-- **Rutas públicas**: `/`, `/catalogo`, `/login`, `/registro`
->>>>>>> feat/auth
 - **Rutas protegidas**: Requieren `meta.requiresAuth !== false` (por defecto true)
 - **Solo invitados**: `meta.guest: true` (login, registro) → Redirige a `/` si autenticado
 - **Redirección post-login**: Guarda `redirect` en query params
@@ -297,24 +289,24 @@ await authStore.initAuth()      // Llamar al montar app (en router guard)
       "estado": "activo",
       "marca_id": 1,
       "categoria_id": 1,
-<<<<<<< HEAD
+
       "marca_nombre": "COSRX",
       "categoria_nombre": "Limpieza",
       "fecha_creacion": "2026-09-14T01:46:23.411889"
     }
   ],
   "message": "Productos obtenidos exitosamente."
-=======
+
       "fecha_creacion": "2026-09-14T01:46:23.411889"
     }
   ]
->>>>>>> feat/auth
+
 }
 ```
 
 ### Vista Catálogo (`src/views/CatalogView.vue`)
 
-<<<<<<< HEAD
+
 - Grid responsivo de productos con imagen, nombre, marca, descripción, precio en GTQ (Q)
 - Botón "Añadir" → Llama a `cartStore.addItem(product)` con campos: id, nombre, marca_nombre, precio, imagen_url, quantity
 - Loading state por producto mientras se añade
@@ -330,12 +322,12 @@ await authStore.initAuth()      // Llamar al montar app (en router guard)
 - Selector de cantidad con validación contra stock disponible
 - Botón "Añadir al carrito" (respeta stock)
 - Botón wishlist (placeholder)
-=======
+
 - Grid responsivo de productos
 - Botón "Añadir" → Llama a `cartStore.addItem(product)`
 - Loading state por producto mientras se añade
 - Filtros preparados (comentados, por categoría)
->>>>>>> feat/auth
+
 
 ## Carrito de Compras
 
@@ -348,6 +340,7 @@ const cartStore = useCartStore()
 
 // Estado reactivo
 <<<<<<< HEAD
+<<<<<<< HEAD
 cartStore.items          // Array de items { id, nombre, marca_nombre, precio, imagen_url, quantity }
 cartStore.totalItems     // Computed: suma de quantities
 cartStore.totalPrice     // Computed: suma de precio * quantity
@@ -356,21 +349,39 @@ cartStore.items          // Array de items { id, name, brand, price, emoji, quan
 cartStore.totalItems     // Computed: suma de quantities
 cartStore.totalPrice     // Computed: suma de price * quantity
 >>>>>>> feat/auth
+=======
+cartStore.items          // Array de items { id, producto_id, nombre, marca_nombre, precio, imagen_url, cantidad, subtotal }
+cartStore.totalItems     // Computed: suma de quantities
+cartStore.totalPrice     // Computed: suma de subtotal
+cartStore.loading        // boolean: carga en curso
+cartStore.error          // string: último error
+>>>>>>> feature/carrito-backend
 
-// Acciones
-cartStore.addItem(product)           // Añadir o incrementar quantity
-cartStore.removeItem(productId)      // Eliminar item
-cartStore.updateQuantity(id, qty)    // Actualizar cantidad (0 = eliminar)
-cartStore.clearCart()                // Vaciar carrito
+// Acciones (sincronizan con backend)
+await cartStore.fetchCart()           // Cargar carrito desde backend
+await cartStore.addItem(product)      // Añadir item (POST /api/carrito/items)
+await cartStore.updateQuantity(id, qty) // Actualizar cantidad (PUT /api/carrito/items/<id>)
+await cartStore.removeItem(itemId)    // Eliminar item (DELETE /api/carrito/items/<id>)
+await cartStore.clearCart()           // Vaciar carrito (DELETE /api/carrito)
+cartStore.setItems([])                // Sincronizar manualmente
 ```
 
-### Flujo "Añadir al Carrito"
+### Flujo "Añadir al Carrito" (con backend)
 
-<<<<<<< HEAD
+
 1. Usuario clicca "Añadir" en `CatalogView.vue` o `ProductDetailView.vue`
-2. `cartStore.addItem(product)` añade al estado Pinia
-3. Badge en header actualiza `cartCount` reactivamente
-4. Vista `/carrito` muestra items con cantidades, subtotales y total en GTQ
+2. `cartStore.addItem(product)` → actualización optimista en UI + POST /api/carrito/items
+3. Si éxito: reemplaza con respuesta del backend (incluye IDs reales, subtotales)
+4. Si error: rollback automático + muestra error
+5. Badge en header actualiza `cartCount` reactivamente
+6. Vista `/carrito` muestra items con cantidades, subtotales y total en GTQ
+
+### Persistencia
+
+- **Usuario autenticado**: Carrito sincronizado con backend (persiste entre sesiones)
+- **Usuario invitado**: Solo estado local en Pinia (se pierde al recargar)
+- **Al hacer login**: Carrito invitado se migra automáticamente al backend
+- **Al hacer logout**: Carrito local se limpia
 
 ## Formato de Moneda
 
@@ -383,12 +394,12 @@ new Intl.NumberFormat('es-GT', {
 })
 ```
 Ejemplo de salida: `Q 149.00`
-=======
+
 1. Usuario clicca "Añadir" en `CatalogView.vue`
 2. `cartStore.addItem(product)` añade al estado Pinia
 3. Badge en header actualiza `cartCount` reactivamente
 4. Persistencia: implementar `localStorage` en `cartStore` (futuro)
->>>>>>> feat/auth
+
 
 ## Docker - Multi-stage Build
 

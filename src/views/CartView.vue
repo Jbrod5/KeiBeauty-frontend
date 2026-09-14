@@ -4,7 +4,17 @@
       <h1>Carrito de Compras</h1>
     </header>
 
-    <div v-if="cartStore.items.length === 0" class="empty-cart">
+    <div v-if="cartStore.loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando carrito...</p>
+    </div>
+
+    <div v-else-if="cartStore.error" class="error-state">
+      <p>{{ cartStore.error }}</p>
+      <button class="btn btn-primary" @click="cartStore.fetchCart">Reintentar</button>
+    </div>
+
+    <div v-else-if="cartStore.items.length === 0" class="empty-cart">
       <p>🛒 Tu carrito está vacío</p>
       <router-link to="/catalogo" class="btn btn-primary">Ir al Catálogo</router-link>
     </div>
@@ -30,10 +40,11 @@
           </div>
           <div class="item-price">{{ formatPrice(item.precio) }}</div>
           <div class="item-quantity">
-            <button @click="cartStore.updateQuantity(item.id, item.quantity - 1)" class="qty-btn" :disabled="item.quantity <= 1" aria-label="Disminuir">−</button>
-            <span class="qty">{{ item.quantity }}</span>
-            <button @click="cartStore.updateQuantity(item.id, item.quantity + 1)" class="qty-btn" aria-label="Aumentar">+</button>
+            <button @click="cartStore.updateQuantity(item.id, item.cantidad - 1)" class="qty-btn" :disabled="item.cantidad <= 1" aria-label="Disminuir">−</button>
+            <span class="qty">{{ item.cantidad }}</span>
+            <button @click="cartStore.updateQuantity(item.id, item.cantidad + 1)" class="qty-btn" aria-label="Aumentar">+</button>
           </div>
+<<<<<<< HEAD
           <div class="item-subtotal">{{ formatPrice(item.precio * item.quantity) }}</div>
 =======
             <span class="item-emoji">{{ item.emoji }}</span>
@@ -50,6 +61,9 @@
           </div>
           <div class="item-subtotal">{{ (item.price * item.quantity).toFixed(2) }}€</div>
 >>>>>>> feat/auth
+=======
+          <div class="item-subtotal">{{ formatPrice(item.subtotal) }}</div>
+>>>>>>> feature/carrito-backend
           <button @click="cartStore.removeItem(item.id)" class="remove-btn" aria-label="Eliminar">✕</button>
         </div>
       </div>
@@ -86,6 +100,7 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { useCartStore } from '../stores/cartStore'
 
 const cartStore = useCartStore()
@@ -100,6 +115,10 @@ const priceFormatter = new Intl.NumberFormat('es-GT', {
 function formatPrice(price) {
   return priceFormatter.format(price)
 }
+
+onMounted(() => {
+  cartStore.fetchCart()
+})
 
 function goToCheckout() {
   // TODO: Implementar checkout (Paso 3B)
@@ -406,5 +425,44 @@ function goToCheckout() {
     grid-column: 2;
     justify-self: end;
   }
+}
+
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  gap: 1rem;
+  color: #666;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #e91e63;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.error-state {
+  color: #c62828;
+  background: #fdeaea;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.error-state .btn {
+  margin-top: 0.5rem;
 }
 </style>
