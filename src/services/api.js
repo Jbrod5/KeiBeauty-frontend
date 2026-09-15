@@ -34,14 +34,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      localStorage.removeItem('temp_token')
-      localStorage.removeItem('temp_email')
-      window.location.href = '/login'
-
-    }
+    // No redirigir automáticamente en 401 - dejar que el router guard maneje el estado de auth
+    // Esto evita redirecciones inesperadas durante initAuth() o peticiones opcionales
     return Promise.reject(error)
   }
 )
