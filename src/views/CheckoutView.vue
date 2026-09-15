@@ -65,10 +65,10 @@
               <label class="checkbox-label">
                 <input
                   type="checkbox"
-                  v-model="form.usar_datos_guardados"
-                  @change="toggleUsarDatosGuardados"
+                  v-model="form.usar_otros_datos"
+                  @change="toggleUsarOtrosDatos"
                 />
-                <span>Usar mis datos guardados (dirección y teléfono del perfil)</span>
+                <span>Usar otros datos para este pedido</span>
               </label>
             </div>
 
@@ -81,7 +81,7 @@
                 rows="3"
                 autocomplete="street-address"
                 :aria-invalid="errors.direccion_envio ? 'true' : 'false'"
-                :disabled="form.usar_datos_guardados"
+                :disabled="!form.usar_otros_datos"
               ></textarea>
               <span v-if="errors.direccion_envio" class="error-message" role="alert">{{ errors.direccion_envio }}</span>
             </div>
@@ -97,13 +97,13 @@
                   autocomplete="tel"
                   :aria-invalid="errors.telefono ? 'true' : 'false'"
                   placeholder="12345678"
-                  :disabled="form.usar_datos_guardados"
+                  :disabled="!form.usar_otros_datos"
                 />
                 <span v-if="errors.telefono" class="error-message" role="alert">{{ errors.telefono }}</span>
               </div>
             </div>
 
-            <div v-if="!form.usar_datos_guardados" class="form-group">
+            <div v-if="form.usar_otros_datos" class="form-group">
               <label class="checkbox-label">
                 <input
                   type="checkbox"
@@ -189,7 +189,7 @@ const form = ref({
   email: '',
   telefono: '',
   guardar_datos: false,
-  usar_datos_guardados: false
+  usar_otros_datos: false
 })
 
 const errors = ref({})
@@ -247,19 +247,19 @@ function validateForm() {
   return isValid
 }
 
-function toggleUsarDatosGuardados() {
-  if (form.value.usar_datos_guardados) {
-    // Cargar datos del perfil
+function toggleUsarOtrosDatos() {
+  if (form.value.usar_otros_datos) {
+    // Usuario quiere ingresar otros datos: limpiar campos para que escriba
+    form.value.direccion_envio = ''
+    form.value.telefono = ''
+  } else {
+    // Usar datos del perfil: pre-llenar y deshabilitar
     if (authStore.user?.direccion_envio) {
       form.value.direccion_envio = authStore.user.direccion_envio
     }
     if (authStore.user?.telefono) {
       form.value.telefono = authStore.user.telefono
     }
-  } else {
-    // Limpiar campos para que el usuario ingrese nuevos
-    form.value.direccion_envio = ''
-    form.value.telefono = ''
   }
 }
 
@@ -309,6 +309,7 @@ async function loadData() {
   
   // Pre-fill address from user profile if available
   if (isAuthenticated.value) {
+    form.value.usar_otros_datos = false
     if (authStore.user?.direccion_envio) {
       form.value.direccion_envio = authStore.user.direccion_envio
     }

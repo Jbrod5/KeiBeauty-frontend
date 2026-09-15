@@ -75,13 +75,16 @@
           </div>
 
           <div class="form-group">
-            <label for="direccion_envio">Dirección de envío (opcional)</label>
+            <label for="direccion_envio">Dirección de envío *</label>
             <textarea
               id="direccion_envio"
               v-model="form.direccion_envio"
+              required
               rows="2"
               autocomplete="street-address"
+              :aria-invalid="errors.direccion_envio ? 'true' : 'false'"
             ></textarea>
+            <span v-if="errors.direccion_envio" class="error-message" role="alert">{{ errors.direccion_envio }}</span>
           </div>
 
           <div v-if="authError" class="auth-error" role="alert">{{ authError }}</div>
@@ -162,6 +165,14 @@ function validateForm() {
     isValid = false
   } else if (form.value.telefono.replace(/\D/g, '').length < 8) {
     errors.value.telefono = 'El teléfono debe tener al menos 8 dígitos'
+    isValid = false
+  }
+
+  if (!form.value.direccion_envio.trim()) {
+    errors.value.direccion_envio = 'La dirección de envío es obligatoria'
+    isValid = false
+  } else if (form.value.direccion_envio.trim().length < 10) {
+    errors.value.direccion_envio = 'La dirección debe tener al menos 10 caracteres'
     isValid = false
   }
 
