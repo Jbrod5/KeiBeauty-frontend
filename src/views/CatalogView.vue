@@ -43,43 +43,47 @@
       <button class="btn btn-link clear-all" @click="clearFilters">Limpiar todo</button>
     </div>
 
-    <main class="products-grid">
-      <router-link 
-        v-for="product in products" 
-        :key="product.id" 
-        :to="`/producto/${product.id}`"
-        class="product-card-link"
-      >
-        <div class="product-card">
-          <div class="product-image">
-            <img 
-              v-show="product.imagen_url" 
-              :src="product.imagen_url" 
-              :alt="product.nombre" 
-              class="product-img"
-              @error="handleImageError($event, product)"
-            />
-            <span v-show="!product.imagen_url || product.imageError" class="product-placeholder">{{ product.nombre.charAt(0) }}</span>
-          </div>
-          <div class="product-info">
-            <h3 class="product-name">{{ product.nombre }}</h3>
-            <p class="product-brand">{{ product.marca_nombre }}</p>
-            <p class="product-description">{{ product.descripcion }}</p>
-            <div class="product-footer">
-              <span class="product-price">{{ formatPrice(product.precio) }}</span>
-              <button 
-                class="add-to-cart-btn" 
-                @click.stop.prevent="addToCart(product)"
-                :disabled="addingToCart === product.id"
-              >
-                <span v-if="addingToCart !== product.id">Añadir</span>
-                <span v-else class="loading">⟳</span>
-              </button>
+<main class="products-grid">
+        <router-link 
+          v-for="product in products" 
+          :key="product.id" 
+          :to="`/producto/${product.id}`"
+          :class="['product-card-link', { 'out-of-stock': product.stock === 0 }]"
+        >
+          <div class="product-card">
+            <div class="product-image">
+              <img 
+                v-show="product.imagen_url" 
+                :src="product.imagen_url" 
+                :alt="product.nombre" 
+                class="product-img"
+                @error="handleImageError($event, product)"
+              />
+              <span v-show="!product.imagen_url || product.imageError" class="product-placeholder">{{ product.nombre.charAt(0) }}</span>
+              <span class="stock-badge" :class="{ 'in-stock': product.stock > 0, 'out-of-stock-badge': product.stock === 0 }">
+                {{ product.stock > 0 ? 'Disponible' : 'Agotado' }}
+              </span>
+            </div>
+            <div class="product-info">
+              <h3 class="product-name">{{ product.nombre }}</h3>
+              <p class="product-brand">{{ product.marca_nombre }}</p>
+              <p class="product-description">{{ product.descripcion }}</p>
+              <div class="product-footer">
+                <span class="product-price">{{ formatPrice(product.precio) }}</span>
+                <button 
+                  class="add-to-cart-btn" 
+                  @click.stop.prevent="addToCart(product)"
+                  :disabled="addingToCart === product.id || product.stock === 0"
+                >
+                  <span v-if="addingToCart !== product.id && product.stock > 0">Añadir</span>
+                  <span v-else-if="addingToCart === product.id" class="loading">⟳</span>
+                  <span v-else>Sin stock</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </router-link>
-    </main>
+        </router-link>
+      </main>
 
     <div class="empty-state" v-if="products.length === 0 && !loading">
       <div class="empty-icon">🔍</div>
@@ -360,6 +364,43 @@ onMounted(async () => {
   background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
   position: relative;
   overflow: hidden;
+}
+
+.stock-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 2;
+}
+
+.stock-badge.in-stock {
+  background: #2e7d32;
+  color: white;
+}
+
+.stock-badge.out-of-stock-badge {
+  background: #c62828;
+  color: white;
+}
+
+.product-card.out-of-stock {
+  opacity: 0.6;
+  border: 2px solid #f5c6cb;
+}
+
+.product-card.out-of-stock:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.product-card.out-of-stock .product-img {
+  transform: none;
 }
 
 .product-img {
