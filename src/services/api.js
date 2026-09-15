@@ -71,7 +71,7 @@ export async function getProducts(params = {}) {
 }
 
 export async function getCategories() {
-  const response = await api.get('/categorias')
+  const response = await api.get('/products/categorias')
   return response.data
 }
 
