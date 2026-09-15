@@ -13,6 +13,7 @@ const CheckoutView = () => import('../views/CheckoutView.vue')
 const OrderHistoryView = () => import('../views/OrderHistoryView.vue')
 const AdminOrdersView = () => import('../views/AdminOrdersView.vue')
 const ProfileView = () => import('../views/ProfileView.vue')
+const OrderDetailView = () => import('../views/OrderDetailView.vue')
 
 
 const routes = [
@@ -56,6 +57,12 @@ const routes = [
     path: '/mis-pedidos',
     name: 'order-history',
     component: OrderHistoryView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/mis-pedidos/:id',
+    name: 'order-detail',
+    component: OrderDetailView,
     meta: { requiresAuth: true }
   },
   {
