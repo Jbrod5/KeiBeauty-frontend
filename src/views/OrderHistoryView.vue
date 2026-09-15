@@ -32,33 +32,12 @@
           </span>
         </div>
 
-        <div class="order-items-preview">
-          <div class="order-item-mini" v-for="detalle in order.detalles.slice(0, 3)" :key="detalle.id">
-            <div class="item-image">
-              <img 
-                v-if="detalle.producto?.imagen_url" 
-                :src="detalle.producto.imagen_url" 
-                :alt="detalle.producto.nombre"
-              />
-              <span v-else class="item-placeholder">{{ detalle.producto?.nombre?.charAt(0) || '?' }}</span>
-            </div>
-            <div class="item-details">
-              <span class="item-name">{{ detalle.nombre_producto || detalle.producto?.nombre }}</span>
-              <span class="item-qty">×{{ detalle.cantidad }}</span>
-              <span class="item-price">{{ formatPrice(detalle.precio_unitario) }}</span>
-            </div>
-          </div>
-          <div v-if="order.detalles.length > 3" class="more-items">
-            +{{ order.detalles.length - 3 }} producto{{ order.detalles.length - 3 > 1 ? 's' : '' }} más
-          </div>
-        </div>
-
         <div class="order-footer">
           <div class="order-total">
             <span>Total:</span>
             <span class="total-amount">{{ formatPrice(order.monto_total) }}</span>
           </div>
-          <router-link :to="`/pedido/${order.id}`" class="btn btn-outline btn-sm">Ver Detalle</router-link>
+          <router-link :to="`/mis-pedidos/${order.id}`" class="btn btn-outline btn-sm">Ver Detalle</router-link>
         </div>
       </div>
 
@@ -248,69 +227,6 @@ onMounted(() => {
 .status-cancelado {
   background: #fce4ec;
   color: #c62828;
-}
-
-.order-items-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.order-item-mini {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.item-image {
-  width: 40px;
-  height: 40px;
-  border-radius: 0.375rem;
-  overflow: hidden;
-  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.item-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.item-placeholder {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #e91e63;
-}
-
-.item-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  min-width: 0;
-}
-
-.item-name {
-  font-size: 0.85rem;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.item-qty {
-  font-size: 0.75rem;
-  color: #666;
-}
-
-.more-items {
-  font-size: 0.8rem;
-  color: #999;
-  padding-left: 2.75rem;
 }
 
 .order-footer {

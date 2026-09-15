@@ -14,6 +14,13 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // Add guest token for cart operations
+    const guestToken = localStorage.getItem('guest_token')
+    if (guestToken && !token) {
+      config.headers['X-Guest-Token'] = guestToken
+    }
+    
     return config
   },
   (error) => Promise.reject(error)
@@ -56,8 +63,9 @@ export async function refreshToken(refreshTokenValue) {
   return response
 }
 
-export async function getProducts() {
-  const response = await api.get('/products')
+export async function getProducts(params = {}) {
+  const queryString = new URLSearchParams(params).toString()
+  const response = await api.get(`/products?${queryString}`)
   return response.data.data
 }
 

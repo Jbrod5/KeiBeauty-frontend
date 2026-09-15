@@ -27,6 +27,7 @@
           
           <!-- Campos para invitados -->
           <div v-if="!isAuthenticated" class="guest-fields">
+            <h3>Información de Contacto</h3>
             <div class="form-row">
               <div class="form-group">
                 <label for="email">Email *</label>
@@ -61,6 +62,17 @@
           <!-- Campos para usuarios autenticados -->
           <div v-else class="auth-fields">
             <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  v-model="form.usar_datos_guardados"
+                  @change="toggleUsarDatosGuardados"
+                />
+                <span>Usar mis datos guardados (dirección y teléfono del perfil)</span>
+              </label>
+            </div>
+
+            <div class="form-group">
               <label for="direccion">Dirección completa *</label>
               <textarea
                 id="direccion"
@@ -69,6 +81,7 @@
                 rows="3"
                 autocomplete="street-address"
                 :aria-invalid="errors.direccion_envio ? 'true' : 'false'"
+                :disabled="form.usar_datos_guardados"
               ></textarea>
               <span v-if="errors.direccion_envio" class="error-message" role="alert">{{ errors.direccion_envio }}</span>
             </div>
@@ -84,34 +97,21 @@
                   autocomplete="tel"
                   :aria-invalid="errors.telefono ? 'true' : 'false'"
                   placeholder="12345678"
+                  :disabled="form.usar_datos_guardados"
                 />
                 <span v-if="errors.telefono" class="error-message" role="alert">{{ errors.telefono }}</span>
               </div>
             </div>
 
-            <div class="form-group">
+            <div v-if="!form.usar_datos_guardados" class="form-group">
               <label class="checkbox-label">
                 <input
                   type="checkbox"
                   v-model="form.guardar_datos"
                 />
-                <span>Guardar estos datos en mi perfil</span>
+                <span>Actualizar mis datos de perfil con esta información</span>
               </label>
             </div>
-          </div>
-
-          <!-- Campo dirección común -->
-          <div class="form-group">
-            <label for="direccion">Dirección completa *</label>
-            <textarea
-              id="direccion"
-              v-model="form.direccion_envio"
-              required
-              rows="3"
-              autocomplete="street-address"
-              :aria-invalid="errors.direccion_envio ? 'true' : 'false'"
-            ></textarea>
-            <span v-if="errors.direccion_envio" class="error-message" role="alert">{{ errors.direccion_envio }}</span>
           </div>
 
           <div v-if="submitError" class="submit-error" role="alert">{{ submitError }}</div>
@@ -188,7 +188,8 @@ const form = ref({
   direccion_envio: '',
   email: '',
   telefono: '',
-  guardar_datos: false
+  guardar_datos: false,
+  usar_datos_guardados: false
 })
 
 const errors = ref({})
@@ -246,6 +247,22 @@ function validateForm() {
   return isValid
 }
 
+function toggleUsarDatosGuardados() {
+  if (form.value.usar_datos_guardados) {
+    // Cargar datos del perfil
+    if (authStore.user?.direccion_envio) {
+      form.value.direccion_envio = authStore.user.direccion_envio
+    }
+    if (authStore.user?.telefono) {
+      form.value.telefono = authStore.user.telefono
+    }
+  } else {
+    // Limpiar campos para que el usuario ingrese nuevos
+    form.value.direccion_envio = ''
+    form.value.telefono = ''
+  }
+}
+
 async function loadCart() {
   await cartStore.fetchCart()
 }
@@ -275,6 +292,10 @@ async function handleSubmit() {
     }
 
     cartStore.clearCart()
+    // Clear guest token after successful order
+    if (!isAuthenticated.value) {
+      cartStore.clearGuestToken()
+    }
     router.push('/mis-pedidos')
   } catch (err) {
     submitError.value = err.response?.data?.message || 'Error al crear el pedido. Intenta de nuevo.'
@@ -288,7 +309,6 @@ async function loadData() {
   
   // Pre-fill address from user profile if available
   if (isAuthenticated.value) {
-    const authStore = useAuthStore()
     if (authStore.user?.direccion_envio) {
       form.value.direccion_envio = authStore.user.direccion_envio
     }
@@ -406,6 +426,13 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.15);
 }
 
+.form-group input:disabled,
+.form-group textarea:disabled {
+  background: #f5f5f5;
+  color: #666;
+  cursor: not-allowed;
+}
+
 .form-group textarea {
   resize: vertical;
   min-height: 100px;
@@ -444,16 +471,6 @@ onMounted(() => {
   width: 18px;
   height: 18px;
   accent-color: #e91e63;
-}
-
-.submit-error {
-  padding: 0.75rem 1rem;
-  background: #fdeaea;
-  border: 1px solid #f5c6cb;
-  border-radius: 0.5rem;
-  color: #c62828;
-  font-size: 0.9rem;
-  text-align: center;
 }
 
 .checkout-submit-btn {
@@ -658,6 +675,7 @@ onMounted(() => {
 }
 
 @keyframes spin {
+  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 

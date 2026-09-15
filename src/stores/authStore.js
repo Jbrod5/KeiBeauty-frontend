@@ -41,7 +41,20 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     try {
       const response = await apiLogin(credentials)
-      const { access_token, refresh_token, usuario } = response.data
+      const data = response.data
+      
+      // Check if 2FA is required
+      if (data.data?.requiere_2fa) {
+        return { 
+          success: true, 
+          requiere2fa: true, 
+          email: data.data.email,
+          message: data.message 
+        }
+      }
+      
+      // Normal login with tokens
+      const { access_token, refresh_token, usuario } = data
       setTokens(access_token, refresh_token)
       setUser(usuario)
       // Cargar carrito del usuario desde backend

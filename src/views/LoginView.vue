@@ -182,10 +182,10 @@ async function handleLogin() {
   const result = await authStore.login(form.value)
 
   if (result.success) {
-    if (authStore.user?.two_factor_enabled) {
+    if (result.requiere2fa) {
       // Cambiar a paso de código 2FA
       paso.value = 'codigo'
-      email.value = form.value.email
+      email.value = result.email
       authError.value = ''
       codigo.value = ''
       startResendCountdown()

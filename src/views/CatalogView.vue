@@ -14,7 +14,6 @@
           v-model="searchQuery"
           placeholder="Buscar productos..."
           class="search-input"
-          @input="debouncedSearch"
         />
         <div class="search-icon">🔍</div>
       </div>
@@ -23,7 +22,6 @@
         <select
           v-model="selectedCategory"
           class="category-select"
-          @change="loadProducts"
         >
           <option value="">Todas las categorías</option>
           <option v-for="cat in categories" :key="cat.id" :value="cat.id">
@@ -33,36 +31,26 @@
       </div>
     </div>
 
-    <div class="catalog-content" :class="{ 'full-width': !showFilters }">
-      <aside class="filters" v-if="showFilters">
-        <h3>Filtros</h3>
-        <div class="filter-group">
-          <label>
-            <input type="checkbox" v-model="filters.category" value="limpieza" /> Limpieza
-          </label>
-          <label>
-            <input type="checkbox" v-model="filters.category" value="tonico" /> Tónico
-          </label>
-          <label>
-            <input type="checkbox" v-model="filters.category" value="serum" /> Sérum
-          </label>
-          <label>
-            <input type="checkbox" v-model="filters.category" value="crema" /> Crema
-          </label>
-          <label>
-            <input type="checkbox" v-model="filters.category" value="protector" /> Protector Solar
-          </label>
-        </div>
-      </aside>
+    <div class="active-filters" v-if="selectedCategory || searchQuery">
+      <span class="filter-chip" v-if="selectedCategory">
+        Categoría: {{ getCategoryName(selectedCategory) }}
+        <button @click="selectedCategory = ''" aria-label="Eliminar filtro">×</button>
+      </span>
+      <span class="filter-chip" v-if="searchQuery">
+        Búsqueda: "{{ searchQuery }}"
+        <button @click="searchQuery = ''" aria-label="Eliminar filtro">×</button>
+      </span>
+      <button class="btn btn-link clear-all" @click="clearFilters">Limpiar todo</button>
+    </div>
 
-      <main class="products-grid">
-        <router-link 
-          v-for="product in filteredProducts" 
-          :key="product.id" 
-          :to="`/producto/${product.id}`"
-          class="product-card-link"
-        >
-          <div class="product-card">
+    <main class="products-grid">
+      <router-link 
+        v-for="product in products" 
+        :key="product.id" 
+        :to="`/producto/${product.id}`"
+        class="product-card-link"
+      >
+        <div class="product-card">
           <div class="product-image">
             <img 
               v-show="product.imagen_url" 
@@ -90,11 +78,10 @@
             </div>
           </div>
         </div>
-        </router-link>
-      </main>
-    </div>
+      </router-link>
+    </main>
 
-    <div class="empty-state" v-if="filteredProducts.length === 0 && !loading">
+    <div class="empty-state" v-if="products.length === 0 && !loading">
       <div class="empty-icon">🔍</div>
       <p>No encontramos productos con esos filtros</p>
       <button class="btn btn-outline" @click="clearFilters">Limpiar filtros</button>
@@ -115,16 +102,10 @@ const loading = ref(true)
 const addingToCart = ref(null)
 const cartStore = useCartStore()
 
-const searchQueryInput = ref('')
+const searchQuery = ref('')
 const selectedCategory = ref('')
 const categories = ref([])
 const debounceTimer = ref(null)
-
-const filters = ref({
-  category: []
-})
-
-const showFilters = ref(false)
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -141,64 +122,23 @@ function handleImageError(event, product) {
   product.imageError = true
 }
 
-const filteredProducts = computed(() => {
-  let result = products.value
-  
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(p => 
-      p.nombre.toLowerCase().includes(query) ||
-      p.descripcion.toLowerCase().includes(query) ||
-      p.marca_nombre.toLowerCase().includes(query)
-    )
-  }
-  
-  if (selectedCategory.value) {
-    result = result.filter(p => p.categoria_id === Number(selectedCategory.value))
-  }
-  
-  if (filters.value.category.length > 0) {
-    // Mapear categorías del filtro a IDs
-    const categoryMap = {
-      'limpieza': 1,
-      'tonico': 2,
-      'serum': 3,
-      'crema': 4,
-      'protector': 5
-    }
-    const categoryIds = filters.value.category.map(c => categoryMap[c]).filter(Boolean)
-    if (categoryIds.length > 0) {
-      result = result.filter(p => categoryIds.includes(p.categoria_id))
-    }
-  }
-  
-  return result
-});
-
-const searchQuery = computed({
-  get: () => searchQueryInput.value,
-  set: (val) => {
-    searchQueryInput.value = val
-    clearTimeout(debounceTimer.value)
-    debounceTimer.value = setTimeout(() => {
-      loadProducts()
-    }, 300)
-  }
-})
+function getCategoryName(catId) {
+  const cat = categories.value.find(c => c.id === Number(catId))
+  return cat ? cat.nombre : ''
+}
 
 async function loadProducts() {
   try {
     loading.value = true
-    let data = await getProducts()
+    const params = {}
+    if (selectedCategory.value) params.categoria = selectedCategory.value
+    if (searchQuery.value) params.buscar = searchQuery.value
     
-    // Si hay categoría seleccionada, filtrar en el servidor
-    if (selectedCategory.value) {
-      data = data.filter(p => p.categoria_id === Number(selectedCategory.value))
-    }
-    
+    const data = await getProducts(params)
     products.value = data.map(p => ({ ...p, imageError: false }))
   } catch (error) {
     console.error('Error loading products:', error)
+    toast.error('Error al cargar productos')
   } finally {
     loading.value = false
   }
@@ -216,7 +156,7 @@ async function loadCategories() {
 async function addToCart(product) {
   addingToCart.value = product.id
   try {
-    cartStore.addItem(product)
+    await cartStore.addItem(product)
     toast.success('Producto añadido al carrito')
   } catch (error) {
     console.error('Error adding to cart:', error)
@@ -229,11 +169,359 @@ async function addToCart(product) {
 function clearFilters() {
   searchQuery.value = ''
   selectedCategory.value = ''
-  filters.value.category = []
 }
+
+watch(searchQuery, () => {
+  clearTimeout(debounceTimer.value)
+  debounceTimer.value = setTimeout(() => {
+    loadProducts()
+  }, 300)
+})
+
+watch(selectedCategory, () => {
+  loadProducts()
+})
 
 onMounted(async () => {
   await loadCategories()
   await loadProducts()
 })
 </script>
+
+<style scoped>
+.catalog-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.catalog-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem 0;
+}
+
+.catalog-header h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.catalog-subtitle {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.catalog-toolbar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 250px;
+  max-width: 500px;
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.875rem 1rem 0.875rem 3rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 50px;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #e91e63;
+  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.15);
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.25rem;
+  pointer-events: none;
+}
+
+.filter-dropdown {
+  min-width: 200px;
+}
+
+.category-select {
+  width: 100%;
+  padding: 0.875rem 2.5rem 0.875rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 50px;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.category-select:focus {
+  outline: none;
+  border-color: #e91e63;
+  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.15);
+}
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: #fef8fa;
+  border-radius: 0.5rem;
+  border: 1px solid #f5d0da;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: white;
+  border: 1px solid #e91e63;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  color: #e91e63;
+  font-weight: 500;
+}
+
+.filter-chip button {
+  background: none;
+  border: none;
+  color: #e91e63;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.filter-chip button:hover {
+  background: rgba(233, 30, 99, 0.1);
+}
+
+.clear-all {
+  color: #e91e63;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.product-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.product-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.product-image {
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.product-card:hover .product-img {
+  transform: scale(1.05);
+}
+
+.product-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: 600;
+  color: #e91e63;
+}
+
+.product-info {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-brand {
+  font-size: 0.8rem;
+  color: #e91e63;
+  font-weight: 500;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.product-description {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0 0 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.product-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.add-to-cart-btn {
+  background: #e91e63;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.add-to-cart-btn:hover:not(:disabled) {
+  background: #c2185b;
+}
+
+.add-to-cart-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.add-to-cart-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.add-to-cart-btn .loading {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  grid-column: 1 / -1;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .catalog-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-box {
+    max-width: none;
+  }
+  
+  .filter-dropdown {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .catalog-header h1 {
+    font-size: 2rem;
+  }
+}
+</style>

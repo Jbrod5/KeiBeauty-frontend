@@ -12,6 +12,7 @@ export const useCartStore = defineStore('cart', () => {
   const items = ref([])
   const loading = ref(false)
   const error = ref(null)
+  const guestToken = ref(localStorage.getItem('guest_token') || null)
 
   const totalItems = computed(() => 
     items.value.reduce((sum, item) => sum + item.cantidad, 0)
@@ -20,6 +21,16 @@ export const useCartStore = defineStore('cart', () => {
   const totalPrice = computed(() =>
     items.value.reduce((sum, item) => sum + item.precio * item.cantidad, 0)
   )
+
+  function setGuestToken(token) {
+    guestToken.value = token
+    localStorage.setItem('guest_token', token)
+  }
+
+  function clearGuestToken() {
+    guestToken.value = null
+    localStorage.removeItem('guest_token')
+  }
 
   function setItemsFromBackend(cartData) {
     if (cartData && cartData.detalles) {
@@ -69,6 +80,10 @@ export const useCartStore = defineStore('cart', () => {
     try {
       const cartData = await apiGetCart()
       setItemsFromBackend(cartData)
+      // Store guest token if returned
+      if (cartData.guest_token) {
+        setGuestToken(cartData.guest_token)
+      }
     } catch (err) {
       error.value = err.response?.data?.message || 'Error al cargar carrito'
       console.error('Error fetching cart:', err)
@@ -85,6 +100,10 @@ export const useCartStore = defineStore('cart', () => {
       const cartData = await apiAddToCart(product.id, 1)
       // Replace with backend response
       setItemsFromBackend(cartData)
+      // Store guest token if returned
+      if (cartData.guest_token) {
+        setGuestToken(cartData.guest_token)
+      }
     } catch (err) {
       // Rollback on error
       error.value = err.response?.data?.message || 'Error al añadir al carrito'
@@ -108,6 +127,9 @@ export const useCartStore = defineStore('cart', () => {
     try {
       const cartData = await apiUpdateCartItem(itemId, cantidad)
       setItemsFromBackend(cartData)
+      if (cartData.guest_token) {
+        setGuestToken(cartData.guest_token)
+      }
     } catch (err) {
       // Rollback
       item.cantidad = oldCantidad
@@ -126,6 +148,9 @@ export const useCartStore = defineStore('cart', () => {
     try {
       const cartData = await apiRemoveCartItem(itemId)
       setItemsFromBackend(cartData)
+      if (cartData.guest_token) {
+        setGuestToken(cartData.guest_token)
+      }
     } catch (err) {
       // Rollback
       items.value.splice(itemIndex, 0, removedItem)
@@ -141,6 +166,9 @@ export const useCartStore = defineStore('cart', () => {
     try {
       const cartData = await apiClearCart()
       setItemsFromBackend(cartData)
+      if (cartData.guest_token) {
+        setGuestToken(cartData.guest_token)
+      }
     } catch (err) {
       // Rollback
       items.value = oldItems
@@ -159,12 +187,15 @@ export const useCartStore = defineStore('cart', () => {
     error,
     totalItems,
     totalPrice,
+    guestToken,
     fetchCart,
     addItem,
     updateQuantity,
     removeItem,
     clearCart: clearCartItems,
     setItems,
-    syncWithBackend
+    syncWithBackend,
+    setGuestToken,
+    clearGuestToken
   }
 })
