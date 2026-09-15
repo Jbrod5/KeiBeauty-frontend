@@ -12,6 +12,7 @@ const ResetPasswordView = () => import('../views/ResetPasswordView.vue')
 const CheckoutView = () => import('../views/CheckoutView.vue')
 const OrderHistoryView = () => import('../views/OrderHistoryView.vue')
 const AdminOrdersView = () => import('../views/AdminOrdersView.vue')
+const ProfileView = () => import('../views/ProfileView.vue')
 
 
 const routes = [
@@ -44,6 +45,12 @@ const routes = [
     name: 'checkout',
     component: CheckoutView,
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/perfil',
+    name: 'profile',
+    component: ProfileView,
+    meta: { requiresAuth: true }
   },
   {
     path: '/mis-pedidos',

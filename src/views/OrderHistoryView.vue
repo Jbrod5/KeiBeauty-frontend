@@ -43,8 +43,9 @@
               <span v-else class="item-placeholder">{{ detalle.producto?.nombre?.charAt(0) || '?' }}</span>
             </div>
             <div class="item-details">
-              <span class="item-name">{{ detalle.producto?.nombre }}</span>
+              <span class="item-name">{{ detalle.nombre_producto || detalle.producto?.nombre }}</span>
               <span class="item-qty">×{{ detalle.cantidad }}</span>
+              <span class="item-price">{{ formatPrice(detalle.precio_unitario) }}</span>
             </div>
           </div>
           <div v-if="order.detalles.length > 3" class="more-items">

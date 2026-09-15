@@ -34,6 +34,9 @@
             <li role="none">
               <router-link to="/perfil" class="dropdown-item" role="menuitem">Mi Perfil</router-link>
             </li>
+            <li role="none">
+              <router-link to="/mis-pedidos" class="dropdown-item" role="menuitem">Mis Pedidos</router-link>
+            </li>
             <li v-if="isAdmin" role="none">
               <router-link to="/admin" class="dropdown-item" role="menuitem">Panel Admin</router-link>
             </li>
