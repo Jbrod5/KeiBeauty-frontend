@@ -53,7 +53,7 @@
               <span class="product-price">{{ formatPrice(product.precio) }}</span>
               <button 
                 class="add-to-cart-btn" 
-                @click.stop="addToCart(product)"
+                @click.stop.prevent="addToCart(product)"
                 :disabled="addingToCart === product.id"
               >
                 <span v-if="addingToCart !== product.id">Añadir</span>
