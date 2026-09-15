@@ -91,8 +91,13 @@ export async function getOrders(params = {}) {
   return response.data
 }
 
-export async function getOrderById(id) {
-  const response = await api.get(`/pedidos/${id}`)
+export async function getOrderById(id, guestToken, emailContacto) {
+  const params = new URLSearchParams()
+  if (guestToken) params.append('guest_token', guestToken)
+  if (emailContacto) params.append('email_contacto', emailContacto)
+  const queryString = params.toString()
+  const url = `/pedidos/${id}${queryString ? '?' + queryString : ''}`
+  const response = await api.get(url)
   return response.data.data
 }
 

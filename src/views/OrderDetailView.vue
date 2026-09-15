@@ -149,8 +149,10 @@ async function loadOrder() {
   errorMessage.value = ''
   try {
     const orderId = route.params.id
-    const result = await getOrderById(orderId)
-    order.value = result.data
+    const guestToken = route.query.guest_token || localStorage.getItem('guest_token')
+    const emailContacto = route.query.email_contacto
+    const result = await getOrderById(orderId, guestToken, emailContacto)
+    order.value = result
   } catch (err) {
     console.error('Error loading order:', err)
     errorMessage.value = err.response?.data?.message || 'Error al cargar el pedido'
