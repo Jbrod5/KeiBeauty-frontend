@@ -15,6 +15,7 @@ const AdminOrdersView = () => import('../views/AdminOrdersView.vue')
 const ProfileView = () => import('../views/ProfileView.vue')
 const OrderDetailView = () => import('../views/OrderDetailView.vue')
 const TwoFactorView = () => import('../views/TwoFactorView.vue')
+const FavoritosView = () => import('../views/FavoritosView.vue')
 
 
 const routes = [
@@ -52,6 +53,12 @@ const routes = [
     path: '/perfil',
     name: 'profile',
     component: ProfileView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/perfil/favoritos',
+    name: 'favoritos',
+    component: FavoritosView,
     meta: { requiresAuth: true }
   },
   {

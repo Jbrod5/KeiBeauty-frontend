@@ -66,8 +66,15 @@
             <span v-if="!addingToCart">Añadir al carrito</span>
             <span v-else class="loading">⟳</span>
           </button>
-          <button class="btn btn-outline btn-wishlist" @click="toggleWishlist">
-            ♡
+          <button 
+            class="btn btn-outline btn-wishlist" 
+            @click="toggleWishlist"
+            :class="{ 'active': product.es_favorito }"
+            :aria-label="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+            :title="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+          >
+            <span v-if="product.es_favorito">♥</span>
+            <span v-else>♡</span>
           </button>
         </div>
 
@@ -106,6 +113,8 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
+import { useFavoritosStore } from '../stores/favoritosStore'
+import { useAuthStore } from '../stores/authStore'
 import { getProductById } from '../services/api'
 import { useToast } from 'vue-toastification'
 
@@ -114,6 +123,8 @@ const toast = useToast()
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
+const favoritosStore = useFavoritosStore()
+const authStore = useAuthStore()
 
 const product = ref(null)
 const loading = ref(true)
@@ -144,6 +155,10 @@ async function loadProduct() {
     errorMessage.value = ''
     product.value = await getProductById(route.params.id)
     quantity.value = 1
+    // Sincronizar estado de favorito
+    if (product.value && authStore.isAuthenticated) {
+      await favoritosStore.fetchFavoritos()
+    }
   } catch (error) {
     console.error('Error loading product:', error)
     if (error.response?.status === 404) {
@@ -192,8 +207,19 @@ function clampQuantity() {
   if (quantity.value > product.value.stock) quantity.value = product.value.stock
 }
 
-function toggleWishlist() {
-  // TODO: Implementar wishlist
+async function toggleWishlist() {
+  if (!product.value) return
+  
+  if (!authStore.isAuthenticated) {
+    toast.info('Iniciá sesión para guardar favoritos')
+    return
+  }
+  
+  await favoritosStore.toggle(product.value.id)
+  // Forzar actualización reactiva
+  if (product.value) {
+    product.value.es_favorito = favoritosStore.esFavorito(product.value.id)
+  }
 }
 
 watch(() => route.params.id, () => {
@@ -404,11 +430,25 @@ onMounted(() => {
   color: #e91e63;
   border: 1px solid #e91e63;
   width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-outline:hover {
   background: #e91e63;
   color: white;
+}
+
+.btn-outline.active {
+  background: #e91e63;
+  color: white;
+  border-color: #e91e63;
+}
+
+.btn-outline.active:hover {
+  background: #c2185b;
+  border-color: #c2185b;
 }
 
 .btn-add-cart .loading {

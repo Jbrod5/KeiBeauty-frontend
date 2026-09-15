@@ -63,6 +63,16 @@
               <span class="stock-badge" :class="{ 'in-stock': product.stock > 0, 'out-of-stock-badge': product.stock === 0 }">
                 {{ product.stock > 0 ? 'Disponible' : 'Agotado' }}
               </span>
+              <button
+                class="favorite-btn"
+                :class="{ 'active': product.es_favorito }"
+                @click.stop.prevent="toggleFavorito(product, $event)"
+                :aria-label="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+                :title="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+              >
+                <span class="heart-icon" v-if="product.es_favorito">♥</span>
+                <span class="heart-icon" v-else>♡</span>
+              </button>
             </div>
             <div class="product-info">
               <h3 class="product-name">{{ product.nombre }}</h3>
@@ -97,6 +107,8 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useCartStore } from '../stores/cartStore'
+import { useFavoritosStore } from '../stores/favoritosStore'
+import { useAuthStore } from '../stores/authStore'
 import { getProducts, getCategories } from '../services/api'
 
 const toast = useToast()
@@ -105,6 +117,8 @@ const products = ref([])
 const loading = ref(true)
 const addingToCart = ref(null)
 const cartStore = useCartStore()
+const favoritosStore = useFavoritosStore()
+const authStore = useAuthStore()
 
 const searchQuery = ref('')
 const selectedCategory = ref('')
@@ -137,6 +151,7 @@ async function loadProducts() {
     const params = {}
     if (selectedCategory.value) params.categoria = selectedCategory.value
     if (searchQuery.value) params.buscar = searchQuery.value
+    if (authStore.isAuthenticated) params.con_favorito = 1
     
     const data = await getProducts(params)
     products.value = data.map(p => ({ ...p, imageError: false }))
@@ -157,6 +172,12 @@ async function loadCategories() {
   }
 }
 
+async function loadFavoritos() {
+  if (authStore.isAuthenticated) {
+    await favoritosStore.fetchFavoritos()
+  }
+}
+
 async function addToCart(product) {
   addingToCart.value = product.id
   try {
@@ -167,6 +188,23 @@ async function addToCart(product) {
     toast.error('Error al añadir al carrito')
   } finally {
     addingToCart.value = null
+  }
+}
+
+async function toggleFavorito(product, event) {
+  event.stopPropagation()
+  event.preventDefault()
+  
+  if (!authStore.isAuthenticated) {
+    toast.info('Iniciá sesión para guardar favoritos')
+    return
+  }
+  
+  await favoritosStore.toggle(product.id)
+  // Actualizar el estado local del producto
+  const prod = products.value.find(p => p.id === product.id)
+  if (prod) {
+    prod.es_favorito = favoritosStore.esFavorito(product.id)
   }
 }
 
@@ -189,6 +227,7 @@ watch(selectedCategory, () => {
 onMounted(async () => {
   await loadCategories()
   await loadProducts()
+  await loadFavoritos()
 })
 </script>
 
@@ -364,6 +403,49 @@ onMounted(async () => {
   background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
   position: relative;
   overflow: hidden;
+}
+
+.favorite-btn {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+  z-index: 3;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.favorite-btn:active {
+  transform: scale(0.95);
+}
+
+.heart-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #999;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.favorite-btn.active .heart-icon {
+  color: #e91e63;
+}
+
+.favorite-btn.active:hover .heart-icon {
+  transform: scale(1.2);
 }
 
 .stock-badge {

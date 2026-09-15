@@ -60,18 +60,15 @@
               <span class="action-icon">📦</span>
               <span>Mis Pedidos</span>
             </router-link>
+            <router-link to="/perfil/favoritos" class="action-btn">
+              <span class="action-icon">♡</span>
+              <span>Mis Favoritos</span>
+            </router-link>
             <router-link to="/catalogo" class="action-btn">
               <span class="action-icon">🛍️</span>
               <span>Seguir Comprando</span>
             </router-link>
           </div>
-        </div>
-
-        <div class="profile-section danger-zone">
-          <h3>Zona de Peligro</h3>
-          <button class="btn btn-danger" @click="logout">
-            Cerrar Sesión
-          </button>
         </div>
       </div>
     </div>
@@ -297,44 +294,7 @@ onMounted(() => {
   font-size: 1.25rem;
 }
 
-.danger-zone {
-  border-top: 2px solid #fce4ec;
-  padding-top: 1.5rem;
-  text-align: center;
-}
-
-.danger-zone h3 {
-  color: #c62828;
-  margin-bottom: 1rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-danger {
-  background: #fce4ec;
-  color: #c62828;
-  border: 1px solid #f8bbd0;
-}
-
-.btn-danger:hover {
-  background: #f8bbd0;
-  color: #c62828;
-}
-
-.loading-state {
+@media (max-width: 768px) {
   display: flex;
   flex-direction: column;
   align-items: center;

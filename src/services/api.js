@@ -166,4 +166,19 @@ export async function desactivar2FA() {
   return response.data
 }
 
+export async function getFavoritos() {
+  const response = await api.get('/favoritos')
+  return response.data
+}
+
+export async function agregarFavorito(productoId) {
+  const response = await api.post(`/favoritos/${productoId}`)
+  return response
+}
+
+export async function quitarFavorito(productoId) {
+  const response = await api.delete(`/favoritos/${productoId}`)
+  return response.data
+}
+
 export default api
