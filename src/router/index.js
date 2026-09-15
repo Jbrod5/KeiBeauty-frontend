@@ -14,6 +14,7 @@ const OrderHistoryView = () => import('../views/OrderHistoryView.vue')
 const AdminOrdersView = () => import('../views/AdminOrdersView.vue')
 const ProfileView = () => import('../views/ProfileView.vue')
 const OrderDetailView = () => import('../views/OrderDetailView.vue')
+const TwoFactorView = () => import('../views/TwoFactorView.vue')
 
 
 const routes = [
@@ -94,6 +95,12 @@ const routes = [
     name: 'reset-password',
     component: ResetPasswordView,
     meta: { guest: true }
+  },
+  {
+    path: '/verificar-2fa',
+    name: 'verify-2fa',
+    component: TwoFactorView,
+    meta: { requiresAuth: false }
   }
 ]
 
@@ -102,11 +109,28 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+
+  // Esperar a que initAuth termine si hay access_token pero no user
+  if (authStore.accessToken && !authStore.user) {
+    await authStore.initAuth()
+  }
 
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth === true)
   const guestOnly = to.matched.some(record => record.meta.guest === true)
+
+  // Si está en flujo 2FA y no va a /verificar-2fa ni /login, redirigir a /verificar-2fa
+  if (authStore.isIn2FAFlow && to.name !== 'verify-2fa' && to.name !== 'login') {
+    next({ name: 'verify-2fa' })
+    return
+  }
+
+  // Si va a /verificar-2fa pero no hay flujo 2FA activo, redirigir a login
+  if (to.name === 'verify-2fa' && !authStore.isIn2FAFlow) {
+    next({ name: 'login' })
+    return
+  }
 
   if (guestOnly && authStore.isAuthenticated) {
     next('/')

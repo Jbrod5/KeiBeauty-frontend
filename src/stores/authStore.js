@@ -7,12 +7,15 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const accessToken = ref(localStorage.getItem('access_token') || null)
   const refreshTokenValue = ref(localStorage.getItem('refresh_token') || null)
+  const tempToken = ref(localStorage.getItem('temp_token') || null)
+  const tempEmail = ref(localStorage.getItem('temp_email') || null)
   const loading = ref(false)
   const error = ref(null)
 
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
   const isAdmin = computed(() => user.value?.rol === 'admin')
   const userName = computed(() => user.value?.nombre || '')
+  const isIn2FAFlow = computed(() => !!tempToken.value && !!tempEmail.value)
 
   function setTokens(access, refresh) {
     accessToken.value = access
@@ -26,6 +29,20 @@ export const useAuthStore = defineStore('auth', () => {
     refreshTokenValue.value = null
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+  }
+
+  function setTempAuth(token, email) {
+    tempToken.value = token
+    tempEmail.value = email
+    localStorage.setItem('temp_token', token)
+    localStorage.setItem('temp_email', email)
+  }
+
+  function clearTempAuth() {
+    tempToken.value = null
+    tempEmail.value = null
+    localStorage.removeItem('temp_token')
+    localStorage.removeItem('temp_email')
   }
 
   function setUser(userData) {
@@ -45,6 +62,8 @@ export const useAuthStore = defineStore('auth', () => {
       
       // Check if 2FA is required
       if (data.data?.requiere_2fa) {
+        // Guardar token temporal y email para el flujo 2FA
+        setTempAuth(data.data.token_temporal, data.data.email)
         return { 
           success: true, 
           requiere2fa: true, 
@@ -123,14 +142,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function verify2FA(email, codigo) {
+  async function verify2FA(codigo) {
     loading.value = true
     error.value = null
     try {
-      const response = await apiVerify2FA(email, codigo)
+      // Usar el token temporal en lugar del access_token normal
+      const response = await apiVerify2FA(tempEmail.value, codigo, tempToken.value)
       const { access_token, refresh_token, usuario } = response.data
       setTokens(access_token, refresh_token)
       setUser(usuario)
+      clearTempAuth()
       const cartStore = useCartStore()
       await cartStore.fetchCart()
       return { success: true }
@@ -143,11 +164,11 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function resend2FA(email) {
+  async function resend2FA() {
     loading.value = true
     error.value = null
     try {
-      const response = await apiResend2FA(email)
+      const response = await apiResend2FA(tempEmail.value, tempToken.value)
       return { success: true, message: response.message }
     } catch (err) {
       const message = err.response?.data?.message || 'Error al reenviar código'
@@ -156,6 +177,10 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  function cancelLogin() {
+    clearTempAuth()
   }
 
   async function activar2FA() {
@@ -227,6 +252,7 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     clearTokens()
     clearUser()
+    clearTempAuth()
 
     // Limpiar carrito local al cerrar sesión
 
@@ -249,17 +275,21 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     accessToken,
     refreshToken: refreshTokenValue,
+    tempToken,
+    tempEmail,
     loading,
     error,
     isAuthenticated,
     isAdmin,
     userName,
+    isIn2FAFlow,
     login,
     register,
     forgotPassword,
     resetPassword,
     verify2FA,
     resend2FA,
+    cancelLogin,
     activar2FA,
     desactivar2FA,
     fetchProfile,

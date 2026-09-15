@@ -10,14 +10,19 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    // Usar token temporal de 2FA si existe y no hay access_token normal
+    const tempToken = localStorage.getItem('temp_token')
+    const accessToken = localStorage.getItem('access_token')
+    
+    if (tempToken && !accessToken) {
+      config.headers.Authorization = `Bearer ${tempToken}`
+    } else if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`
     }
     
     // Add guest token for cart operations
     const guestToken = localStorage.getItem('guest_token')
-    if (guestToken && !token) {
+    if (guestToken && !accessToken && !tempToken) {
       config.headers['X-Guest-Token'] = guestToken
     }
     
@@ -32,6 +37,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
+      localStorage.removeItem('temp_token')
+      localStorage.removeItem('temp_email')
       window.location.href = '/login'
 
     }
@@ -136,13 +143,17 @@ export async function resetPassword(token, password, confirmPassword) {
   return response.data
 }
 
-export async function verify2FA(email, codigo) {
-  const response = await api.post('/auth/verificar-2fa', { email, codigo })
+export async function verify2FA(email, codigo, tempToken) {
+  const response = await api.post('/auth/verificar-2fa', { codigo }, {
+    headers: tempToken ? { Authorization: `Bearer ${tempToken}` } : {}
+  })
   return response
 }
 
-export async function resend2FA(email) {
-  const response = await api.post('/auth/reenviar-codigo-2fa', { email })
+export async function resend2FA(email, tempToken) {
+  const response = await api.post('/auth/reenviar-codigo-2fa', {}, {
+    headers: tempToken ? { Authorization: `Bearer ${tempToken}` } : {}
+  })
   return response.data
 }
 

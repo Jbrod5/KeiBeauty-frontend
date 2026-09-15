@@ -3,56 +3,59 @@
     <div class="auth-container">
       <div class="auth-card">
         <header class="auth-header">
-          <h1>Iniciar Sesión</h1>
-          <p>Accede a tu cuenta KeiBeauty</p>
+          <h1>Verificar Código</h1>
+          <p>Te enviamos un código de 6 dígitos a <strong>{{ email }}</strong></p>
         </header>
 
-        <form @submit.prevent="handleLogin" class="auth-form" novalidate>
+        <form @submit.prevent="handleVerify" class="auth-form" novalidate>
           <div class="form-group">
-            <label for="email">Email</label>
+            <label for="codigo">Código de 6 dígitos</label>
             <input
-              id="email"
-              type="email"
-              v-model="form.email"
+              id="codigo"
+              type="text"
+              v-model="codigo"
               required
-              autocomplete="email"
-              :aria-invalid="errors.email ? 'true' : 'false'"
+              maxlength="6"
+              autocomplete="one-time-code"
+              inputmode="numeric"
+              :aria-invalid="errors.codigo ? 'true' : 'false'"
+              @input="formatCodigo"
+              placeholder="000000"
             />
-            <span v-if="errors.email" class="error-message" role="alert">{{ errors.email }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="password">Contraseña</label>
-            <input
-              id="password"
-              type="password"
-              v-model="form.password"
-              required
-              autocomplete="current-password"
-              :aria-invalid="errors.password ? 'true' : 'false'"
-            />
-            <span v-if="errors.password" class="error-message" role="alert">{{ errors.password }}</span>
+            <span v-if="errors.codigo" class="error-message" role="alert">{{ errors.codigo }}</span>
           </div>
 
           <div v-if="authError" class="auth-error" role="alert">{{ authError }}</div>
 
-          <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
+          <button type="submit" class="btn btn-primary btn-block" :disabled="loading || codigo.length < 6">
             <span v-if="loading" class="spinner"></span>
-            <span v-else>Iniciar Sesión</span>
+            <span v-else>Verificar</span>
+          </button>
+
+          <div class="resend-section">
+            <button 
+              type="button" 
+              class="btn btn-link" 
+              @click="reenviarCodigo"
+              :disabled="resendDisabled || loading"
+            >
+              <span v-if="resendDisabled">Reenviar en {{ resendCountdown }}s</span>
+              <span v-else>Reenviar código</span>
+            </button>
+            <p class="resend-note">No recibiste el código? Revisa tu carpeta de spam.</p>
+          </div>
+
+          <button type="button" class="btn btn-outline btn-block back-btn" @click="cancelarLogin" :disabled="loading">
+            Cancelar inicio de sesión
           </button>
         </form>
-
-        <footer class="auth-footer">
-          <p>¿No tienes cuenta? <router-link to="/registro">Regístrate</router-link></p>
-          <p class="forgot-password"><router-link to="/olvide-contrasena">¿Olvidaste tu contraseña?</router-link></p>
-        </footer>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 
@@ -60,59 +63,111 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
-const form = ref({
-  email: '',
-  password: ''
-})
-
+const codigo = ref('')
 const errors = ref({})
 const authError = ref('')
 const loading = ref(false)
 
-function validateForm() {
-  errors.value = {}
-  let isValid = true
+const resendDisabled = ref(false)
+const resendCountdown = ref(0)
+const resendInterval = ref(null)
 
-  if (!form.value.email) {
-    errors.value.email = 'El email es obligatorio'
-    isValid = false
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-    errors.value.email = 'Formato de email inválido'
-    isValid = false
+const email = ref('')
+
+function validateCodigo() {
+  errors.value.codigo = ''
+  if (!codigo.value) {
+    errors.value.codigo = 'El código es obligatorio'
+    return false
   }
-
-  if (!form.value.password) {
-    errors.value.password = 'La contraseña es obligatoria'
-    isValid = false
-  } else if (form.value.password.length < 6) {
-    errors.value.password = 'La contraseña debe tener al menos 6 caracteres'
-    isValid = false
+  if (codigo.value.length !== 6 || !/^\d{6}$/.test(codigo.value)) {
+    errors.value.codigo = 'El código debe tener 6 dígitos'
+    return false
   }
-
-  return isValid
+  return true
 }
 
-async function handleLogin() {
+function formatCodigo() {
+  codigo.value = codigo.value.replace(/\D/g, '').slice(0, 6)
+}
+
+async function handleVerify() {
   authError.value = ''
   
-  if (!validateForm()) return
+  if (!validateCodigo()) return
   
   loading.value = true
-  const result = await authStore.login(form.value)
-
-  if (result.success) {
-    if (result.requiere2fa) {
-      // Redirigir a la vista de verificación 2FA
-      router.push('/verificar-2fa')
-    } else {
+  try {
+    const result = await authStore.verify2FA(codigo.value)
+    if (result.success) {
       const redirect = route.query.redirect || '/'
       router.push(redirect)
+    } else {
+      authError.value = result.error
     }
-  } else {
-    authError.value = result.error
+  } catch (err) {
+    authError.value = err.response?.data?.error || 'Error al verificar el código'
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 }
+
+async function reenviarCodigo() {
+  if (resendDisabled.value) return
+  
+  loading.value = true
+  try {
+    const result = await authStore.resend2FA()
+    if (result.success) {
+      startResendCountdown()
+    } else {
+      authError.value = result.error
+    }
+  } catch (err) {
+    authError.value = err.response?.data?.message || 'Error al reenviar código'
+  } finally {
+    loading.value = false
+  }
+}
+
+function cancelarLogin() {
+  authStore.cancelLogin()
+  router.push('/login')
+}
+
+function startResendCountdown() {
+  resendDisabled.value = true
+  resendCountdown.value = 60
+  stopResendCountdown()
+  resendInterval.value = setInterval(() => {
+    resendCountdown.value--
+    if (resendCountdown.value <= 0) {
+      resendDisabled.value = false
+      clearInterval(resendInterval.value)
+    }
+  }, 1000)
+}
+
+function stopResendCountdown() {
+  if (resendInterval.value) {
+    clearInterval(resendInterval.value)
+    resendInterval.value = null
+  }
+}
+
+onMounted(() => {
+  // Verificar que hay token temporal en el store
+  if (!authStore.isIn2FAFlow) {
+    router.push('/login')
+    return
+  }
+  email.value = authStore.tempEmail || ''
+  startResendCountdown()
+})
+
+onUnmounted(() => {
+  stopResendCountdown()
+})
 </script>
 
 <style scoped>
@@ -258,12 +313,12 @@ async function handleLogin() {
 
 .btn-outline:hover:not(:disabled) {
   background: #e91e63;
-  color: white;
+  color: white.
 }
 
 .btn-outline:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: not-allowed.
 }
 
 .resend-section {
@@ -276,7 +331,7 @@ async function handleLogin() {
 .resend-note {
   font-size: 0.8rem;
   color: #999;
-  margin-top: 0.5rem;
+  margin-top: 0.5rem.
 }
 
 .back-btn {
