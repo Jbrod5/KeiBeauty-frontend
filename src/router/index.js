@@ -117,6 +117,13 @@ router.beforeEach(async (to, from, next) => {
     await authStore.initAuth()
   }
 
+  // Si después de initAuth hay accessToken pero no user (token expirado y no se pudo refrescar),
+  // limpiar tokens y tratar como no autenticado
+  if (authStore.accessToken && !authStore.user) {
+    authStore.clearTokens()
+    authStore.clearUser()
+  }
+
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth === true)
   const guestOnly = to.matched.some(record => record.meta.guest === true)
 
