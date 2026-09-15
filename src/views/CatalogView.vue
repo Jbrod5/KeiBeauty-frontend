@@ -5,6 +5,34 @@
       <p class="catalog-subtitle">Descubre nuestra selección de K-Beauty auténtico</p>
     </header>
 
+    <div class="catalog-toolbar">
+      <div class="search-box">
+        <label for="search" class="sr-only">Buscar productos</label>
+        <input
+          id="search"
+          type="search"
+          v-model="searchQuery"
+          placeholder="Buscar productos..."
+          class="search-input"
+          @input="debouncedSearch"
+        />
+        <div class="search-icon">🔍</div>
+      </div>
+
+      <div class="filter-dropdown">
+        <select
+          v-model="selectedCategory"
+          class="category-select"
+          @change="loadProducts"
+        >
+          <option value="">Todas las categorías</option>
+          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+            {{ cat.nombre }}
+          </option>
+        </select>
+      </div>
+    </div>
+
     <div class="catalog-content" :class="{ 'full-width': !showFilters }">
       <aside class="filters" v-if="showFilters">
         <h3>Filtros</h3>
@@ -29,7 +57,7 @@
 
       <main class="products-grid">
         <router-link 
-          v-for="product in products" 
+          v-for="product in filteredProducts" 
           :key="product.id" 
           :to="`/producto/${product.id}`"
           class="product-card-link"
@@ -66,17 +94,19 @@
       </main>
     </div>
 
-    <div class="empty-state" v-if="products.length === 0">
-      <p>No hay productos disponibles en este momento.</p>
+    <div class="empty-state" v-if="filteredProducts.length === 0 && !loading">
+      <div class="empty-icon">🔍</div>
+      <p>No encontramos productos con esos filtros</p>
+      <button class="btn btn-outline" @click="clearFilters">Limpiar filtros</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useCartStore } from '../stores/cartStore'
-import { getProducts } from '../services/api'
+import { getProducts, getCategories } from '../services/api'
 
 const toast = useToast()
 
@@ -84,6 +114,11 @@ const products = ref([])
 const loading = ref(true)
 const addingToCart = ref(null)
 const cartStore = useCartStore()
+
+const searchQueryInput = ref('')
+const selectedCategory = ref('')
+const categories = ref([])
+const debounceTimer = ref(null)
 
 const filters = ref({
   category: []
@@ -106,15 +141,75 @@ function handleImageError(event, product) {
   product.imageError = true
 }
 
+const filteredProducts = computed(() => {
+  let result = products.value
+  
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(p => 
+      p.nombre.toLowerCase().includes(query) ||
+      p.descripcion.toLowerCase().includes(query) ||
+      p.marca_nombre.toLowerCase().includes(query)
+    )
+  }
+  
+  if (selectedCategory.value) {
+    result = result.filter(p => p.categoria_id === Number(selectedCategory.value))
+  }
+  
+  if (filters.value.category.length > 0) {
+    // Mapear categorías del filtro a IDs
+    const categoryMap = {
+      'limpieza': 1,
+      'tonico': 2,
+      'serum': 3,
+      'crema': 4,
+      'protector': 5
+    }
+    const categoryIds = filters.value.category.map(c => categoryMap[c]).filter(Boolean)
+    if (categoryIds.length > 0) {
+      result = result.filter(p => categoryIds.includes(p.categoria_id))
+    }
+  }
+  
+  return result
+});
+
+const searchQuery = computed({
+  get: () => searchQueryInput.value,
+  set: (val) => {
+    searchQueryInput.value = val
+    clearTimeout(debounceTimer.value)
+    debounceTimer.value = setTimeout(() => {
+      loadProducts()
+    }, 300)
+  }
+})
+
 async function loadProducts() {
   try {
     loading.value = true
-    const data = await getProducts()
+    let data = await getProducts()
+    
+    // Si hay categoría seleccionada, filtrar en el servidor
+    if (selectedCategory.value) {
+      data = data.filter(p => p.categoria_id === Number(selectedCategory.value))
+    }
+    
     products.value = data.map(p => ({ ...p, imageError: false }))
   } catch (error) {
     console.error('Error loading products:', error)
   } finally {
     loading.value = false
+  }
+}
+
+async function loadCategories() {
+  try {
+    const result = await getCategories()
+    categories.value = result.data
+  } catch (error) {
+    console.error('Error loading categories:', error)
   }
 }
 
@@ -131,202 +226,14 @@ async function addToCart(product) {
   }
 }
 
-onMounted(() => {
-  loadProducts()
+function clearFilters() {
+  searchQuery.value = ''
+  selectedCategory.value = ''
+  filters.value.category = []
+}
+
+onMounted(async () => {
+  await loadCategories()
+  await loadProducts()
 })
 </script>
-
-<style scoped>
-.catalog-view {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.catalog-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  padding: 1rem 0;
-}
-
-.catalog-header h1 {
-  font-size: 2.5rem;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.catalog-subtitle {
-  color: #666;
-  font-size: 1.1rem;
-}
-
-.catalog-content {
-  display: grid;
-  grid-template-columns: 250px 1fr;
-  gap: 2rem;
-}
-
-.catalog-content.full-width {
-  grid-template-columns: 1fr;
-}
-
-.filters {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  height: fit-content;
-}
-
-.filters h3 {
-  margin-bottom: 1rem;
-  color: #2c3e50;
-}
-
-.filter-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  cursor: pointer;
-  color: #555;
-}
-
-.filter-group input {
-  margin-right: 0.5rem;
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.5rem;
-}
-
-.product-card {
-  background: white;
-  border-radius: 1rem;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.product-image {
-  aspect-ratio: 1;
-  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.product-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.product-placeholder {
-  display: none;
-  font-size: 3rem;
-  font-weight: 600;
-  color: #e91e63;
-  background: white;
-  border-radius: 50%;
-  width: 80px;
-  height: 80px;
-  align-items: center;
-  justify-content: center;
-}
-
-.product-info {
-  padding: 1.5rem;
-}
-
-.product-name {
-  font-size: 1.1rem;
-  color: #2c3e50;
-  margin-bottom: 0.25rem;
-}
-
-.product-brand {
-  font-size: 0.85rem;
-  color: #e91e63;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.product-description {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 1rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.product-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.product-price {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #2c3e50;
-}
-
-.add-to-cart-btn {
-  padding: 0.5rem 1.25rem;
-  background: #e91e63;
-  color: white;
-  border: none;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.product-card-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-
-.product-card-link:hover .product-card {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-}
-
-.add-to-cart-btn:hover:not(:disabled) {
-  background: #c2185b;
-}
-
-.add-to-cart-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.add-to-cart-btn .loading {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: #999;
-}
-
-@media (max-width: 768px) {
-  .catalog-content {
-    grid-template-columns: 1fr;
-  }
-  
-  .filters {
-    display: none;
-  }
-}
-</style>
