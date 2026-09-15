@@ -60,14 +60,18 @@
             <span v-if="errors.confirmPassword" class="error-message" role="alert">{{ errors.confirmPassword }}</span>
           </div>
 
-          <div class="form-group">
-            <label for="telefono">Teléfono (opcional)</label>
+<div class="form-group">
+            <label for="telefono">Teléfono *</label>
             <input
               id="telefono"
               type="tel"
               v-model="form.telefono"
+              required
               autocomplete="tel"
+              :aria-invalid="errors.telefono ? 'true' : 'false'"
+              placeholder="12345678"
             />
+            <span v-if="errors.telefono" class="error-message" role="alert">{{ errors.telefono }}</span>
           </div>
 
           <div class="form-group">
@@ -150,6 +154,14 @@ function validateForm() {
     isValid = false
   } else if (form.value.password !== form.value.confirmPassword) {
     errors.value.confirmPassword = 'Las contraseñas no coinciden'
+    isValid = false
+  }
+
+  if (!form.value.telefono.trim()) {
+    errors.value.telefono = 'El teléfono es obligatorio'
+    isValid = false
+  } else if (form.value.telefono.replace(/\D/g, '').length < 8) {
+    errors.value.telefono = 'El teléfono debe tener al menos 8 dígitos'
     isValid = false
   }
 

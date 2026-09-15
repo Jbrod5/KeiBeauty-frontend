@@ -24,7 +24,42 @@
       <section class="checkout-form-section">
         <h2>Dirección de Envío</h2>
         <form @submit.prevent="handleSubmit" class="address-form" novalidate>
-          <div class="form-row">
+          
+          <!-- Campos para invitados -->
+          <div v-if="!isAuthenticated" class="guest-fields">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="email">Email *</label>
+                <input
+                  id="email"
+                  type="email"
+                  v-model="form.email"
+                  required
+                  autocomplete="email"
+                  :aria-invalid="errors.email ? 'true' : 'false'"
+                />
+                <span v-if="errors.email" class="error-message" role="alert">{{ errors.email }}</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="telefono">Teléfono *</label>
+                <input
+                  id="telefono"
+                  type="tel"
+                  v-model="form.telefono"
+                  required
+                  autocomplete="tel"
+                  :aria-invalid="errors.telefono ? 'true' : 'false'"
+                  placeholder="12345678"
+                />
+                <span v-if="errors.telefono" class="error-message" role="alert">{{ errors.telefono }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campos para usuarios autenticados -->
+          <div v-else class="auth-fields">
             <div class="form-group">
               <label for="direccion">Dirección completa *</label>
               <textarea
@@ -37,6 +72,46 @@
               ></textarea>
               <span v-if="errors.direccion_envio" class="error-message" role="alert">{{ errors.direccion_envio }}</span>
             </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="telefono">Teléfono *</label>
+                <input
+                  id="telefono"
+                  type="tel"
+                  v-model="form.telefono"
+                  required
+                  autocomplete="tel"
+                  :aria-invalid="errors.telefono ? 'true' : 'false'"
+                  placeholder="12345678"
+                />
+                <span v-if="errors.telefono" class="error-message" role="alert">{{ errors.telefono }}</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  v-model="form.guardar_datos"
+                />
+                <span>Guardar estos datos en mi perfil</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Campo dirección común -->
+          <div class="form-group">
+            <label for="direccion">Dirección completa *</label>
+            <textarea
+              id="direccion"
+              v-model="form.direccion_envio"
+              required
+              rows="3"
+              autocomplete="street-address"
+              :aria-invalid="errors.direccion_envio ? 'true' : 'false'"
+            ></textarea>
+            <span v-if="errors.direccion_envio" class="error-message" role="alert">{{ errors.direccion_envio }}</span>
           </div>
 
           <div v-if="submitError" class="submit-error" role="alert">{{ submitError }}</div>
@@ -97,16 +172,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
+import { useAuthStore } from '../stores/authStore'
 import { createOrder } from '../services/api'
 
 const router = useRouter()
 const cartStore = useCartStore()
+const authStore = useAuthStore()
+
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 const form = ref({
-  direccion_envio: ''
+  direccion_envio: '',
+  email: '',
+  telefono: '',
+  guardar_datos: false
 })
 
 const errors = ref({})
@@ -135,6 +217,32 @@ function validateForm() {
     isValid = false
   }
 
+  if (!isAuthenticated.value) {
+    if (!form.value.email.trim()) {
+      errors.value.email = 'El email es obligatorio'
+      isValid = false
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+      errors.value.email = 'Formato de email inválido'
+      isValid = false
+    }
+
+    if (!form.value.telefono.trim()) {
+      errors.value.telefono = 'El teléfono es obligatorio'
+      isValid = false
+    } else if (form.value.telefono.replace(/\D/g, '').length < 8) {
+      errors.value.telefono = 'El teléfono debe tener al menos 8 dígitos'
+      isValid = false
+    }
+  } else {
+    if (!form.value.telefono.trim()) {
+      errors.value.telefono = 'El teléfono es obligatorio'
+      isValid = false
+    } else if (form.value.telefono.replace(/\D/g, '').length < 8) {
+      errors.value.telefono = 'El teléfono debe tener al menos 8 dígitos'
+      isValid = false
+    }
+  }
+
   return isValid
 }
 
@@ -148,7 +256,24 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    await createOrder({ direccion_envio: form.value.direccion_envio })
+    const payload = {
+      direccion_envio: form.value.direccion_envio
+    }
+
+    if (!isAuthenticated.value) {
+      payload.email_contacto = form.value.email
+      payload.telefono_contacto = form.value.telefono
+    } else {
+      payload.telefono = form.value.telefono
+    }
+
+    await createOrder(payload)
+
+    // Si el usuario marcó guardar datos y está autenticado
+    if (isAuthenticated.value && form.value.guardar_datos) {
+      // TODO: Actualizar perfil del usuario
+    }
+
     cartStore.clearCart()
     router.push('/mis-pedidos')
   } catch (err) {
@@ -158,15 +283,23 @@ async function handleSubmit() {
   }
 }
 
-onMounted(() => {
-  loadCart()
+async function loadData() {
+  await loadCart()
+  
   // Pre-fill address from user profile if available
-  import('../stores/authStore').then(({ useAuthStore }) => {
+  if (isAuthenticated.value) {
     const authStore = useAuthStore()
     if (authStore.user?.direccion_envio) {
       form.value.direccion_envio = authStore.user.direccion_envio
     }
-  })
+    if (authStore.user?.telefono) {
+      form.value.telefono = authStore.user.telefono
+    }
+  }
+}
+
+onMounted(() => {
+  loadData()
 })
 </script>
 
@@ -212,6 +345,24 @@ onMounted(() => {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #eee;
+}
+
+.guest-fields {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  border: 1px solid #e0e0e0;
+}
+
+.guest-fields h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: #2c3e50;
+}
+
+.auth-fields {
+  margin-bottom: 1.5rem;
 }
 
 .address-form {
@@ -268,6 +419,31 @@ onMounted(() => {
 .error-message {
   font-size: 0.8rem;
   color: #e53935;
+}
+
+.submit-error {
+  padding: 0.75rem 1rem;
+  background: #fdeaea;
+  border: 1px solid #f5c6cb;
+  border-radius: 0.5rem;
+  color: #c62828;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.checkbox-label input {
+  width: 18px;
+  height: 18px;
+  accent-color: #e91e63;
 }
 
 .submit-error {
@@ -479,6 +655,10 @@ onMounted(() => {
   border-top: 3px solid #e91e63;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .error-state {
