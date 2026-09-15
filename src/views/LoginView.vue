@@ -3,11 +3,13 @@
     <div class="auth-container">
       <div class="auth-card">
         <header class="auth-header">
-          <h1>Iniciar Sesión</h1>
-          <p>Accede a tu cuenta KeiBeauty</p>
+          <h1 v-if="paso === 'credenciales'">Iniciar Sesión</h1>
+          <h1 v-else>Verificar Código</h1>
+          <p v-if="paso === 'credenciales'">Accede a tu cuenta KeiBeauty</p>
+          <p v-else>Te enviamos un código de 6 dígitos a <strong>{{ email }}</strong></p>
         </header>
 
-        <form @submit.prevent="handleLogin" class="auth-form" novalidate>
+        <form @submit.prevent="handleSubmit" class="auth-form" novalidate v-if="paso === 'credenciales'">
           <div class="form-group">
             <label for="email">Email</label>
             <input
@@ -42,7 +44,50 @@
           </button>
         </form>
 
-        <footer class="auth-footer">
+        <form @submit.prevent="handleVerify" class="auth-form" novalidate v-else>
+          <div class="form-group">
+            <label for="codigo">Código de 6 dígitos</label>
+            <input
+              id="codigo"
+              type="text"
+              v-model="codigo"
+              required
+              maxlength="6"
+              autocomplete="one-time-code"
+              inputmode="numeric"
+              :aria-invalid="errors.codigo ? 'true' : 'false'"
+              @input="formatCodigo"
+              placeholder="000000"
+            />
+            <span v-if="errors.codigo" class="error-message" role="alert">{{ errors.codigo }}</span>
+          </div>
+
+          <div v-if="authError" class="auth-error" role="alert">{{ authError }}</div>
+
+          <button type="submit" class="btn btn-primary btn-block" :disabled="loading || codigo.length < 6">
+            <span v-if="loading" class="spinner"></span>
+            <span v-else>Verificar</span>
+          </button>
+
+          <div class="resend-section">
+            <button 
+              type="button" 
+              class="btn btn-link" 
+              @click="reenviarCodigo"
+              :disabled="resendDisabled || loading"
+            >
+              <span v-if="resendDisabled">Reenviar en {{ resendCountdown }}s</span>
+              <span v-else>Reenviar código</span>
+            </button>
+            <p class="resend-note">No recibiste el código? Revisa tu carpeta de spam.</p>
+          </div>
+
+          <button type="button" class="btn btn-outline btn-block back-btn" @click="volverACredenciales" :disabled="loading">
+            Volver
+          </button>
+        </form>
+
+        <footer class="auth-footer" v-if="paso === 'credenciales'">
           <p>¿No tienes cuenta? <router-link to="/registro">Regístrate</router-link></p>
           <p class="forgot-password"><router-link to="/olvide-contrasena">¿Olvidaste tu contraseña?</router-link></p>
         </footer>
@@ -52,7 +97,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 
@@ -60,14 +105,24 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
+const paso = ref('credenciales') // 'credenciales' | 'codigo'
+const email = ref('')
+
 const form = ref({
   email: '',
   password: ''
 })
 
+const codigo = ref('')
+
 const errors = ref({})
 const authError = ref('')
 const loading = ref(false)
+
+const resendDisabled = ref(false)
+const resendCountdown = ref(0)
+
+const resendInterval = ref(null)
 
 function validateForm() {
   errors.value = {}
@@ -92,21 +147,131 @@ function validateForm() {
   return isValid
 }
 
-async function handleLogin() {
-  authError.value = ''
-  if (!validateForm()) return
+function validateCodigo() {
+  errors.value.codigo = ''
+  if (!codigo.value) {
+    errors.value.codigo = 'El código es obligatorio'
+    return false
+  }
+  if (codigo.value.length !== 6 || !/^\d{6}$/.test(codigo.value)) {
+    errors.value.codigo = 'El código debe tener 6 dígitos'
+    return false
+  }
+  return true
+}
 
+function formatCodigo() {
+  // Solo permitir dígitos
+  codigo.value = codigo.value.replace(/\D/g, '').slice(0, 6)
+}
+
+async function handleSubmit() {
+  authError.value = ''
+  
+  if (paso.value === 'credenciales') {
+    if (!validateForm()) return
+    await handleLogin()
+  } else {
+    if (!validateCodigo()) return
+    await handleVerify()
+  }
+}
+
+async function handleLogin() {
   loading.value = true
   const result = await authStore.login(form.value)
 
   if (result.success) {
-    const redirect = route.query.redirect || '/'
-    router.push(redirect)
+    if (authStore.user?.two_factor_enabled) {
+      // Cambiar a paso de código 2FA
+      paso.value = 'codigo'
+      email.value = form.value.email
+      authError.value = ''
+      codigo.value = ''
+      startResendCountdown()
+    } else {
+      const redirect = route.query.redirect || '/'
+      router.push(redirect)
+    }
   } else {
     authError.value = result.error
   }
   loading.value = false
 }
+
+async function handleVerify() {
+  loading.value = true
+  try {
+    const result = await authStore.verify2FA(email.value, codigo.value)
+    if (result.success) {
+      const redirect = route.query.redirect || '/'
+      router.push(redirect)
+    } else {
+      authError.value = result.error
+    }
+  } catch (err) {
+    authError.value = err.response?.data?.error || 'Error al verificar el código'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function reenviarCodigo() {
+  if (resendDisabled.value) return
+  
+  loading.value = true
+  try {
+    const result = await authStore.resend2FA(email.value)
+    if (result.success) {
+      startResendCountdown()
+    } else {
+      authError.value = result.error
+    }
+  } catch (err) {
+    authError.value = err.response?.data?.message || 'Error al reenviar código'
+  } finally {
+    loading.value = false
+  }
+}
+
+function volverACredenciales() {
+  paso.value = 'credenciales'
+  authError.value = ''
+  codigo.value = ''
+  stopResendCountdown()
+}
+
+function startResendCountdown() {
+  resendDisabled.value = true
+  resendCountdown.value = 60
+  stopResendCountdown()
+  resendInterval.value = setInterval(() => {
+    resendCountdown.value--
+    if (resendCountdown.value <= 0) {
+      resendDisabled.value = false
+      clearInterval(resendInterval.value)
+    }
+  }, 1000)
+}
+
+function stopResendCountdown() {
+  if (resendInterval.value) {
+    clearInterval(resendInterval.value)
+    resendInterval.value = null
+  }
+}
+
+onMounted(() => {
+  // Si venimos de login con 2FA requerido
+  if (route.query.requires2fa === 'true' && route.query.email) {
+    paso.value = 'codigo'
+    email.value = route.query.email
+  }
+})
+
+onUnmounted(() => {
+  stopResendCountdown()
+})
 </script>
 
 <style scoped>
@@ -226,6 +391,55 @@ async function handleLogin() {
 
 .btn-block {
   width: 100%;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #e91e63;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.5rem;
+  text-decoration: none;
+}
+
+.btn-link:disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #e91e63;
+  border: 1px solid #e91e63;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #e91e63;
+  color: white;
+}
+
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resend-section {
+  text-align: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.resend-note {
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 0.5rem;
+}
+
+.back-btn {
+  margin-top: 0.5rem;
 }
 
 .spinner {

@@ -121,6 +121,26 @@ export async function forgotPassword(email) {
 export async function resetPassword(token, password, confirmPassword) {
   const response = await api.post('/auth/reestablecer-contrasena', { token, password, confirm_password: confirmPassword })
   return response.data
-} 
+}
+
+export async function verify2FA(email, codigo) {
+  const response = await api.post('/auth/verificar-2fa', { email, codigo })
+  return response
+}
+
+export async function resend2FA(email) {
+  const response = await api.post('/auth/reenviar-codigo-2fa', { email })
+  return response.data
+}
+
+export async function activar2FA() {
+  const response = await api.post('/auth/activar-2fa')
+  return response.data
+}
+
+export async function desactivar2FA() {
+  const response = await api.post('/auth/desactivar-2fa')
+  return response.data
+}
 
 export default api
