@@ -74,8 +74,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useToast } from 'vue-toastification'
 import { useCartStore } from '../stores/cartStore'
 import { getProducts } from '../services/api'
+
+const toast = useToast()
 
 const products = ref([])
 const loading = ref(true)
@@ -119,8 +122,10 @@ async function addToCart(product) {
   addingToCart.value = product.id
   try {
     cartStore.addItem(product)
+    toast.success('Producto añadido al carrito')
   } catch (error) {
     console.error('Error adding to cart:', error)
+    toast.error('Error al añadir al carrito')
   } finally {
     addingToCart.value = null
   }

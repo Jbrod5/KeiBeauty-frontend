@@ -107,6 +107,9 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
 import { getProductById } from '../services/api'
+import { useToast } from 'vue-toastification'
+
+const toast = useToast()
 
 const route = useRoute()
 const router = useRouter()
@@ -163,8 +166,10 @@ function addToCart() {
     for (let i = 0; i < quantity.value; i++) {
       cartStore.addItem(productToAdd)
     }
+    toast.success('Producto añadido al carrito')
   } catch (error) {
     console.error('Error adding to cart:', error)
+    toast.error('Error al añadir al carrito')
   } finally {
     addingToCart.value = false
   }
