@@ -47,6 +47,10 @@
             <strong>Tipo de piel:</strong>
             <span>{{ product.tipo_piel }}</span>
           </div>
+          <div class="detail-item" v-if="product.tamano">
+            <strong>Tamaño:</strong>
+            <span>{{ product.tamano }}</span>
+          </div>
           <div class="detail-item">
             <strong>Categoría:</strong>
             <span>{{ product.categoria_nombre }}</span>
