@@ -161,6 +161,13 @@ export async function activar2FA() {
   return response.data
 }
 
+export async function cancelarLogin(tempToken) {
+  const response = await api.post('/auth/cancelar-login', {}, {
+    headers: tempToken ? { Authorization: `Bearer ${tempToken}` } : {}
+  })
+  return response.data
+}
+
 export async function desactivar2FA() {
   const response = await api.post('/auth/desactivar-2fa')
   return response.data

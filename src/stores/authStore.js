@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { login as apiLogin, register as apiRegister, getProfile, refreshToken, forgotPassword as apiForgotPassword, resetPassword as apiResetPassword, verify2FA as apiVerify2FA, resend2FA as apiResend2FA, activar2FA as apiActivar2FA, desactivar2FA as apiDesactivar2FA } from '../services/api'
+import { login as apiLogin, register as apiRegister, getProfile, refreshToken, forgotPassword as apiForgotPassword, resetPassword as apiResetPassword, verify2FA as apiVerify2FA, resend2FA as apiResend2FA, cancelarLogin as apiCancelLogin, activar2FA as apiActivar2FA, desactivar2FA as apiDesactivar2FA } from '../services/api'
 import { useCartStore } from './cartStore'
 import { useFavoritosStore } from './favoritosStore'
 
@@ -189,7 +189,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function cancelLogin() {
+  async function cancelLogin() {
+    try {
+      await apiCancelLogin(tempToken.value)
+    } catch (e) {
+      // Silenciar errores en cancelación
+    }
     clearTempAuth()
   }
 
