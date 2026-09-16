@@ -78,6 +78,7 @@
               <h3 class="product-name">{{ product.nombre }}</h3>
               <p class="product-brand">{{ product.marca_nombre }}</p>
               <p class="product-description">{{ product.descripcion }}</p>
+              <p class="product-size" v-if="product.tamano">Tamaño: {{ product.tamano }}</p>
               <div class="product-footer">
                 <span class="product-price">{{ formatPrice(product.precio) }}</span>
                 <button 
