@@ -203,4 +203,15 @@ export async function deleteCategory(id) {
   return response.data
 }
 
+export async function uploadGuia(pedidoId, archivo) {
+  const formData = new FormData()
+  formData.append('archivo', archivo)
+  const response = await api.post(`/pedidos/${pedidoId}/guia`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+  return response.data
+}
+
 export default api

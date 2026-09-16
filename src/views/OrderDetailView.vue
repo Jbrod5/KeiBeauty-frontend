@@ -30,6 +30,11 @@
         </dl>
       </section>
 
+      <section v-if="order.url_guia" class="guide-image">
+        <h2>Imagen de Guía</h2>
+        <img :src="order.url_guia" alt="Guía del pedido" class="guide-img" />
+      </section>
+
       <section class="order-items">
         <h2>Productos</h2>
         <div class="items-table-container">

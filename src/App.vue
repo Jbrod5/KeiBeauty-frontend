@@ -41,7 +41,10 @@
               <router-link to="/perfil/favoritos" class="dropdown-item" role="menuitem">Mis Favoritos</router-link>
             </li>
             <li v-if="isAdmin" role="none">
-              <router-link to="/admin" class="dropdown-item" role="menuitem">Panel Admin</router-link>
+              <router-link to="/admin/categorias" class="dropdown-item" role="menuitem">Categorías</router-link>
+            </li>
+            <li v-if="isAdmin" role="none">
+              <router-link to="/admin/pedidos" class="dropdown-item" role="menuitem">Panel Admin</router-link>
             </li>
             <li role="none"><hr class="dropdown-divider" /></li>
             <li role="none">

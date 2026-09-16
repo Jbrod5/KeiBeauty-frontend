@@ -59,6 +59,8 @@
                     <option value="cancelado">Cancelado</option>
                   </select>
                   <router-link :to="`/admin/pedidos/${order.id}`" class="btn btn-outline btn-sm" style="margin-left: 0.5rem;">Ver</router-link>
+                  <label :for="`guia-${order.id}`" class="btn btn-sm btn-outline" style="margin-left: 0.25rem; cursor: pointer;">Subir guía</label>
+                  <input :id="`guia-${order.id}`" type="file" accept="image/*" style="display: none;" @change="handleGuiaUpload(order.id, $event)">
                 </div>
               </td>
             </tr>
@@ -78,7 +80,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { getOrders as apiGetOrders, updateOrderStatus as apiUpdateOrderStatus } from '../services/api'
+import { getOrders as apiGetOrders, updateOrderStatus as apiUpdateOrderStatus, uploadGuia } from '../services/api'
 import { useAuthStore } from '../stores/authStore'
 
 const router = useRouter()
@@ -88,6 +90,7 @@ const orders = ref([])
 const loading = ref(true)
 const error = ref('')
 const updatingStatus = ref(null)
+const uploadingGuia = ref(null)
 const pagination = ref({
   page: 1,
   per_page: 15,
@@ -160,6 +163,27 @@ async function updateOrderStatus(orderId, estado) {
   } finally {
     updatingStatus.value = null
   }
+}
+
+function handleGuiaUpload(orderId, event) {
+  const archivo = event.target.files[0]
+  if (!archivo) return
+  uploadingGuia.value = orderId
+  uploadGuia(orderId, archivo)
+    .then((res) => {
+      // Actualizar pedido local para reflejar la URL
+      const pedido = orders.value.find(o => o.id === orderId)
+      if (pedido && res && res.data) {
+        pedido.url_guia = res.data.url_guia
+      }
+    })
+    .catch((err) => {
+      error.value = err.response?.data?.message || 'Error al subir imagen de guía'
+    })
+    .finally(() => {
+      uploadingGuia.value = null
+      event.target.value = ''
+    })
 }
 
 function nextPage() {
