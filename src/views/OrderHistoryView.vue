@@ -38,6 +38,7 @@
             <span class="total-amount">{{ formatPrice(order.monto_total) }}</span>
           </div>
           <router-link :to="`/mis-pedidos/${order.id}`" class="btn btn-outline btn-sm">Ver Detalle</router-link>
+          <a v-if="order.url_guia" :href="order.url_guia" target="_blank" class="btn btn-sm btn-outline" style="margin-left: 0.25rem;">Ver Guía</a>
         </div>
       </div>
 

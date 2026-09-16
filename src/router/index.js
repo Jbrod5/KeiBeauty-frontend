@@ -14,6 +14,7 @@ const OrderHistoryView = () => import('../views/OrderHistoryView.vue')
 const AdminCategoriesView = () => import('../views/AdminCategoriesView.vue')
 const AdminOrdersView = () => import('../views/AdminOrdersView.vue')
 const ProfileView = () => import('../views/ProfileView.vue')
+import AdminProductsView from '../views/AdminProductsView.vue'
 const OrderDetailView = () => import('../views/OrderDetailView.vue')
 const TwoFactorView = () => import('../views/TwoFactorView.vue')
 const FavoritosView = () => import('../views/FavoritosView.vue')
@@ -75,6 +76,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/admin/productos',
+    name: 'admin-productos',
+    component: AdminProductsView,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/admin/categorias',
     name: 'admin-categorias',
     component: AdminCategoriesView,
@@ -84,6 +91,12 @@ const routes = [
     path: '/admin/pedidos',
     name: 'admin-orders',
     component: AdminOrdersView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/pedidos/:id',
+    name: 'admin-order-detail',
+    component: OrderDetailView,
     meta: { requiresAuth: true }
   },
   {

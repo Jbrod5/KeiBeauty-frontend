@@ -70,6 +70,11 @@ export async function getProducts(params = {}) {
   return response.data.data
 }
 
+export async function getMarcas() {
+  const response = await api.get('/products/marcas')
+  return response.data
+}
+
 export async function getCategories() {
   const response = await api.get('/products/categorias')
   return response.data
@@ -200,6 +205,48 @@ export async function updateCategory(id, categoryData) {
 
 export async function deleteCategory(id) {
   const response = await api.delete(`/categorias/${id}`)
+  return response.data
+}
+
+export async function createProduct(formData) {
+  const response = await api.post('/products', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return response.data
+}
+
+export async function updateProduct(id, data) {
+  const response = await api.put(`/products/${id}`, data)
+  return response.data
+}
+
+export async function deleteProduct(id) {
+  const response = await api.delete(`/products/${id}`)
+  return response.data
+}
+
+export async function uploadProductImage(productId, archivo) {
+  const formData = new FormData()
+  formData.append('archivo', archivo)
+  const response = await api.post(`/products/${productId}/imagen`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return response.data
+}
+
+export async function ajustarInventario(productId, tipo, cantidad) {
+  const response = await api.post(`/products/${productId}/inventario`, { tipo, cantidad })
+  return response.data
+}
+
+export async function uploadGuia(pedidoId, archivo) {
+  const formData = new FormData()
+  formData.append('archivo', archivo)
+  const response = await api.post(`/pedidos/${pedidoId}/guia`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
   return response.data
 }
 
