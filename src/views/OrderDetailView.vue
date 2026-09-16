@@ -82,7 +82,7 @@
       </section>
 
       <div class="order-actions">
-        <router-link to="/mis-pedidos" class="btn btn-outline">Volver a Mis Pedidos</router-link>
+        <router-link to="/admin/pedidos" class="btn btn-outline">Volver a Pedidos</router-link>
       </div>
     </div>
   </div>

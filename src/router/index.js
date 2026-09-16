@@ -87,6 +87,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/admin/pedidos/:id',
+    name: 'admin-order-detail',
+    component: OrderDetailView,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'login',
     component: LoginView,

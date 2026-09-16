@@ -16,7 +16,19 @@
     </div>
 
     <div v-else class="admin-orders">
-      <div class="table-container">
+      <div class="filter-bar" style="margin-bottom: 1rem; text-align: center;">
+      <label for="filtro-estado" style="font-weight: 600; margin-right: 0.5rem;">Filtrar por estado:</label>
+      <select id="filtro-estado" v-model="filtroEstado" @change="loadOrders" class="status-select">
+        <option value="">Todos</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="confirmado">Confirmado</option>
+        <option value="enviado">Enviado</option>
+        <option value="entregado">Entregado</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+    </div>
+
+    <div class="table-container">
         <table class="orders-table">
           <thead>
             <tr>
@@ -91,6 +103,7 @@ const loading = ref(true)
 const error = ref('')
 const updatingStatus = ref(null)
 const uploadingGuia = ref(null)
+const filtroEstado = ref('pendiente')
 const pagination = ref({
   page: 1,
   per_page: 15,
@@ -138,10 +151,14 @@ async function loadOrders() {
   loading.value = true
   error.value = ''
   try {
-    const result = await apiGetOrders({
+    const params = {
       page: pagination.value.page,
       per_page: pagination.value.per_page
-    })
+    }
+    if (filtroEstado.value) {
+      params.estado = filtroEstado.value
+    }
+    const result = await apiGetOrders(params)
     orders.value = result.data
     pagination.value = result.pagination
   } catch (err) {
