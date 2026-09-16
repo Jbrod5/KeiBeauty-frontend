@@ -188,4 +188,19 @@ export async function quitarFavorito(productoId) {
   return response.data
 }
 
+export async function createCategory(categoryData) {
+  const response = await api.post('/categorias', categoryData)
+  return response.data
+}
+
+export async function updateCategory(id, categoryData) {
+  const response = await api.put(`/categorias/${id}`, categoryData)
+  return response.data
+}
+
+export async function deleteCategory(id) {
+  const response = await api.delete(`/categorias/${id}`)
+  return response.data
+}
+
 export default api
