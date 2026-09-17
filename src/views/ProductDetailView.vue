@@ -115,12 +115,12 @@
                   <i v-if="!addingToCart" class="bi bi-bag"></i>
                 </button>
                 <button
-                  class="btn btn-outline-primary d-inline-flex align-items-center justify-content-center"
+                  class="btn d-inline-flex align-items-center justify-content-center"
+                  :class="product.es_favorito ? 'btn-primary' : 'btn-outline-primary'"
                   @click="toggleWishlist"
-                  :class="{ 'active': product.es_favorito }"
                   :aria-label="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
                   :title="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
-                  style="width: 56px;"
+                  :style="product.es_favorito ? 'width:56px;background:var(--kei-rojo);border-color:var(--kei-rojo);color:#fff;' : 'width:56px;'"
                 >
                   <i v-if="product.es_favorito" class="bi bi-heart-fill"></i>
                   <i v-else class="bi bi-heart"></i>
@@ -434,10 +434,16 @@ async function toggleWishlist() {
     toast.info('Iniciá sesión para guardar favoritos')
     return
   }
-  await favoritosStore.toggle(product.value.id)
-  // Forzar actualización reactiva
-  if (product.value) {
+  const estadoPrevio = !!product.value.es_favorito
+  // Optimista
+  product.value.es_favorito = !estadoPrevio
+  const result = await favoritosStore.toggle(product.value.id)
+  if (!result.success) {
+    product.value.es_favorito = estadoPrevio
+    toast.error(result.error || 'Error al actualizar favoritos')
+  } else {
     product.value.es_favorito = favoritosStore.esFavorito(product.value.id)
+    toast.success(product.value.es_favorito ? 'Añadido a favoritos' : 'Quitado de favoritos')
   }
 }
 

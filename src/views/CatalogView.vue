@@ -104,7 +104,7 @@
                 :title="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
                 style="width: 36px; height: 36px;"
               >
-                <i v-if="product.es_favorito" class="bi bi-heart-fill" style="color: var(--kei-beige);"></i>
+                <i v-if="product.es_favorito" class="bi bi-heart-fill" style="color: var(--kei-rojo);"></i>
                 <i v-else class="bi bi-heart" style="color: var(--kei-beige-medio);"></i>
               </button>
             </div>
@@ -256,11 +256,20 @@ async function toggleFavorito(product, event) {
     toast.info('Iniciá sesión para guardar favoritos')
     return
   }
-  await favoritosStore.toggle(product.id)
-  // Actualizar el estado local del producto
   const prod = products.value.find(p => p.id === product.id)
-  if (prod) {
+  if (!prod) return
+  const estadoPrevio = !!prod.es_favorito
+  // Actualización optimista inmediata para reactividad
+  prod.es_favorito = !estadoPrevio
+  const result = await favoritosStore.toggle(product.id)
+  if (!result.success) {
+    // Revertir si falla
+    prod.es_favorito = estadoPrevio
+    toast.error(result.error || 'Error al actualizar favoritos')
+  } else {
+    // Sincronizar con store por si hay divergencia
     prod.es_favorito = favoritosStore.esFavorito(product.id)
+    toast.success(prod.es_favorito ? 'Añadido a favoritos' : 'Quitado de favoritos')
   }
 }
 

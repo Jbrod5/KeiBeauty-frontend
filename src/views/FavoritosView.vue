@@ -51,12 +51,12 @@
                 title="Quitar de favoritos"
                 style="width: 36px; height: 36px;"
               >
-                <i class="bi bi-heart-fill" style="color: var(--kei-beige);"></i>
+                <i class="bi bi-heart-fill" style="color: var(--kei-rojo);"></i>
               </button>
             </div>
             <div class="card-body d-flex flex-column">
               <h3 class="h6 fw-semibold mb-1 text-truncate-2" style="color: var(--kei-casi-negro);">{{ fav.producto.nombre }}</h3>
-              <p class="small fw-medium mb-2 text-uppercase" style="color: var(--kei-beige); letter-spacing: 0.05em;">{{ fav.producto.marca_nombre }}</p>
+              <p class="small fw-bold mb-2 text-uppercase" style="color: var(--kei-rojo); letter-spacing: 0.05em;">{{ fav.producto.marca_nombre }}</p>
               <div class="d-flex justify-content-between align-items-center pt-2 mt-auto border-top" style="border-color: var(--kei-gris-claro) !important;">
                 <span class="fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(fav.producto.precio) }}</span>
                 <span class="badge rounded-pill text-uppercase" :style="stockBadgeStyle(fav.producto.stock)" style="font-size: 0.7rem;">
