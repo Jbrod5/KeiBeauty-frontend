@@ -80,6 +80,30 @@
             <span v-if="product.es_favorito">♥</span>
             <span v-else>♡</span>
           </button>
+          <button 
+            class="btn btn-outline btn-wishlist" 
+            @click="mostrarResena"
+            :title="authStore.isAuthenticated ? 'Dejar reseña' : 'Inicia sesión para reseñar'"
+          >
+            ⭐ Dejar reseña
+          </button>
+        </div>
+
+        <div v-if="mostrarFormResena" class="resena-form" style="margin-top:1rem;padding:1rem;border:1px solid #ddd;border-radius:0.5rem;background:#fafafa;">
+          <h3>Dejar una reseña</h3>
+          <label>Calificación:</label>
+          <select v-model="calificacionResena" style="margin-left:0.5rem;padding:0.25rem;">
+            <option value="5">5 ★</option>
+            <option value="4">4 ★</option>
+            <option value="3">3 ★</option>
+            <option value="2">2 ★</option>
+            <option value="1">1 ★</option>
+          </select>
+          <textarea v-model="comentarioResena" placeholder="Comentario (opcional)" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;margin-top:0.5rem;min-height:80px;"></textarea>
+          <div style="margin-top:0.5rem;">
+            <button @click="enviarResena" class="btn btn-primary">Enviar reseña</button>
+            <button @click="cancelarResena" class="btn btn-outline" style="margin-left:0.5rem;">Cancelar</button>
+          </div>
         </div>
 
         <div class="quantity-selector" v-if="product.stock > 0">
@@ -119,7 +143,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
 import { useFavoritosStore } from '../stores/favoritosStore'
 import { useAuthStore } from '../stores/authStore'
-import { getProductById } from '../services/api'
+import { getProductById, createResena } from '../services/api'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -135,6 +159,9 @@ const loading = ref(true)
 const errorMessage = ref('')
 const addingToCart = ref(false)
 const quantity = ref(1)
+const mostrarFormResena = ref(false)
+const calificacionResena = ref(5)
+const comentarioResena = ref('')
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -203,6 +230,41 @@ function increaseQty() {
 function decreaseQty() {
   if (quantity.value > 1) {
     quantity.value--
+  }
+}
+
+function mostrarResena() {
+  if (!authStore.isAuthenticated) {
+    toast.info('Iniciá sesión para dejar una reseña')
+    return
+  }
+  mostrarFormResena.value = true
+  calificacionResena.value = 5
+  comentarioResena.value = ''
+}
+
+function cancelarResena() {
+  mostrarFormResena.value = false
+  calificacionResena.value = 5
+  comentarioResena.value = ''
+}
+
+async function enviarResena() {
+  if (calificacionResena.value < 1 || calificacionResena.value > 5) {
+    toast.error('Calificación debe ser entre 1 y 5')
+    return
+  }
+  try {
+    await createResena({
+      producto_id: product.value.id,
+      calificacion: calificacionResena.value,
+      comentario: comentarioResena.value || null
+    })
+    toast.success('Reseña enviada exitosamente')
+    cancelarResena()
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || 'Error al enviar reseña'
+    toast.error(errorMessage.value)
   }
 }
 
