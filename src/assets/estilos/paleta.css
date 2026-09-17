@@ -12,11 +12,14 @@
   --kei-beige-claro: #A6A498;
   --kei-fondo: #F2F2F2;
   --kei-negro: #0D0D0D;
-  /* Alias oliva para dar más color (basado en beige oliva) */
-  --kei-oliva: #737166;
-  --kei-oliva-claro: #A6A498;
-  --kei-oliva-oscuro: #5E5C4A;
-  --kei-oliva-suave: #E8E6D9;
+  /* Alias oliva más claro y muteado (no fosforescente) - verde oliva base #8C9B7A */
+  --kei-oliva: #8C9B7A;
+  --kei-oliva-claro: #B5C4A8;
+  --kei-oliva-oscuro: #6B7A5F;
+  --kei-oliva-suave: #E9EFE6;
+  /* Rojo tradicional intenso para favoritos/marca */
+  --kei-rojo: #B02A37;
+  --kei-rojo-claro: #E6A5AC;
 
   /* Derivados para Bootstrap - ahora oliva como primario para más color */
   --bs-primary: #737166;
@@ -128,7 +131,7 @@ h1, h2, h3, .font-display {
 }
 .form-control:focus, .form-select:focus {
   border-color: var(--kei-oliva) !important;
-  box-shadow: 0 0 0 0.25rem rgba(115, 113, 102, 0.18) !important;
+  box-shadow: 0 0 0 0.25rem rgba(140, 155, 122, 0.22) !important;
 }
 .form-label { color: var(--kei-casi-negro) !important; font-weight: 500; }
 
