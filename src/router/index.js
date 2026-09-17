@@ -107,6 +107,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/admin/productos/crear',
+    name: 'admin-productos-crear',
+    component: () => import('../views/AdminProductoCrearView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/productos/:id/editar',
+    name: 'admin-productos-editar',
+    component: () => import('../views/AdminProductoEditarView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/admin/pedidos',
     name: 'admin-orders',
     component: AdminOrdersView,
