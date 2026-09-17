@@ -41,21 +41,30 @@
                 <div v-else class="d-flex align-items-center justify-content-center w-100 h-100 fw-bold display-1" style="color: var(--kei-beige);">
                   {{ product.nombre.charAt(0) }}
                 </div>
+                <!-- Botones laterales -->
+                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenAnterior" class="btn btn-light rounded-circle position-absolute top-50 start-0 translate-middle-y ms-2 d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px;" aria-label="Anterior">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenSiguiente" class="btn btn-light rounded-circle position-absolute top-50 end-0 translate-middle-y me-2 d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px;" aria-label="Siguiente">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
                 <button type="button" @click="mostrarModal=true" class="btn btn-light rounded-circle position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center shadow-sm" style="width:36px;height:36px;" title="Ver en grande">
                   <i class="bi bi-zoom-in"></i>
                 </button>
               </div>
-              <!-- Thumbnails -->
-              <div v-if="product.imagenes && product.imagenes.length>1" class="d-flex gap-2 mt-3 flex-wrap">
-                <button v-for="img in product.imagenes" :key="img.id" @click="imagenActiva = img.imagen_url" class="p-0 border-0 bg-transparent" :title="img.es_principal ? 'Principal' : 'Ver imagen'">
+              <!-- Thumbnails con scroll lateral -->
+              <div v-if="product.imagenes && product.imagenes.length>1" ref="thumbsRef" @wheel.prevent="onWheelThumbs" class="d-flex gap-2 mt-3 flex-nowrap overflow-auto pb-1" style="scroll-behavior:smooth; scrollbar-width:thin;">
+                <button v-for="img in product.imagenes" :key="img.id" @click="imagenActiva = img.imagen_url" class="p-0 border-0 bg-transparent flex-shrink-0 position-relative" :title="img.es_principal ? 'Principal' : 'Ver imagen'">
                   <img :src="img.imagen_url" :alt="'thumb '+img.id" class="rounded" :style="imagenActiva===img.imagen_url ? 'width:64px;height:64px;object-fit:cover;border:2px solid #FFD700; box-shadow:0 2px 8px rgba(0,0,0,0.15);' : 'width:64px;height:64px;object-fit:cover;border:1px solid var(--kei-gris-claro);opacity:0.9;'" />
-                  <span v-if="img.es_principal" class="badge position-absolute" style="background:#FFD700;color:#000;font-size:0.5rem;transform:translate(-8px, -8px);"><i class="bi bi-star-fill"></i></span>
+                  <span v-if="img.es_principal" class="badge position-absolute top-0 start-0 m-1" style="background:#FFD700;color:#000;font-size:0.5rem;"><i class="bi bi-star-fill"></i></span>
                 </button>
               </div>
-              <!-- Modal grande -->
+              <!-- Modal grande con navegación -->
               <div v-if="mostrarModal" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background:rgba(0,0,0,0.8);z-index:1055;" @click.self="mostrarModal=false">
-                <div class="position-relative" style="max-width:90vw;max-height:90vh;">
+                <div class="position-relative d-flex align-items-center" style="max-width:90vw;max-height:90vh;">
+                  <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click.stop="imagenAnterior" class="btn btn-light rounded-circle position-absolute start-0 ms-3 d-flex align-items-center justify-content-center shadow" style="width:42px;height:42px;z-index:1;"><i class="bi bi-chevron-left"></i></button>
                   <img :src="imagenActiva" :alt="product.nombre" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;" />
+                  <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click.stop="imagenSiguiente" class="btn btn-light rounded-circle position-absolute end-0 me-3 d-flex align-items-center justify-content-center shadow" style="width:42px;height:42px;z-index:1;"><i class="bi bi-chevron-right"></i></button>
                   <button type="button" @click="mostrarModal=false" class="btn btn-light rounded-circle position-absolute top-0 end-0 m-3" style="width:40px;height:40px;"><i class="bi bi-x-lg"></i></button>
                 </div>
               </div>
@@ -281,6 +290,7 @@ const puedeResenar = ref(false)
 const verificandoCompra = ref(false)
 const imagenActiva = ref('')
 const mostrarModal = ref(false)
+const thumbsRef = ref(null)
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -378,6 +388,28 @@ async function loadResenas() {
 function formatFecha(fecha) {
   if (!fecha) return ''
   return new Date(fecha).toLocaleDateString('es-GT', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+function indiceImagenActual() {
+  if (!product.value || !product.value.imagenes) return -1
+  return product.value.imagenes.findIndex(i => i.imagen_url === imagenActiva.value)
+}
+function imagenSiguiente() {
+  if (!product.value || !product.value.imagenes || product.value.imagenes.length===0) return
+  const idx = indiceImagenActual()
+  const next = (idx + 1) % product.value.imagenes.length
+  imagenActiva.value = product.value.imagenes[next].imagen_url
+}
+function imagenAnterior() {
+  if (!product.value || !product.value.imagenes || product.value.imagenes.length===0) return
+  const idx = indiceImagenActual()
+  const prev = (idx - 1 + product.value.imagenes.length) % product.value.imagenes.length
+  imagenActiva.value = product.value.imagenes[prev].imagen_url
+}
+function onWheelThumbs(e) {
+  if (!thumbsRef.value) return
+  // Scroll lateral con rueda vertical
+  thumbsRef.value.scrollLeft += e.deltaY
 }
 
 function addToCart() {
