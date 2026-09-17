@@ -216,7 +216,8 @@ export async function createProduct(formData) {
 }
 
 export async function updateProduct(id, data) {
-  const response = await api.put(`/products/${id}`, data)
+  const isFormData = data instanceof FormData
+  const response = await api.put(`/products/${id}`, data, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
   return response.data
 }
 
@@ -245,7 +246,8 @@ export async function createMarca(data) {
 }
 
 export async function updateMarca(id, data) {
-  const response = await api.put(`/marcas/${id}`, data)
+  const isFormData = data instanceof FormData
+  const response = await api.put(`/marcas/${id}`, data, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
   return response.data
 }
 

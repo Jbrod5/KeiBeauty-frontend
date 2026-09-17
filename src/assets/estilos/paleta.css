@@ -1,7 +1,7 @@
 /* Tipografía KeiBeauty: Playfair Display (titulares elegantes) + Inter (cuerpo legible) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
-/* Paleta oficial KeiBeauty - variables CSS */
+/* Paleta oficial KeiBeauty - variables CSS (verde oliva) */
 :root {
   --kei-gris-oscuro: #4D4D59;
   --kei-gris-medio: #565659;
@@ -12,10 +12,15 @@
   --kei-beige-claro: #A6A498;
   --kei-fondo: #F2F2F2;
   --kei-negro: #0D0D0D;
+  /* Alias oliva para dar más color (basado en beige oliva) */
+  --kei-oliva: #737166;
+  --kei-oliva-claro: #A6A498;
+  --kei-oliva-oscuro: #5E5C4A;
+  --kei-oliva-suave: #E8E6D9;
 
-  /* Derivados para Bootstrap */
-  --bs-primary: #4D4D59;
-  --bs-secondary: #737166;
+  /* Derivados para Bootstrap - ahora oliva como primario para más color */
+  --bs-primary: #737166;
+  --bs-secondary: #4D4D59;
   --bs-light: #F2F2F2;
   --bs-dark: #3A3E40;
   --bs-body-bg: #F2F2F2;
@@ -42,59 +47,60 @@ h1, h2, h3, .font-display {
 
 /* --- Overrides Bootstrap con paleta --- */
 
-/* Botones */
+/* Botones - oliva como primario para más color */
 .btn-primary {
-  background-color: var(--kei-gris-oscuro) !important;
-  border-color: var(--kei-gris-oscuro) !important;
+  background-color: var(--kei-oliva) !important;
+  border-color: var(--kei-oliva) !important;
   color: #fff !important;
 }
 .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-  background-color: var(--kei-casi-negro) !important;
-  border-color: var(--kei-casi-negro) !important;
+  background-color: var(--kei-oliva-oscuro) !important;
+  border-color: var(--kei-oliva-oscuro) !important;
   color: #fff !important;
 }
 .btn-secondary {
-  background-color: var(--kei-beige) !important;
-  border-color: var(--kei-beige) !important;
+  background-color: var(--kei-gris-oscuro) !important;
+  border-color: var(--kei-gris-oscuro) !important;
   color: #fff !important;
 }
 .btn-secondary:hover {
-  background-color: var(--kei-beige-medio) !important;
-  border-color: var(--kei-beige-medio) !important;
+  background-color: var(--kei-casi-negro) !important;
+  border-color: var(--kei-casi-negro) !important;
 }
 .btn-outline-primary {
-  color: var(--kei-gris-oscuro) !important;
-  border-color: var(--kei-gris-oscuro) !important;
+  color: var(--kei-oliva) !important;
+  border-color: var(--kei-oliva) !important;
 }
 .btn-outline-primary:hover {
-  background-color: var(--kei-gris-oscuro) !important;
+  background-color: var(--kei-oliva) !important;
+  border-color: var(--kei-oliva) !important;
   color: #fff !important;
 }
 .btn-outline-secondary {
-  color: var(--kei-beige) !important;
-  border-color: var(--kei-beige) !important;
+  color: var(--kei-gris-oscuro) !important;
+  border-color: var(--kei-gris-oscuro) !important;
 }
 .btn-outline-secondary:hover {
-  background-color: var(--kei-beige) !important;
+  background-color: var(--kei-gris-oscuro) !important;
   color: #fff !important;
 }
 
-/* Fondos y textos */
-.bg-primary { background-color: var(--kei-gris-oscuro) !important; }
-.bg-secondary { background-color: var(--kei-beige) !important; }
+/* Fondos y textos - oliva protagonista */
+.bg-primary { background-color: var(--kei-oliva) !important; }
+.bg-secondary { background-color: var(--kei-gris-oscuro) !important; }
 .bg-light { background-color: var(--kei-fondo) !important; }
 .bg-dark { background-color: var(--kei-casi-negro) !important; }
-.text-primary { color: var(--kei-gris-oscuro) !important; }
-.text-secondary { color: var(--kei-beige) !important; }
+.text-primary { color: var(--kei-oliva) !important; }
+.text-secondary { color: var(--kei-gris-oscuro) !important; }
 .text-dark { color: var(--kei-casi-negro) !important; }
 .text-muted { color: var(--kei-beige-medio) !important; }
-.border-primary { border-color: var(--kei-gris-oscuro) !important; }
+.border-primary { border-color: var(--kei-oliva) !important; }
 
-/* Navbar */
-.navbar { background-color: #fff !important; border-bottom: 1px solid var(--kei-gris-claro); }
+/* Navbar - acento oliva */
+.navbar { background-color: #fff !important; border-bottom: 2px solid var(--kei-oliva-claro); }
 .navbar-brand { color: var(--kei-casi-negro) !important; font-weight: 700; }
 .nav-link { color: var(--kei-gris-medio) !important; }
-.nav-link:hover, .nav-link.active { color: var(--kei-gris-oscuro) !important; }
+.nav-link:hover, .nav-link.active { color: var(--kei-oliva) !important; }
 
 /* Cards */
 .card {
@@ -108,21 +114,21 @@ h1, h2, h3, .font-display {
   color: var(--kei-casi-negro) !important;
 }
 
-/* Badges */
-.badge.bg-primary { background-color: var(--kei-gris-oscuro) !important; }
-.badge.bg-secondary { background-color: var(--kei-beige) !important; }
-.badge.bg-success { background-color: #4a6741 !important; } /* verde desaturado acorde paleta */
+/* Badges - oliva */
+.badge.bg-primary { background-color: var(--kei-oliva) !important; }
+.badge.bg-secondary { background-color: var(--kei-gris-oscuro) !important; }
+.badge.bg-success { background-color: #5a6b4a !important; } /* oliva desaturado */
 .badge.bg-danger { background-color: #7a3a3a !important; }
 
-/* Forms */
+/* Forms - focus oliva */
 .form-control, .form-select {
   border-color: var(--kei-gris-claro) !important;
   background-color: #fff !important;
   color: var(--kei-casi-negro) !important;
 }
 .form-control:focus, .form-select:focus {
-  border-color: var(--kei-beige-medio) !important;
-  box-shadow: 0 0 0 0.25rem rgba(77, 77, 89, 0.15) !important;
+  border-color: var(--kei-oliva) !important;
+  box-shadow: 0 0 0 0.25rem rgba(115, 113, 102, 0.18) !important;
 }
 .form-label { color: var(--kei-casi-negro) !important; font-weight: 500; }
 
@@ -140,10 +146,10 @@ h1, h2, h3, .font-display {
 .modal-header { border-bottom: 1px solid var(--kei-gris-claro) !important; }
 .modal-footer { border-top: 1px solid var(--kei-gris-claro) !important; }
 
-/* Paginación, spinner, etc. */
-.page-link { color: var(--kei-gris-oscuro) !important; border-color: var(--kei-gris-claro) !important; }
-.page-item.active .page-link { background-color: var(--kei-gris-oscuro) !important; border-color: var(--kei-gris-oscuro) !important; color: #fff !important; }
-.spinner-border { color: var(--kei-gris-oscuro) !important; }
+/* Paginación, spinner, etc. - oliva */
+.page-link { color: var(--kei-oliva) !important; border-color: var(--kei-gris-claro) !important; }
+.page-item.active .page-link { background-color: var(--kei-oliva) !important; border-color: var(--kei-oliva) !important; color: #fff !important; }
+.spinner-border { color: var(--kei-oliva) !important; }
 
 /* Links */
 a { color: var(--kei-gris-oscuro); }
@@ -155,9 +161,14 @@ a:hover { color: var(--kei-casi-negro); }
 .bg-kei-beige { background-color: var(--kei-beige) !important; color: #fff; }
 .bg-kei-claro { background-color: var(--kei-gris-claro) !important; }
 .bg-kei-fondo { background-color: var(--kei-fondo) !important; }
+.bg-kei-oliva { background-color: var(--kei-oliva) !important; color: #fff; }
+.bg-kei-oliva-suave { background-color: var(--kei-oliva-suave) !important; }
 .text-kei-oscuro { color: var(--kei-gris-oscuro) !important; }
 .text-kei-beige { color: var(--kei-beige) !important; }
+.text-kei-oliva { color: var(--kei-oliva) !important; }
 .border-kei { border-color: var(--kei-gris-claro) !important; }
 
-/* Footer */
-.footer-kei { background-color: var(--kei-casi-negro) !important; color: var(--kei-fondo) !important; }
+/* Footer - oliva oscuro */
+.footer-kei { background-color: var(--kei-casi-negro) !important; color: var(--kei-fondo) !important; border-top: 4px solid var(--kei-oliva); }
+/* Hero y acentos oliva suaves */
+.bg-oliva-suave { background-color: var(--kei-oliva-suave) !important; }
