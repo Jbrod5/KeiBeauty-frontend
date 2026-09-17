@@ -41,11 +41,11 @@
                 <div v-else class="d-flex align-items-center justify-content-center w-100 h-100 fw-bold display-1" style="color: var(--kei-beige);">
                   {{ product.nombre.charAt(0) }}
                 </div>
-                <!-- Botones laterales -->
-                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenAnterior" class="btn btn-light rounded-circle position-absolute top-50 start-0 translate-middle-y ms-2 d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px;" aria-label="Anterior">
+                <!-- Botones laterales - izquierda/derecha separados -->
+                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenAnterior" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px; left:12px; top:50%; transform:translateY(-50%); z-index:2;" aria-label="Anterior">
                   <i class="bi bi-chevron-left"></i>
                 </button>
-                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenSiguiente" class="btn btn-light rounded-circle position-absolute top-50 end-0 translate-middle-y me-2 d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px;" aria-label="Siguiente">
+                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenSiguiente" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px; right:12px; top:50%; transform:translateY(-50%); z-index:2;" aria-label="Siguiente">
                   <i class="bi bi-chevron-right"></i>
                 </button>
                 <button type="button" @click="mostrarModal=true" class="btn btn-light rounded-circle position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center shadow-sm" style="width:36px;height:36px;" title="Ver en grande">
@@ -61,11 +61,11 @@
               </div>
               <!-- Modal grande con navegación -->
               <div v-if="mostrarModal" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background:rgba(0,0,0,0.8);z-index:1055;" @click.self="mostrarModal=false">
-                <div class="position-relative d-flex align-items-center" style="max-width:90vw;max-height:90vh;">
-                  <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click.stop="imagenAnterior" class="btn btn-light rounded-circle position-absolute start-0 ms-3 d-flex align-items-center justify-content-center shadow" style="width:42px;height:42px;z-index:1;"><i class="bi bi-chevron-left"></i></button>
+                <div class="position-relative d-flex align-items-center justify-content-center" style="max-width:90vw;max-height:90vh;">
+                  <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click.stop="imagenAnterior" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:42px;height:42px; left:16px; top:50%; transform:translateY(-50%); z-index:2;"><i class="bi bi-chevron-left"></i></button>
                   <img :src="imagenActiva" :alt="product.nombre" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;" />
-                  <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click.stop="imagenSiguiente" class="btn btn-light rounded-circle position-absolute end-0 me-3 d-flex align-items-center justify-content-center shadow" style="width:42px;height:42px;z-index:1;"><i class="bi bi-chevron-right"></i></button>
-                  <button type="button" @click="mostrarModal=false" class="btn btn-light rounded-circle position-absolute top-0 end-0 m-3" style="width:40px;height:40px;"><i class="bi bi-x-lg"></i></button>
+                  <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click.stop="imagenSiguiente" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:42px;height:42px; right:16px; top:50%; transform:translateY(-50%); z-index:2;"><i class="bi bi-chevron-right"></i></button>
+                  <button type="button" @click="mostrarModal=false" class="btn btn-light rounded-circle position-absolute" style="width:40px;height:40px; top:16px; right:16px; z-index:3;"><i class="bi bi-x-lg"></i></button>
                 </div>
               </div>
             </div>
