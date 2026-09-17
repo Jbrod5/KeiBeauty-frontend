@@ -82,12 +82,6 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/admin/categorias',
-    name: 'admin-categorias',
-    component: AdminCategoriesView,
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/admin/pedidos',
     name: 'admin-orders',
     component: AdminOrdersView,
