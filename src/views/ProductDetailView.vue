@@ -52,8 +52,8 @@
                   <i class="bi bi-zoom-in"></i>
                 </button>
               </div>
-              <!-- Thumbnails con scroll lateral -->
-              <div v-if="product.imagenes && product.imagenes.length>1" ref="thumbsRef" @wheel.prevent="onWheelThumbs" class="d-flex gap-2 mt-3 flex-nowrap overflow-auto pb-1" style="scroll-behavior:smooth; scrollbar-width:thin;">
+              <!-- Thumbnails -->
+              <div v-if="product.imagenes && product.imagenes.length>1" class="d-flex gap-2 mt-3 flex-wrap">
                 <button v-for="img in product.imagenes" :key="img.id" @click="imagenActiva = img.imagen_url" class="p-0 border-0 bg-transparent flex-shrink-0 position-relative" :title="img.es_principal ? 'Principal' : 'Ver imagen'">
                   <img :src="img.imagen_url" :alt="'thumb '+img.id" class="rounded" :style="imagenActiva===img.imagen_url ? 'width:64px;height:64px;object-fit:cover;border:2px solid #FFD700; box-shadow:0 2px 8px rgba(0,0,0,0.15);' : 'width:64px;height:64px;object-fit:cover;border:1px solid var(--kei-gris-claro);opacity:0.9;'" />
                   <span v-if="img.es_principal" class="badge position-absolute top-0 start-0 m-1" style="background:#FFD700;color:#000;font-size:0.5rem;"><i class="bi bi-star-fill"></i></span>
@@ -290,7 +290,6 @@ const puedeResenar = ref(false)
 const verificandoCompra = ref(false)
 const imagenActiva = ref('')
 const mostrarModal = ref(false)
-const thumbsRef = ref(null)
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -406,12 +405,6 @@ function imagenAnterior() {
   const prev = (idx - 1 + product.value.imagenes.length) % product.value.imagenes.length
   imagenActiva.value = product.value.imagenes[prev].imagen_url
 }
-function onWheelThumbs(e) {
-  if (!thumbsRef.value) return
-  // Scroll lateral con rueda vertical
-  thumbsRef.value.scrollLeft += e.deltaY
-}
-
 function addToCart() {
   if (!product.value || product.value.stock === 0) return
   addingToCart.value = true
