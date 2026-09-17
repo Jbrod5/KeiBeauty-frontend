@@ -9,7 +9,28 @@ Frontend del e-commerce KeiBeauty para productos K-Beauty (belleza coreana). Con
 - **Vue Router 4** - Enrutamiento SPA
 - **Pinia** - Gestión de estado global
 - **Axios** - Cliente HTTP para API REST
+- **Bootstrap 5** - Framework CSS (único, sin CSS custom fuera de paleta)
+- **Bootstrap Icons** - Librería de iconos vectoriales (MIT, 2000+ iconos, única en proyecto)
 - **Docker & Nginx** - Contenedorización multi-etapa para producción
+
+## Paleta Oficial KeiBeauty
+
+Variables en `src/assets/estilos/paleta.css`:
+
+```css
+--kei-gris-oscuro: #4D4D59; --kei-gris-medio: #565659; --kei-casi-negro: #3A3E40;
+--kei-gris-claro: #D9D9D7; --kei-beige: #737166; --kei-beige-medio: #8C8A80;
+--kei-beige-claro: #A6A498; --kei-fondo: #F2F2F2; --kei-negro: #0D0D0D;
+```
+
+Overrides Bootstrap: `btn-primary` → gris oscuro, `btn-secondary` → beige, etc. Ver `.agents/skills/convenciones-vue/SKILL.md`.
+
+## Iconos Vectoriales
+
+- Librería elegida: **Bootstrap Icons** (`bootstrap-icons` npm). Justificación: ya se usa Bootstrap 5, no agrega dependencia visual extra, MIT, 2000+ iconos.
+- Uso: `<i class="bi bi-cart3"></i>`, `<i class="bi bi-heart-fill"></i>`, etc.
+- Prohibidos emojis en interfaz. Verificación: `grep -rP "[\x{1F300}-\x{1FAFF}]" src/` debe dar 0.
+- Import en `src/main.js`: `import 'bootstrap-icons/font/bootstrap-icons.css'`.
 
 ## Estructura del Proyecto
 
