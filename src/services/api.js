@@ -239,6 +239,21 @@ export async function ajustarInventario(productId, tipo, cantidad) {
   return response.data
 }
 
+export async function createMarca(data) {
+  const response = await api.post('/marcas', data)
+  return response.data
+}
+
+export async function updateMarca(id, data) {
+  const response = await api.put(`/marcas/${id}`, data)
+  return response.data
+}
+
+export async function deleteMarca(id) {
+  const response = await api.delete(`/marcas/${id}`)
+  return response.data
+}
+
 export async function uploadGuia(pedidoId, archivo) {
   const formData = new FormData()
   formData.append('archivo', archivo)

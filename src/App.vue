@@ -46,9 +46,6 @@
             <li v-if="isAdmin" role="none">
               <router-link to="/admin/pedidos" class="dropdown-item" role="menuitem">Panel Admin</router-link>
             </li>
-            <li v-if="isAdmin" role="none">
-              <router-link to="/admin/productos" class="dropdown-item" role="menuitem">Productos</router-link>
-            </li>
             <li role="none"><hr class="dropdown-divider" /></li>
             <li role="none">
               <button @click="logout" class="dropdown-item dropdown-logout" role="menuitem">Cerrar Sesión</button>
