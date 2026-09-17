@@ -96,6 +96,17 @@
                 </span>
               </div>
 
+              <!-- Avisame cuando esté disponible (solo sin stock, solo clientes) -->
+              <div v-if="product.stock===0 && !isAdmin" class="mt-2">
+                <button v-if="!alertaActiva" @click="activarAlerta" :disabled="cargandoAlerta" class="btn btn-outline-primary btn-sm rounded-pill d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-bell"></i> Avísame cuando esté disponible
+                </button>
+                <button v-else @click="desactivarAlerta" :disabled="cargandoAlerta" class="btn btn-primary btn-sm rounded-pill d-inline-flex align-items-center gap-2" style="background: var(--kei-oliva); border-color: var(--kei-oliva);">
+                  <i class="bi bi-bell-fill"></i> Aviso activado — Cancelar
+                </button>
+                <small class="d-block mt-1" style="color: var(--kei-gris-medio);">Te notificaremos cuando vuelva a tener stock.</small>
+              </div>
+
               <!-- Alert error reseña si existe -->
               <div v-if="errorMessage && product" class="alert alert-danger d-flex align-items-center gap-2 py-2" role="alert">
                 <i class="bi bi-exclamation-triangle-fill"></i>
@@ -264,7 +275,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
 import { useFavoritosStore } from '../stores/favoritosStore'
 import { useAuthStore } from '../stores/authStore'
-import { getProductById, createResena, getResenas, getOrders } from '../services/api'
+import { getProductById, createResena, getResenas, getOrders, getAlertaProducto, crearAlertaProducto, eliminarAlertaProducto } from '../services/api'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -291,6 +302,8 @@ const puedeResenar = ref(false)
 const verificandoCompra = ref(false)
 const imagenActiva = ref('')
 const mostrarModal = ref(false)
+const alertaActiva = ref(false)
+const cargandoAlerta = ref(false)
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -331,7 +344,7 @@ async function loadProduct() {
     } else if (product.value) {
       product.value.es_favorito = false
     }
-    await Promise.all([loadResenas(), verificarCompra()])
+    await Promise.all([loadResenas(), verificarCompra(), cargarAlerta()])
   } catch (error) {
     console.error('Error loading product:', error)
     if (error.response?.status === 404) {
@@ -368,6 +381,43 @@ async function verificarCompra() {
   } finally {
     verificandoCompra.value = false
   }
+}
+
+async function cargarAlerta() {
+  if (!authStore.isAuthenticated || !product.value || product.value.stock > 0 || isAdmin.value) {
+    alertaActiva.value = false
+    return
+  }
+  try {
+    cargandoAlerta.value = true
+    const res = await getAlertaProducto(product.value.id)
+    alertaActiva.value = !!res.data?.activa
+  } catch {
+    alertaActiva.value = false
+  } finally {
+    cargandoAlerta.value = false
+  }
+}
+async function activarAlerta() {
+  if (!authStore.isAuthenticated) { toast.info('Iniciá sesión para recibir aviso'); return }
+  try {
+    cargandoAlerta.value = true
+    await crearAlertaProducto(product.value.id)
+    alertaActiva.value = true
+    toast.success('Te avisaremos cuando haya stock')
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Error al activar aviso')
+  } finally { cargandoAlerta.value = false }
+}
+async function desactivarAlerta() {
+  try {
+    cargandoAlerta.value = true
+    await eliminarAlertaProducto(product.value.id)
+    alertaActiva.value = false
+    toast.info('Aviso desactivado')
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Error al desactivar')
+  } finally { cargandoAlerta.value = false }
 }
 
 async function loadResenas() {
