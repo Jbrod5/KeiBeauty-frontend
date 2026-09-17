@@ -238,20 +238,28 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function fetchProfile() {
     if (!accessToken.value) return { success: false }
+    if (isIn2FAFlow.value) return { success: false }
     try {
       const response = await getProfile()
       setUser(response.data.usuario)
       return { success: true }
     } catch (err) {
-      if (err.response?.status === 401) {
-        await tryRefreshToken()
+      if (err.response?.status === 401 && err.response?.data?.msg === 'Token has expired') {
+        const refreshed = await tryRefreshToken()
+        if (refreshed) {
+          try {
+            const retry = await getProfile()
+            setUser(retry.data.usuario)
+            return { success: true }
+          } catch {}
+        }
       }
       return { success: false }
     }
   }
 
   async function tryRefreshToken() {
-    if (!refreshTokenValue.value) return false
+    if (!refreshTokenValue.value || isIn2FAFlow.value) return false
     try {
       const response = await refreshToken(refreshTokenValue.value)
       const { access_token } = response.data
@@ -259,7 +267,8 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('access_token', access_token)
       return true
     } catch {
-      logout()
+      // Solo hacer logout si el refresh falla por token inválido/expirado, no por estar en flujo 2FA
+      if (!isIn2FAFlow.value) logout()
       return false
     }
   }
@@ -279,16 +288,22 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function initAuth() {
+    if (isIn2FAFlow.value) {
+      // En flujo 2FA no intentar cargar perfil/cart/favoritos con token temporal
+      return
+    }
     if (accessToken.value && !user.value) {
-      await fetchProfile()
-
+      const ok = await fetchProfile()
+      if (!ok.success) {
+        // Si el perfil falló por token expirado y no se pudo refrescar, ya se hizo logout
+        return
+      }
       // Cargar carrito si hay usuario autenticado
-
       const cartStore = useCartStore()
-      await cartStore.fetchCart()
+      try { await cartStore.fetchCart() } catch {}
       // Cargar favoritos
       const favoritosStore = useFavoritosStore()
-      await favoritosStore.fetchFavoritos()
+      try { await favoritosStore.fetchFavoritos() } catch {}
     }
   }
 

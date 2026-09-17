@@ -10,11 +10,17 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    // Usar token temporal de 2FA si existe y no hay access_token normal
+    // Solo usar token temporal para endpoints de 2FA; para el resto usar solo access_token
     const tempToken = localStorage.getItem('temp_token')
     const accessToken = localStorage.getItem('access_token')
     
-    if (tempToken && !accessToken) {
+    const esEndpoint2FA = config.url && (
+      config.url.includes('/auth/verificar-2fa') ||
+      config.url.includes('/auth/reenviar-codigo-2fa') ||
+      config.url.includes('/auth/cancelar-login')
+    )
+    
+    if (esEndpoint2FA && tempToken) {
       config.headers.Authorization = `Bearer ${tempToken}`
     } else if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`
