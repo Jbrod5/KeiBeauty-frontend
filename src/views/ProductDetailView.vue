@@ -31,24 +31,25 @@
           <div class="row g-4 g-lg-5">
             <!-- Galería -->
             <div class="col-12 col-md-6">
-              <div class="position-relative ratio ratio-1x1 rounded-3 overflow-hidden d-flex align-items-center justify-content-center" style="background-color: var(--kei-fondo);">
+              <div class="position-relative rounded-3 overflow-hidden d-flex align-items-center justify-content-center" style="background-color: var(--kei-fondo); aspect-ratio:1;">
                 <img
                   v-if="imagenActiva"
                   :src="imagenActiva"
                   :alt="product.nombre"
                   class="w-100 h-100 object-fit-cover"
+                  style="position:absolute; top:0; left:0;"
                 />
                 <div v-else class="d-flex align-items-center justify-content-center w-100 h-100 fw-bold display-1" style="color: var(--kei-beige);">
                   {{ product.nombre.charAt(0) }}
                 </div>
-                <!-- Botones laterales - izquierda/derecha separados -->
-                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenAnterior" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px; left:12px; top:50%; transform:translateY(-50%); z-index:2;" aria-label="Anterior">
+                <!-- Botones laterales - izquierda/derecha separados sin superposición -->
+                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenAnterior" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px; left:12px; top:50%; transform:translateY(-50%); z-index:3;" aria-label="Anterior">
                   <i class="bi bi-chevron-left"></i>
                 </button>
-                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenSiguiente" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px; right:12px; top:50%; transform:translateY(-50%); z-index:2;" aria-label="Siguiente">
+                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenSiguiente" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px; right:12px; top:50%; transform:translateY(-50%); z-index:3;" aria-label="Siguiente">
                   <i class="bi bi-chevron-right"></i>
                 </button>
-                <button type="button" @click="mostrarModal=true" class="btn btn-light rounded-circle position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center shadow-sm" style="width:36px;height:36px;" title="Ver en grande">
+                <button type="button" @click="mostrarModal=true" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow-sm" style="width:36px;height:36px; top:12px; right:12px; z-index:2;" title="Ver en grande">
                   <i class="bi bi-zoom-in"></i>
                 </button>
               </div>
