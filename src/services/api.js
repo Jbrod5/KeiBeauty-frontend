@@ -320,4 +320,17 @@ export async function uploadGuia(pedidoId, archivo) {
   return response.data
 }
 
+export async function getAlertaProducto(productoId) {
+  const response = await api.get(`/notificaciones/producto/${productoId}/alerta`)
+  return response.data
+}
+export async function crearAlertaProducto(productoId) {
+  const response = await api.post(`/notificaciones/producto/${productoId}/alerta`)
+  return response.data
+}
+export async function eliminarAlertaProducto(productoId) {
+  const response = await api.delete(`/notificaciones/producto/${productoId}/alerta`)
+  return response.data
+}
+
 export default api
