@@ -1,3 +1,6 @@
+/* Tipografía KeiBeauty: Playfair Display (titulares elegantes) + Inter (cuerpo legible) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
 /* Paleta oficial KeiBeauty - variables CSS */
 :root {
   --kei-gris-oscuro: #4D4D59;
@@ -24,6 +27,17 @@
 body {
   background-color: var(--kei-fondo) !important;
   color: var(--kei-casi-negro) !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+h1, h2, h3, .font-display {
+  font-family: 'Playfair Display', serif !important;
+  letter-spacing: -0.02em;
+}
+.navbar-brand {
+  font-family: 'Playfair Display', serif !important;
+  letter-spacing: 0.04em;
 }
 
 /* --- Overrides Bootstrap con paleta --- */

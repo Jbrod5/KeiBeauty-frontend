@@ -6,9 +6,9 @@
       <p style="color: var(--kei-gris-medio);">Descubre nuestra selección de K-Beauty auténtico</p>
     </header>
 
-    <!-- Toolbar: búsqueda + filtro -->
+    <!-- Toolbar: búsqueda + filtros categoría y marca -->
     <div class="row g-3 mb-3 align-items-center">
-      <div class="col-12 col-md-6 col-lg-5">
+      <div class="col-12 col-md-5 col-lg-4">
         <label for="search" class="visually-hidden">Buscar productos</label>
         <div class="input-group">
           <span class="input-group-text" style="background-color: var(--kei-fondo); border-color: var(--kei-gris-claro);">
@@ -18,12 +18,12 @@
             id="search"
             type="search"
             v-model="searchQuery"
-            placeholder="Buscar productos..."
+            placeholder="Buscar por nombre..."
             class="form-control rounded-end-pill"
           />
         </div>
       </div>
-      <div class="col-12 col-md-6 col-lg-4">
+      <div class="col-6 col-md-3 col-lg-4">
         <select v-model="selectedCategory" class="form-select rounded-pill">
           <option value="">Todas las categorías</option>
           <option v-for="cat in categories" :key="cat.id" :value="cat.id">
@@ -31,17 +31,29 @@
           </option>
         </select>
       </div>
+      <div class="col-6 col-md-4 col-lg-4">
+        <select v-model="selectedMarca" class="form-select rounded-pill">
+          <option value="">Todas las marcas</option>
+          <option v-for="m in marcas" :key="m.id" :value="m.id">
+            {{ m.nombre }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <!-- Filtros activos -->
-    <div v-if="selectedCategory || searchQuery" class="d-flex flex-wrap gap-2 align-items-center mb-4 p-3 rounded" style="background-color: var(--kei-fondo); border: 1px solid var(--kei-gris-claro);">
+    <div v-if="selectedCategory || selectedMarca || searchQuery" class="d-flex flex-wrap gap-2 align-items-center mb-4 p-3 rounded" style="background-color: var(--kei-fondo); border: 1px solid var(--kei-gris-claro);">
       <span v-if="selectedCategory" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-gris-oscuro); color: var(--kei-fondo);">
-        Categoría: {{ getCategoryName(selectedCategory) }}
-        <button @click="selectedCategory = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro"></button>
+        <i class="bi bi-tags"></i> {{ getCategoryName(selectedCategory) }}
+        <button @click="selectedCategory = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro categoría"></button>
+      </span>
+      <span v-if="selectedMarca" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-beige); color: #fff;">
+        <i class="bi bi-award"></i> {{ getMarcaName(selectedMarca) }}
+        <button @click="selectedMarca = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro marca"></button>
       </span>
       <span v-if="searchQuery" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-gris-oscuro); color: var(--kei-fondo);">
-        Búsqueda: "{{ searchQuery }}"
-        <button @click="searchQuery = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro"></button>
+        <i class="bi bi-search"></i> "{{ searchQuery }}"
+        <button @click="searchQuery = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro búsqueda"></button>
       </span>
       <button class="btn btn-link btn-sm text-decoration-none p-0 ms-2" style="color: var(--kei-beige);" @click="clearFilters">Limpiar todo</button>
     </div>
@@ -137,7 +149,7 @@ import { useToast } from 'vue-toastification'
 import { useCartStore } from '../stores/cartStore'
 import { useFavoritosStore } from '../stores/favoritosStore'
 import { useAuthStore } from '../stores/authStore'
-import { getProducts, getCategories } from '../services/api'
+import { getProducts, getCategories, getMarcas } from '../services/api'
 
 const toast = useToast()
 
@@ -150,7 +162,9 @@ const authStore = useAuthStore()
 
 const searchQuery = ref('')
 const selectedCategory = ref('')
+const selectedMarca = ref('')
 const categories = ref([])
+const marcas = ref([])
 const debounceTimer = ref(null)
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
@@ -173,11 +187,17 @@ function getCategoryName(catId) {
   return cat ? cat.nombre : ''
 }
 
+function getMarcaName(marcaId) {
+  const m = marcas.value.find(x => x.id === Number(marcaId))
+  return m ? m.nombre : ''
+}
+
 async function loadProducts() {
   try {
     loading.value = true
     const params = {}
     if (selectedCategory.value) params.categoria = selectedCategory.value
+    if (selectedMarca.value) params.marca = selectedMarca.value
     if (searchQuery.value) params.buscar = searchQuery.value
     if (authStore.isAuthenticated) params.con_favorito = 1
     const data = await getProducts(params)
@@ -196,6 +216,15 @@ async function loadCategories() {
     categories.value = result.data
   } catch (error) {
     console.error('Error loading categories:', error)
+  }
+}
+
+async function loadMarcas() {
+  try {
+    const result = await getMarcas()
+    marcas.value = result.data || []
+  } catch (error) {
+    console.error('Error loading marcas:', error)
   }
 }
 
@@ -236,6 +265,7 @@ async function toggleFavorito(product, event) {
 function clearFilters() {
   searchQuery.value = ''
   selectedCategory.value = ''
+  selectedMarca.value = ''
 }
 
 watch(searchQuery, () => {
@@ -249,8 +279,13 @@ watch(selectedCategory, () => {
   loadProducts()
 })
 
+watch(selectedMarca, () => {
+  loadProducts()
+})
+
 onMounted(async () => {
   await loadCategories()
+  await loadMarcas()
   await loadProducts()
   await loadFavoritos()
 })

@@ -46,8 +46,12 @@
 
             <!-- Info -->
             <div class="col-12 col-md-6 d-flex flex-column gap-3">
-              <p class="small fw-medium text-uppercase mb-0" style="color: var(--kei-beige); letter-spacing: 0.05em;">{{ product.marca_nombre }}</p>
-              <h1 class="h2 fw-bold mb-0" style="color: var(--kei-casi-negro);">{{ product.nombre }}</h1>
+              <div class="d-flex align-items-center gap-2">
+                <img v-if="product.marca_logo_url" :src="product.marca_logo_url" :alt="product.marca_nombre" style="width:28px;height:28px;object-fit:contain;border-radius:50%;border:1px solid var(--kei-gris-claro);background:#fff;" />
+                <span v-else class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:var(--kei-fondo);border:1px solid var(--kei-gris-claro);"><i class="bi bi-award" style="color:var(--kei-beige);font-size:14px;"></i></span>
+                <p class="small fw-medium text-uppercase mb-0" style="color: var(--kei-beige); letter-spacing: 0.05em;">{{ product.marca_nombre }}</p>
+              </div>
+              <h1 class="h2 fw-bold mb-0 font-display" style="color: var(--kei-casi-negro);">{{ product.nombre }}</h1>
 
               <div class="fs-2 fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(product.precio) }}</div>
 
@@ -173,6 +177,50 @@
           </div>
         </div>
       </div>
+
+      <!-- Reseñas: promedio + listado -->
+      <div class="card shadow-sm mt-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="h5 fw-bold mb-0 font-display" style="color: var(--kei-casi-negro);"><i class="bi bi-star me-2" style="color: var(--kei-beige);"></i>Opiniones de clientes</h3>
+            <span v-if="resenasTotal > 0" class="badge rounded-pill" style="background: var(--kei-gris-oscuro);">{{ resenasTotal }} {{ resenasTotal === 1 ? 'opinión' : 'opiniones' }}</span>
+          </div>
+
+          <div v-if="resenasCargando" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <p class="small mt-2" style="color: var(--kei-gris-medio);">Cargando opiniones...</p>
+          </div>
+
+          <div v-else-if="resenasTotal > 0" class="mb-4 p-3 rounded" style="background: var(--kei-fondo); border: 1px solid var(--kei-gris-claro);">
+            <div class="d-flex align-items-center gap-3">
+              <div class="display-6 fw-bold" style="color: var(--kei-casi-negro);">{{ resenaPromedio }}</div>
+              <div>
+                <div class="d-flex gap-1">
+                  <i v-for="n in 5" :key="n" :class="n <= Math.round(resenaPromedio) ? 'bi bi-star-fill' : 'bi bi-star'" style="color: var(--kei-beige);"></i>
+                </div>
+                <small style="color: var(--kei-gris-medio);">Promedio de {{ resenasTotal }} calificaciones</small>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!resenasCargando && resenas.length === 0" class="text-center py-4">
+            <i class="bi bi-chat-square-text fs-2 d-block mb-2" style="color: var(--kei-beige-medio);"></i>
+            <p class="mb-0" style="color: var(--kei-gris-medio);">Aún no hay opiniones. ¡Sé el primero en opinar!</p>
+          </div>
+
+          <div v-for="r in resenas" :key="r.id" class="border-bottom py-3" style="border-color: var(--kei-gris-claro) !important;">
+            <div class="d-flex justify-content-between align-items-start">
+              <strong style="color: var(--kei-casi-negro);">{{ r.usuario_nombre || 'Cliente' }}</strong>
+              <small style="color: var(--kei-beige-medio);">{{ formatFecha(r.fecha) }}</small>
+            </div>
+            <div class="d-flex gap-1 my-1">
+              <i v-for="n in 5" :key="n" :class="n <= r.calificacion ? 'bi bi-star-fill' : 'bi bi-star'" style="color: var(--kei-beige); font-size: 0.9rem;"></i>
+            </div>
+            <p v-if="r.comentario" class="mb-0" style="color: var(--kei-gris-medio);">{{ r.comentario }}</p>
+            <p v-else class="mb-0 small fst-italic" style="color: var(--kei-beige-medio);">Sin comentario</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -183,7 +231,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
 import { useFavoritosStore } from '../stores/favoritosStore'
 import { useAuthStore } from '../stores/authStore'
-import { getProductById, createResena } from '../services/api'
+import { getProductById, createResena, getResenas } from '../services/api'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -202,6 +250,10 @@ const quantity = ref(1)
 const mostrarFormResena = ref(false)
 const calificacionResena = ref(5)
 const comentarioResena = ref('')
+const resenas = ref([])
+const resenaPromedio = ref(null)
+const resenasTotal = ref(0)
+const resenasCargando = ref(false)
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -230,6 +282,7 @@ async function loadProduct() {
     if (product.value && authStore.isAuthenticated) {
       await favoritosStore.fetchFavoritos()
     }
+    await loadResenas()
   } catch (error) {
     console.error('Error loading product:', error)
     if (error.response?.status === 404) {
@@ -241,6 +294,26 @@ async function loadProduct() {
   } finally {
     loading.value = false
   }
+}
+
+async function loadResenas() {
+  if (!product.value) return
+  resenasCargando.value = true
+  try {
+    const data = await getResenas({ producto: product.value.id })
+    resenas.value = data.data || []
+    resenaPromedio.value = data.promedio
+    resenasTotal.value = data.total || 0
+  } catch (e) {
+    console.error('Error cargando reseñas', e)
+  } finally {
+    resenasCargando.value = false
+  }
+}
+
+function formatFecha(fecha) {
+  if (!fecha) return ''
+  return new Date(fecha).toLocaleDateString('es-GT', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 function addToCart() {
@@ -301,6 +374,7 @@ async function enviarResena() {
     })
     toast.success('Reseña enviada exitosamente')
     cancelarResena()
+    await loadResenas()
   } catch (err) {
     errorMessage.value = err.response?.data?.message || 'Error al enviar reseña'
     toast.error(errorMessage.value)
