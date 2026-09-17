@@ -43,6 +43,7 @@
                   <div v-if="ajusteActivo === p.id" class="card mt-2 p-2 d-inline-flex flex-row flex-wrap align-items-center gap-2" style="background: var(--kei-oliva-suave); border-color: var(--kei-oliva-claro);">
                     <select v-model="ajusteTipo" class="form-select form-select-sm w-auto"><option value="">Tipo</option><option value="entrada">Entrada</option><option value="salida">Salida</option></select>
                     <input v-model="ajusteCantidad" type="number" class="form-control form-control-sm" style="width: 80px;" placeholder="Cant" />
+                    <input v-if="ajusteTipo==='entrada'" v-model="ajusteCosto" type="number" step="0.01" class="form-control form-control-sm" style="width: 110px;" placeholder="Costo/u Q" />
                     <button @click="confirmaAjuste(p.id)" class="btn btn-primary btn-sm rounded-pill">Confirmar</button>
                     <button @click="cancelarAjuste()" class="btn btn-outline-secondary btn-sm rounded-pill">Cancelar</button>
                   </div>
@@ -61,7 +62,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { getProducts, deleteProduct, ajustarInventario } from '../services/api'
 const router = useRouter(); const authStore = useAuthStore()
-const products=ref([]); const loading=ref(true); const error=ref(''); const filtroEstado=ref(''); const ajusteActivo=ref(null); const ajusteTipo=ref(''); const ajusteCantidad=ref('')
+const products=ref([]); const loading=ref(true); const error=ref(''); const filtroEstado=ref(''); const ajusteActivo=ref(null); const ajusteTipo=ref(''); const ajusteCantidad=ref(''); const ajusteCosto=ref('')
 function formatPrice(price){ return new Intl.NumberFormat('es-GT', { style:'currency', currency:'GTQ', minimumFractionDigits:2 }).format(price) }
 function estadoBadgeStyle(estado){
   if(estado==='activo') return 'background: var(--kei-oliva-suave); color: var(--kei-oliva-oscuro); border: 1px solid var(--kei-oliva-claro);'
@@ -74,8 +75,8 @@ async function loadProducts(){
   try{ const params = filtroEstado.value ? { estado: filtroEstado.value } : {}; const result = await getProducts(params); products.value = Array.isArray(result) ? result : (result?.data||[]) }catch(err){ error.value = err.response?.data?.message || 'Error al cargar productos' } finally{ loading.value=false }
 }
 async function eliminarProducto(id){ if(!confirm('¿Eliminar producto?')) return; try{ await deleteProduct(id); await loadProducts() }catch(err){ error.value=err.response?.data?.message||'Error al eliminar' } }
-function mostrarAjuste(id){ ajusteActivo.value=id; ajusteTipo.value=''; ajusteCantidad.value='' }
-function cancelarAjuste(){ ajusteActivo.value=null; ajusteTipo.value=''; ajusteCantidad.value='' }
-async function confirmaAjuste(id){ const t=ajusteTipo.value; const c=parseInt(ajusteCantidad.value||'0'); if(!t||c<=0){ error.value='Selecciona tipo y cantidad válida'; return } try{ await ajustarInventario(id,t,c); await loadProducts(); cancelarAjuste() }catch(err){ error.value=err.response?.data?.message||'Error al ajustar' } }
+function mostrarAjuste(id){ ajusteActivo.value=id; ajusteTipo.value=''; ajusteCantidad.value=''; ajusteCosto.value='' }
+function cancelarAjuste(){ ajusteActivo.value=null; ajusteTipo.value=''; ajusteCantidad.value=''; ajusteCosto.value='' }
+async function confirmaAjuste(id){ const t=ajusteTipo.value; const c=parseInt(ajusteCantidad.value||'0'); if(!t||c<=0){ error.value='Selecciona tipo y cantidad válida'; return } try{ await ajustarInventario(id,t,c, ajusteCosto.value); await loadProducts(); cancelarAjuste() }catch(err){ error.value=err.response?.data?.message||'Error al ajustar' } }
 onMounted(async ()=>{ if(!authStore.isAdmin){ router.push('/'); return } await loadProducts() })
 </script>

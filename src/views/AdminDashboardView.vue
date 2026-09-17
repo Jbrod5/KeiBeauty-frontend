@@ -49,6 +49,7 @@ const cards = [
   { titulo: 'Pedidos', descripcion: 'Ver y actualizar estado de pedidos', icono: 'bi bi-receipt', ruta: '/admin/pedidos' },
   { titulo: 'Reseñas', descripcion: 'Moderar reseñas de clientes', icono: 'bi bi-star-half', ruta: '/admin/resenas' },
   { titulo: 'Inventario', descripcion: 'Ajustes de stock desde Productos', icono: 'bi bi-boxes', ruta: '/admin/productos' },
+  { titulo: 'Reportes', descripcion: 'Ventas, ganancias y top productos/clientes', icono: 'bi bi-bar-chart-line', ruta: '/admin/reportes' },
 ]
 </script>
 

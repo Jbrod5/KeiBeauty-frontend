@@ -241,9 +241,49 @@ export async function uploadProductImage(productId, archivo) {
   return response.data
 }
 
-export async function ajustarInventario(productId, tipo, cantidad) {
-  const response = await api.post(`/products/${productId}/inventario`, { tipo, cantidad })
+export async function ajustarInventario(productId, tipo, cantidad, costo_unitario = null) {
+  const payload = { tipo, cantidad }
+  if (costo_unitario !== null && costo_unitario !== '' && tipo === 'entrada') {
+    payload.costo_unitario = parseFloat(costo_unitario)
+  }
+  const response = await api.post(`/products/${productId}/inventario`, payload)
   return response.data
+}
+
+export async function getReportesVentasTotales(params = {}) {
+  const qs = new URLSearchParams(params).toString()
+  const response = await api.get(`/reportes/ventas-totales?${qs}`)
+  return response.data
+}
+export async function getReportesVentasPorMes(params = {}) {
+  const qs = new URLSearchParams(params).toString()
+  const response = await api.get(`/reportes/ventas-por-mes?${qs}`)
+  return response.data
+}
+export async function getReportesVentasPorPeriodo(params) {
+  const qs = new URLSearchParams(params).toString()
+  const response = await api.get(`/reportes/ventas-por-periodo?${qs}`)
+  return response.data
+}
+export async function getReportesGanancias(params = {}) {
+  const qs = new URLSearchParams(params).toString()
+  const response = await api.get(`/reportes/ganancias?${qs}`)
+  return response.data
+}
+export async function getReportesProductosMasVendidos(params = {}) {
+  const qs = new URLSearchParams(params).toString()
+  const response = await api.get(`/reportes/productos-mas-vendidos?${qs}`)
+  return response.data
+}
+export async function getReportesClientesTop(params = {}) {
+  const qs = new URLSearchParams(params).toString()
+  const response = await api.get(`/reportes/clientes-top?${qs}`)
+  return response.data
+}
+export async function descargarExcel(url, params = {}) {
+  const qs = new URLSearchParams({ ...params, excel: '1' }).toString()
+  const response = await api.get(`${url}?${qs}`, { responseType: 'blob' })
+  return response
 }
 
 export async function getProductoImagenes(productId) {

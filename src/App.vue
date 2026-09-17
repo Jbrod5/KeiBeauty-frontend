@@ -77,8 +77,9 @@
                   <li><router-link to="/admin/productos/crear" class="dropdown-item ps-4 small"><i class="bi bi-plus-lg me-1"></i>Crear producto</router-link></li>
                   <li><router-link to="/admin/marcas" class="dropdown-item"><i class="bi bi-award me-2"></i>Marcas</router-link></li>
                   <li><router-link to="/admin/categorias" class="dropdown-item"><i class="bi bi-tags me-2"></i>Categorías</router-link></li>
-                  <li><router-link to="/admin/pedidos" class="dropdown-item"><i class="bi bi-receipt me-2"></i>Pedidos</router-link></li>
-                  <li><router-link to="/admin/resenas" class="dropdown-item"><i class="bi bi-star me-2"></i>Reseñas</router-link></li>
+                <li><router-link to="/admin/pedidos" class="dropdown-item"><i class="bi bi-receipt me-2"></i>Pedidos</router-link></li>
+                <li><router-link to="/admin/resenas" class="dropdown-item"><i class="bi bi-star me-2"></i>Reseñas</router-link></li>
+                <li><router-link to="/admin/reportes" class="dropdown-item"><i class="bi bi-bar-chart-line me-2"></i>Reportes</router-link></li>
                 </template>
                 <li><hr class="dropdown-divider" /></li>
                 <li><button @click="logout" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</button></li>
