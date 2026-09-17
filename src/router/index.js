@@ -13,6 +13,7 @@ const CheckoutView = () => import('../views/CheckoutView.vue')
 const OrderHistoryView = () => import('../views/OrderHistoryView.vue')
 const AdminCategoriesView = () => import('../views/AdminCategoriesView.vue')
 const AdminOrdersView = () => import('../views/AdminOrdersView.vue')
+const AdminDashboardView = () => import('../views/AdminDashboardView.vue')
 const ProfileView = () => import('../views/ProfileView.vue')
 import AdminProductsView from '../views/AdminProductsView.vue'
 const OrderDetailView = () => import('../views/OrderDetailView.vue')
@@ -73,6 +74,18 @@ const routes = [
     path: '/mis-pedidos/:id',
     name: 'order-detail',
     component: OrderDetailView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin',
+    name: 'admin-dashboard',
+    component: AdminDashboardView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/categorias',
+    name: 'admin-categorias',
+    component: AdminCategoriesView,
     meta: { requiresAuth: true }
   },
   {
