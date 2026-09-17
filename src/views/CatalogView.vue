@@ -117,6 +117,7 @@
               <div class="d-flex justify-content-between align-items-center pt-2 mt-auto border-top" style="border-color: var(--kei-gris-claro) !important;">
                 <span class="fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(product.precio) }}</span>
                 <button
+                  v-if="!authStore.isAdmin"
                   class="btn btn-primary btn-sm rounded-pill px-3"
                   @click.stop.prevent="addToCart(product)"
                   :disabled="addingToCart === product.id || product.stock === 0"
@@ -125,6 +126,7 @@
                   <span v-else-if="addingToCart === product.id" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                   <span v-else>Sin stock</span>
                 </button>
+                <span v-else class="small" style="color: var(--kei-beige-medio);"><i class="bi bi-eye me-1"></i>Solo vista</span>
               </div>
             </div>
           </div>

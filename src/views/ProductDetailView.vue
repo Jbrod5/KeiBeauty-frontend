@@ -105,6 +105,7 @@
               <!-- Acciones -->
               <div class="d-flex flex-wrap gap-2">
                 <button
+                  v-if="!isAdmin"
                   class="btn btn-primary flex-grow-1 d-inline-flex align-items-center justify-content-center gap-2"
                   @click="addToCart"
                   :disabled="product.stock === 0 || addingToCart"
@@ -125,12 +126,16 @@
                   <i v-else class="bi bi-heart"></i>
                 </button>
                 <button
-                  class="btn btn-outline-secondary d-inline-flex align-items-center gap-2"
+                  v-if="!isAdmin"
+                  class="btn d-inline-flex align-items-center gap-2"
+                  :class="puedeResenar ? 'btn-outline-secondary' : 'btn-outline-secondary disabled'"
                   @click="mostrarResena"
-                  :title="authStore.isAuthenticated ? 'Dejar reseña' : 'Inicia sesión para reseñar'"
+                  :disabled="!puedeResenar || verificandoCompra"
+                  :title="!authStore.isAuthenticated ? 'Inicia sesión para reseñar' : (puedeResenar ? 'Dejar reseña' : 'Debes comprar el producto para dejar una reseña')"
                 >
                   <i class="bi bi-star"></i> Dejar reseña
                 </button>
+                <span v-if="authStore.isAuthenticated && !puedeResenar && !verificandoCompra && !isAdmin" class="small d-flex align-items-center" style="color: var(--kei-beige-medio);"><i class="bi bi-info-circle me-1"></i>No puedes reseñar hasta comprar este producto</span>
               </div>
 
               <!-- Form reseña con card + alert -->
@@ -231,7 +236,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
 import { useFavoritosStore } from '../stores/favoritosStore'
 import { useAuthStore } from '../stores/authStore'
-import { getProductById, createResena, getResenas } from '../services/api'
+import { getProductById, createResena, getResenas, getOrders } from '../services/api'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -254,6 +259,8 @@ const resenas = ref([])
 const resenaPromedio = ref(null)
 const resenasTotal = ref(0)
 const resenasCargando = ref(false)
+const puedeResenar = ref(false)
+const verificandoCompra = ref(false)
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -282,7 +289,7 @@ async function loadProduct() {
     if (product.value && authStore.isAuthenticated) {
       await favoritosStore.fetchFavoritos()
     }
-    await loadResenas()
+    await Promise.all([loadResenas(), verificarCompra()])
   } catch (error) {
     console.error('Error loading product:', error)
     if (error.response?.status === 404) {
@@ -293,6 +300,31 @@ async function loadProduct() {
     product.value = null
   } finally {
     loading.value = false
+  }
+}
+
+async function verificarCompra() {
+  if (!authStore.isAuthenticated || !product.value) {
+    puedeResenar.value = false
+    return
+  }
+  // Admin no necesita comprar para reseñar? Pero requisito dice solo clientes que compraron. Admin tampoco puede si no compró.
+  verificandoCompra.value = true
+  try {
+    // Verificar si ya existe reseña del usuario (también bloquea)
+    const yaReseno = resenas.value.some(r => r.usuario_id === authStore.user?.id)
+    if (yaReseno) {
+      puedeResenar.value = false
+      return
+    }
+    const data = await getOrders()
+    const pedidos = data.data || data || []
+    const haComprado = pedidos.some(p => (p.detalles || []).some(d => d.producto_id === product.value.id || d.producto?.id === product.value.id))
+    puedeResenar.value = haComprado
+  } catch (e) {
+    puedeResenar.value = false
+  } finally {
+    verificandoCompra.value = false
   }
 }
 
@@ -345,9 +377,19 @@ function decreaseQty() {
   }
 }
 
+const isAdmin = computed(() => authStore.isAdmin)
+
 function mostrarResena() {
   if (!authStore.isAuthenticated) {
     toast.info('Iniciá sesión para dejar una reseña')
+    return
+  }
+  if (isAdmin.value) {
+    toast.info('Los administradores no dejan reseñas')
+    return
+  }
+  if (!puedeResenar.value) {
+    toast.warning('Debes comprar este producto para dejar una reseña')
     return
   }
   mostrarFormResena.value = true
