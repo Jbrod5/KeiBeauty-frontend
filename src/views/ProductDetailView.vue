@@ -52,7 +52,6 @@
                   <span v-if="img.es_principal" class="badge position-absolute" style="background:#FFD700;color:#000;font-size:0.5rem;transform:translate(-8px, -8px);"><i class="bi bi-star-fill"></i></span>
                 </button>
               </div>
-              <div v-if="product.imagenes && product.imagenes.length>0" class="small mt-2" style="color: var(--kei-gris-medio);"><i class="bi bi-images me-1"></i>{{ product.imagenes.length }} imágenes — principal marcada con <i class="bi bi-star-fill" style="color:#FFD700;"></i></div>
               <!-- Modal grande -->
               <div v-if="mostrarModal" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background:rgba(0,0,0,0.8);z-index:1055;" @click.self="mostrarModal=false">
                 <div class="position-relative" style="max-width:90vw;max-height:90vh;">
