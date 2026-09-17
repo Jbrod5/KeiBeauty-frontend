@@ -1,0 +1,149 @@
+/* Paleta oficial KeiBeauty - variables CSS */
+:root {
+  --kei-gris-oscuro: #4D4D59;
+  --kei-gris-medio: #565659;
+  --kei-casi-negro: #3A3E40;
+  --kei-gris-claro: #D9D9D7;
+  --kei-beige: #737166;
+  --kei-beige-medio: #8C8A80;
+  --kei-beige-claro: #A6A498;
+  --kei-fondo: #F2F2F2;
+  --kei-negro: #0D0D0D;
+
+  /* Derivados para Bootstrap */
+  --bs-primary: #4D4D59;
+  --bs-secondary: #737166;
+  --bs-light: #F2F2F2;
+  --bs-dark: #3A3E40;
+  --bs-body-bg: #F2F2F2;
+  --bs-body-color: #3A3E40;
+  --bs-border-color: #D9D9D7;
+}
+
+/* Body y fondo global */
+body {
+  background-color: var(--kei-fondo) !important;
+  color: var(--kei-casi-negro) !important;
+}
+
+/* --- Overrides Bootstrap con paleta --- */
+
+/* Botones */
+.btn-primary {
+  background-color: var(--kei-gris-oscuro) !important;
+  border-color: var(--kei-gris-oscuro) !important;
+  color: #fff !important;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--kei-casi-negro) !important;
+  border-color: var(--kei-casi-negro) !important;
+  color: #fff !important;
+}
+.btn-secondary {
+  background-color: var(--kei-beige) !important;
+  border-color: var(--kei-beige) !important;
+  color: #fff !important;
+}
+.btn-secondary:hover {
+  background-color: var(--kei-beige-medio) !important;
+  border-color: var(--kei-beige-medio) !important;
+}
+.btn-outline-primary {
+  color: var(--kei-gris-oscuro) !important;
+  border-color: var(--kei-gris-oscuro) !important;
+}
+.btn-outline-primary:hover {
+  background-color: var(--kei-gris-oscuro) !important;
+  color: #fff !important;
+}
+.btn-outline-secondary {
+  color: var(--kei-beige) !important;
+  border-color: var(--kei-beige) !important;
+}
+.btn-outline-secondary:hover {
+  background-color: var(--kei-beige) !important;
+  color: #fff !important;
+}
+
+/* Fondos y textos */
+.bg-primary { background-color: var(--kei-gris-oscuro) !important; }
+.bg-secondary { background-color: var(--kei-beige) !important; }
+.bg-light { background-color: var(--kei-fondo) !important; }
+.bg-dark { background-color: var(--kei-casi-negro) !important; }
+.text-primary { color: var(--kei-gris-oscuro) !important; }
+.text-secondary { color: var(--kei-beige) !important; }
+.text-dark { color: var(--kei-casi-negro) !important; }
+.text-muted { color: var(--kei-beige-medio) !important; }
+.border-primary { border-color: var(--kei-gris-oscuro) !important; }
+
+/* Navbar */
+.navbar { background-color: #fff !important; border-bottom: 1px solid var(--kei-gris-claro); }
+.navbar-brand { color: var(--kei-casi-negro) !important; font-weight: 700; }
+.nav-link { color: var(--kei-gris-medio) !important; }
+.nav-link:hover, .nav-link.active { color: var(--kei-gris-oscuro) !important; }
+
+/* Cards */
+.card {
+  border: 1px solid var(--kei-gris-claro) !important;
+  background-color: #fff !important;
+  border-radius: 0.75rem !important;
+}
+.card-header {
+  background-color: #fff !important;
+  border-bottom: 1px solid var(--kei-gris-claro) !important;
+  color: var(--kei-casi-negro) !important;
+}
+
+/* Badges */
+.badge.bg-primary { background-color: var(--kei-gris-oscuro) !important; }
+.badge.bg-secondary { background-color: var(--kei-beige) !important; }
+.badge.bg-success { background-color: #4a6741 !important; } /* verde desaturado acorde paleta */
+.badge.bg-danger { background-color: #7a3a3a !important; }
+
+/* Forms */
+.form-control, .form-select {
+  border-color: var(--kei-gris-claro) !important;
+  background-color: #fff !important;
+  color: var(--kei-casi-negro) !important;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--kei-beige-medio) !important;
+  box-shadow: 0 0 0 0.25rem rgba(77, 77, 89, 0.15) !important;
+}
+.form-label { color: var(--kei-casi-negro) !important; font-weight: 500; }
+
+/* Tablas */
+.table { --bs-table-border-color: var(--kei-gris-claro); }
+.table thead th { background-color: var(--kei-fondo) !important; color: var(--kei-casi-negro) !important; border-bottom-color: var(--kei-beige-claro) !important; }
+.table-hover tbody tr:hover { background-color: rgba(242,242,242,0.7) !important; }
+
+/* Alerts */
+.alert-primary { background-color: var(--kei-beige-claro) !important; color: var(--kei-casi-negro) !important; border-color: var(--kei-beige-medio) !important; }
+.alert-info { background-color: var(--kei-fondo) !important; color: var(--kei-gris-oscuro) !important; border-color: var(--kei-gris-claro) !important; }
+.alert-danger { background-color: #f8e8e8 !important; color: #5a2a2a !important; border-color: #e0c0c0 !important; }
+
+/* Modales */
+.modal-header { border-bottom: 1px solid var(--kei-gris-claro) !important; }
+.modal-footer { border-top: 1px solid var(--kei-gris-claro) !important; }
+
+/* Paginación, spinner, etc. */
+.page-link { color: var(--kei-gris-oscuro) !important; border-color: var(--kei-gris-claro) !important; }
+.page-item.active .page-link { background-color: var(--kei-gris-oscuro) !important; border-color: var(--kei-gris-oscuro) !important; color: #fff !important; }
+.spinner-border { color: var(--kei-gris-oscuro) !important; }
+
+/* Links */
+a { color: var(--kei-gris-oscuro); }
+a:hover { color: var(--kei-casi-negro); }
+
+/* Utilities paleta */
+.bg-kei-oscuro { background-color: var(--kei-gris-oscuro) !important; color: #fff; }
+.bg-kei-medio { background-color: var(--kei-gris-medio) !important; color: #fff; }
+.bg-kei-beige { background-color: var(--kei-beige) !important; color: #fff; }
+.bg-kei-claro { background-color: var(--kei-gris-claro) !important; }
+.bg-kei-fondo { background-color: var(--kei-fondo) !important; }
+.text-kei-oscuro { color: var(--kei-gris-oscuro) !important; }
+.text-kei-beige { color: var(--kei-beige) !important; }
+.border-kei { border-color: var(--kei-gris-claro) !important; }
+
+/* Footer */
+.footer-kei { background-color: var(--kei-casi-negro) !important; color: var(--kei-fondo) !important; }

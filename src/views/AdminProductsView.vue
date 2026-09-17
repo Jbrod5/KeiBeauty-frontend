@@ -1,90 +1,187 @@
 <template>
-  <div class="admin-products-view">
-    <header class="admin-header">
-      <h1>Gestión de Productos</h1>
-      <p class="admin-subtitle">Administra productos, inventario e imágenes</p>
+  <div class="container py-4">
+    <header class="text-center mb-4 py-3">
+      <h1 class="fw-bold" style="color: var(--kei-casi-negro);">Gestión de Productos</h1>
+      <p style="color: var(--kei-gris-medio);">Administra productos, inventario e imágenes</p>
     </header>
-    <div v-if="loading" class="loading-state"><p>Cargando...</p></div>
-    <div v-else-if="error" class="error-state"><p>{{ error }}</p><button class="btn btn-primary" @click="loadProducts">Reintentar</button></div>
-    <div v-else>
-      <div style="text-align:center;margin-bottom:1rem;">
-        <label>Estado:</label>
-        <select v-model="filtroEstado" @change="loadProducts" class="status-select" style="margin-left:0.5rem;">
-          <option value="">Todos</option>
-          <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
-          <option value="agotado">Agotado</option>
-        </select>
+
+    <div v-if="loading" class="d-flex flex-column align-items-center justify-content-center py-5 gap-3" style="min-height: 300px;">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
       </div>
-      <section style="background:white;padding:1.5rem;border-radius:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:2rem;">
-        <h2>{{ editMode ? 'Editar Producto' : 'Crear Producto' }}</h2>
-        <form @submit.prevent="saveProduct()">
-          <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
-            <input v-model="form.nombre" placeholder="Nombre" required style="flex:1;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;min-width:200px;" />
-            <input v-model="form.precio" placeholder="Precio" type="number" step="0.01" required style="flex:1;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;min-width:200px;" />
-          </div>
-          <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
-            <input v-model="form.stock" placeholder="Stock" type="number" required style="flex:1;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;min-width:200px;" />
-            <input v-model="form.tamano" placeholder="Tamaño (ej. 250ml)" style="flex:1;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;min-width:200px;" />
-          </div>
-          <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
-            <select v-model="form.marca_id" required style="flex:1;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;min-width:200px;">
-              <option value="">Marca</option>
-              <option v-for="m in marcas" :key="m.id" :value="m.id">{{ m.nombre }}</option>
-            </select>
-            <select v-model="form.categoria_id" required style="flex:1;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;min-width:200px;">
-              <option value="">Categoría</option>
-              <option v-for="c in categorias" :key="c.id" :value="c.id">{{ c.nombre }}</option>
-            </select>
-          </div>
-          <textarea v-model="form.descripcion" placeholder="Descripción" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;margin-bottom:0.5rem;"></textarea>
-          <textarea v-model="form.ingredientes_clave" placeholder="Ingredientes clave" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;margin-bottom:0.5rem;"></textarea>
-          <input v-model="form.tipo_piel" placeholder="Tipo de piel" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;margin-bottom:0.5rem;" />
-          <input v-model="form.imagen_url" placeholder="URL de imagen (opcional)" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;margin-bottom:0.5rem;" />
-          <input type="file" @change="handleImage($event)" accept="image/*" style="margin-bottom:0.5rem;" />
-          <div style="margin-top:0.5rem;">
-            <button type="submit" class="btn btn-primary">{{ editMode ? 'Guardar cambios' : 'Crear producto' }}</button>
-            <button v-if="editMode" type="button" @click="cancelEdit" class="btn btn-outline" style="margin-left:0.5rem;">Cancelar</button>
-          </div>
-        </form>
-      </section>
-      <section style="background:white;padding:1.5rem;border-radius:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-        <table style="width:100%;border-collapse:collapse;">
-          <thead>
-            <tr style="background:#f8f9fa;">
-              <th style="padding:1rem;text-align:left;">ID</th>
-              <th style="padding:1rem;text-align:left;">Nombre</th>
-              <th style="padding:1rem;text-align:left;">Precio</th>
-              <th style="padding:1rem;text-align:left;">Stock</th>
-              <th style="padding:1rem;text-align:left;">Estado</th>
-              <th style="padding:1rem;text-align:left;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="p in products" :key="p.id" style="border-bottom:1px solid #eee;">
-              <td style="padding:1rem;"><strong>#{{ p.id }}</strong></td>
-              <td style="padding:1rem;">{{ p.nombre }}</td>
-              <td style="padding:1rem;">{{ formatPrice(p.precio) }}</td>
-              <td style="padding:1rem;">{{ p.stock }}</td>
-              <td style="padding:1rem;"><span :class="'status-' + p.estado" style="padding:0.375rem 0.875rem;border-radius:50px;font-size:0.75rem;font-weight:600;text-transform:uppercase;display:inline-block;background:#fff3e0;color:#e65100;">{{ p.estado }}</span></td>
-              <td style="padding:1rem;">
-                <button @click="editProduct(p)" class="btn btn-sm btn-outline" style="font-size:0.75rem;">Editar</button>
-                <button @click="eliminarProducto(p.id)" class="btn btn-sm btn-outline" style="font-size:0.75rem;margin-left:0.25rem;">Eliminar</button>
-                <button @click="mostrarAjuste(p.id)" class="btn btn-sm btn-outline" style="font-size:0.75rem;margin-top:0.25rem;">Ajustar inventario</button>
-                <div v-if="ajusteActivo === p.id" style="margin-top:0.5rem;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;background:#fafafa;display:inline-block;">
-                  <select v-model="ajusteTipo" style="font-size:0.75rem;padding:0.2rem;margin-right:0.25rem;">
-                    <option value="">Tipo</option>
-                    <option value="entrada">Entrada</option>
-                    <option value="salida">Salida</option>
-                  </select>
-                  <input v-model="ajusteCantidad" type="number" style="font-size:0.75rem;width:60px;padding:0.2rem;" placeholder="Cant" />
-                  <button @click="confirmaAjuste(p.id)" class="btn btn-sm btn-outline" style="font-size:0.75rem;margin-left:0.25rem;">Confirmar</button>
-                  <button @click="cancelarAjuste()" class="btn btn-sm btn-outline" style="font-size:0.75rem;margin-left:0.25rem;">Cancelar</button>
+      <p style="color: var(--kei-gris-medio);">Cargando...</p>
+    </div>
+
+    <div v-else-if="error && products.length === 0" class="alert alert-danger d-flex flex-column align-items-center text-center gap-3" role="alert">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ error }}</span>
+      </div>
+      <button class="btn btn-primary btn-sm rounded-pill" @click="loadProducts">Reintentar</button>
+    </div>
+
+    <div v-else>
+      <!-- Filtro estado -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-center gap-3">
+          <label class="form-label mb-0 fw-medium d-inline-flex align-items-center gap-2" style="color: var(--kei-casi-negro);">
+            <i class="bi bi-funnel" style="color: var(--kei-beige);"></i>Estado:
+          </label>
+          <select v-model="filtroEstado" @change="loadProducts" class="form-select w-auto" style="min-width: 200px;">
+            <option value="">Todos</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+            <option value="agotado">Agotado</option>
+          </select>
+        </div>
+      </div>
+
+      <div v-if="error" class="alert alert-danger d-flex align-items-center gap-2 py-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>{{ error }}</div>
+      </div>
+
+      <!-- Form -->
+      <section class="card shadow-sm mb-4">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi" :class="editMode ? 'bi-pencil-square' : 'bi-plus-circle'" style="color: var(--kei-beige);"></i>
+          <h2 class="h6 fw-bold mb-0" style="color: var(--kei-casi-negro);">{{ editMode ? 'Editar Producto' : 'Crear Producto' }}</h2>
+        </div>
+        <div class="card-body">
+          <form @submit.prevent="saveProduct()">
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label">Nombre</label>
+                <input v-model="form.nombre" placeholder="Nombre" required class="form-control" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">Precio</label>
+                <div class="input-group">
+                  <span class="input-group-text" style="background-color: var(--kei-fondo); border-color: var(--kei-gris-claro);">Q</span>
+                  <input v-model="form.precio" placeholder="0.00" type="number" step="0.01" required class="form-control" />
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label">Stock</label>
+                <input v-model="form.stock" placeholder="Stock" type="number" required class="form-control" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">Tamaño</label>
+                <input v-model="form.tamano" placeholder="Tamaño (ej. 250ml)" class="form-control" />
+              </div>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label">Marca</label>
+                <select v-model="form.marca_id" required class="form-select">
+                  <option value="">Selecciona marca</option>
+                  <option v-for="m in marcas" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">Categoría</label>
+                <select v-model="form.categoria_id" required class="form-select">
+                  <option value="">Selecciona categoría</option>
+                  <option v-for="c in categorias" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Descripción</label>
+              <textarea v-model="form.descripcion" placeholder="Descripción" rows="2" class="form-control"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Ingredientes clave</label>
+              <textarea v-model="form.ingredientes_clave" placeholder="Ingredientes clave" rows="2" class="form-control"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Tipo de piel</label>
+              <input v-model="form.tipo_piel" placeholder="Tipo de piel" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">URL de imagen (opcional)</label>
+              <input v-model="form.imagen_url" placeholder="https://..." class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Archivo de imagen</label>
+              <input type="file" @change="handleImage($event)" accept="image/*" class="form-control" />
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary rounded-pill">
+                <i :class="editMode ? 'bi bi-check-lg' : 'bi bi-plus-lg'" class="me-2"></i>{{ editMode ? 'Guardar cambios' : 'Crear producto' }}
+              </button>
+              <button v-if="editMode" type="button" @click="cancelEdit" class="btn btn-outline-secondary rounded-pill">
+                <i class="bi bi-x-lg me-1"></i>Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Tabla productos -->
+      <section class="card shadow-sm overflow-hidden">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span class="fw-bold d-inline-flex align-items-center gap-2" style="color: var(--kei-casi-negro);">
+            <i class="bi bi-box-seam" style="color: var(--kei-beige);"></i>Productos ({{ products.length }})
+          </span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="ps-3">ID</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Estado</th>
+                <th class="pe-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in products" :key="p.id">
+                <td class="ps-3"><span class="fw-bold" style="color: var(--kei-casi-negro);">#{{ p.id }}</span></td>
+                <td>
+                  <router-link :to="`/producto/${p.id}`" class="text-decoration-none fw-medium d-inline-flex align-items-center gap-2" style="color: var(--kei-gris-oscuro);">
+                    <i class="bi bi-box-seam small" style="color: var(--kei-beige);"></i>{{ p.nombre }}
+                    <i class="bi bi-box-arrow-up-right small" style="color: var(--kei-beige-medio);"></i>
+                  </router-link>
+                </td>
+                <td class="fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(p.precio) }}</td>
+                <td>
+                  <span class="badge rounded-pill" style="background-color: var(--kei-fondo); color: var(--kei-casi-negro); border: 1px solid var(--kei-gris-claro);">{{ p.stock }}</span>
+                </td>
+                <td>
+                  <span class="badge rounded-pill text-uppercase px-2 py-1" :style="estadoBadgeStyle(p.estado)">{{ p.estado }}</span>
+                </td>
+                <td class="pe-3">
+                  <div class="d-flex flex-wrap gap-1 align-items-center">
+                    <button @click="editProduct(p)" class="btn btn-outline-primary btn-sm rounded-pill">
+                      <i class="bi bi-pencil me-1"></i>Editar
+                    </button>
+                    <button @click="eliminarProducto(p.id)" class="btn btn-outline-secondary btn-sm rounded-pill">
+                      <i class="bi bi-trash me-1"></i>Eliminar
+                    </button>
+                    <button @click="mostrarAjuste(p.id)" class="btn btn-outline-secondary btn-sm rounded-pill">
+                      <i class="bi bi-arrow-down-up me-1"></i>Ajustar
+                    </button>
+                  </div>
+                  <div v-if="ajusteActivo === p.id" class="card mt-2 p-2 d-inline-flex flex-row flex-wrap align-items-center gap-2" style="background-color: var(--kei-fondo); border-color: var(--kei-gris-claro);">
+                    <select v-model="ajusteTipo" class="form-select form-select-sm w-auto">
+                      <option value="">Tipo</option>
+                      <option value="entrada">Entrada</option>
+                      <option value="salida">Salida</option>
+                    </select>
+                    <input v-model="ajusteCantidad" type="number" class="form-control form-control-sm" style="width: 80px;" placeholder="Cant" />
+                    <button @click="confirmaAjuste(p.id)" class="btn btn-primary btn-sm rounded-pill">Confirmar</button>
+                    <button @click="cancelarAjuste()" class="btn btn-outline-secondary btn-sm rounded-pill">Cancelar</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   </div>
@@ -108,6 +205,12 @@ const ajusteTipo = ref('')
 const ajusteCantidad = ref('')
 const form = ref({ nombre:'', precio:'', stock:'', marca_id:'', categoria_id:'', descripcion:'', ingredientes_clave:'', tipo_piel:'', imagen_url:'', tamano:'' })
 function formatPrice(price) { return new Intl.NumberFormat('es-GT', { style:'currency', currency:'GTQ', minimumFractionDigits:2 }).format(price) }
+function estadoBadgeStyle(estado) {
+  if (estado === 'activo') return 'background-color: var(--kei-fondo); color: var(--kei-gris-oscuro); border: 1px solid var(--kei-beige-claro);'
+  if (estado === 'inactivo') return 'background-color: var(--kei-beige-claro); color: var(--kei-casi-negro); border: 1px solid var(--kei-beige-medio);'
+  if (estado === 'agotado') return 'background-color: #f8e8e8; color: #7a3a3a; border: 1px solid #e0c0c0;'
+  return 'background-color: var(--kei-gris-claro); color: var(--kei-casi-negro);'
+}
 async function loadProducts() {
   loading.value = true; error.value = ''
   try {
@@ -171,15 +274,4 @@ onMounted(async () => {
 })
 </script>
 <style scoped>
-.admin-products-view { max-width:1200px; margin:0 auto; padding:1rem; }
-.admin-header { text-align:center; margin-bottom:2rem; }
-.admin-header h1 { font-size:2.5rem; color:#2c3e50; }
-.form-section { background:white; padding:1.5rem; border-radius:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:2rem; }
-.form-row { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
-.form-row input, .form-row select, .form-row textarea { flex:1; padding:0.5rem; border:1px solid #ddd; border-radius:0.5rem; min-width:200px; }
-.product-form button { margin-top:0.5rem; }
-.table-section { background:white; padding:1.5rem; border-radius:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
-.status-activo { background:#e8f5e9; color:#2e7d32; }
-.status-inactivo { background:#fff3e0; color:#e65100; }
-.status-agotado { background:#fce4ec; color:#c62828; }
 </style>

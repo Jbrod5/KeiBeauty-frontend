@@ -1,62 +1,84 @@
 <template>
-  <div class="admin-categories-view">
-    <header class="admin-header">
-      <h1>Gestión de Categorías</h1>
-      <p class="admin-subtitle">Administra las categorías del catálogo</p>
+  <div class="container py-4">
+    <header class="text-center mb-4 py-3">
+      <h1 class="fw-bold" style="color: var(--kei-casi-negro);">Gestión de Categorías</h1>
+      <p style="color: var(--kei-gris-medio);">Administra las categorías del catálogo</p>
     </header>
 
-    <div class="admin-form">
-      <h3>{{ editMode ? 'Editar categoría' : 'Crear categoría' }}</h3>
-      <form @submit.prevent="submitCategory" class="category-form">
-        <div class="form-group">
-          <label for="cat-nombre">Nombre</label>
-          <input id="cat-nombre" v-model="form.nombre" type="text" placeholder="Nombre de la categoría" required />
+    <div class="card shadow-sm mb-4">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi" :class="editMode ? 'bi-pencil-square' : 'bi-plus-circle'" style="color: var(--kei-beige);"></i>
+        <h3 class="h6 fw-bold mb-0" style="color: var(--kei-casi-negro);">{{ editMode ? 'Editar categoría' : 'Crear categoría' }}</h3>
+      </div>
+      <div class="card-body">
+        <form @submit.prevent="submitCategory" class="d-flex flex-column gap-3">
+          <div>
+            <label for="cat-nombre" class="form-label">Nombre</label>
+            <input id="cat-nombre" v-model="form.nombre" type="text" placeholder="Nombre de la categoría" required class="form-control" />
+          </div>
+          <div>
+            <label for="cat-desc" class="form-label">Descripción</label>
+            <textarea id="cat-desc" v-model="form.descripcion" placeholder="Descripción opcional" rows="3" class="form-control"></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary rounded-pill" :disabled="loadingForm">
+              <span v-if="loadingForm" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              <i v-else :class="editMode ? 'bi bi-check-lg me-2' : 'bi bi-plus-lg me-2'"></i>{{ editMode ? 'Guardar cambios' : 'Crear categoría' }}
+            </button>
+            <button v-if="editMode" type="button" class="btn btn-outline-secondary rounded-pill" @click="cancelEdit">
+              <i class="bi bi-x-lg me-1"></i>Cancelar
+            </button>
+          </div>
+        </form>
+        <div v-if="formError" class="alert alert-danger d-flex align-items-center gap-2 mt-3 py-2" role="alert">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <div>{{ formError }}</div>
         </div>
-        <div class="form-group">
-          <label for="cat-desc">Descripción</label>
-          <textarea id="cat-desc" v-model="form.descripcion" placeholder="Descripción opcional" rows="3"></textarea>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="loadingForm">{{ editMode ? 'Guardar cambios' : 'Crear categoría' }}</button>
-          <button v-if="editMode" type="button" class="btn btn-outline" @click="cancelEdit">Cancelar</button>
-        </div>
-      </form>
-      <div v-if="formError" class="form-error">{{ formError }}</div>
+      </div>
     </div>
 
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Cargando categorías...</p>
+    <div v-if="loading" class="d-flex flex-column align-items-center justify-content-center py-5 gap-3" style="min-height: 200px;">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p style="color: var(--kei-gris-medio);">Cargando categorías...</p>
     </div>
 
-    <div v-else class="table-container">
-      <table class="categories-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="cat in categories" :key="cat.id">
-            <td>#{{ cat.id }}</td>
-            <td>{{ cat.nombre }}</td>
-            <td>{{ cat.descripcion || '-' }}</td>
-            <td>
-              <div class="action-buttons">
-                <button class="btn btn-sm btn-outline" @click="startEdit(cat)">Editar</button>
-                <button class="btn btn-sm btn-danger" @click="confirmDelete(cat)" :disabled="deletingId === cat.id">Eliminar</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div v-if="!loading && categories.length === 0" class="empty-state">
-      <p>No hay categorías registradas.</p>
+    <div v-else class="card shadow-sm overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th class="ps-3">ID</th>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th class="pe-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="cat in categories" :key="cat.id">
+              <td class="ps-3"><span class="fw-bold" style="color: var(--kei-casi-negro);">#{{ cat.id }}</span></td>
+              <td class="fw-medium" style="color: var(--kei-casi-negro);">{{ cat.nombre }}</td>
+              <td style="color: var(--kei-gris-medio);">{{ cat.descripcion || '-' }}</td>
+              <td class="pe-3">
+                <div class="d-flex gap-2">
+                  <button class="btn btn-outline-primary btn-sm rounded-pill" @click="startEdit(cat)">
+                    <i class="bi bi-pencil me-1"></i>Editar
+                  </button>
+                  <button class="btn btn-outline-secondary btn-sm rounded-pill" @click="confirmDelete(cat)" :disabled="deletingId === cat.id">
+                    <span v-if="deletingId === cat.id" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <i v-else class="bi bi-trash me-1"></i>Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-if="categories.length === 0" class="text-center py-5">
+        <i class="bi bi-tag fs-1 mb-2 d-block" style="color: var(--kei-beige-medio);"></i>
+        <p class="mb-0" style="color: var(--kei-gris-medio);">No hay categorías registradas.</p>
+      </div>
     </div>
   </div>
 </template>
@@ -146,166 +168,4 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.admin-categories-view {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-.admin-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  padding: 1rem 0;
-}
-.admin-header h1 {
-  font-size: 2.5rem;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-.admin-subtitle {
-  color: #666;
-  font-size: 1.1rem;
-}
-.admin-form {
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-}
-.category-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.form-group label {
-  font-weight: 500;
-  color: #333;
-  font-size: 0.9rem;
-}
-.form-group input,
-.form-group textarea {
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-family: inherit;
-}
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #e91e63;
-  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.15);
-}
-.form-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-.form-error {
-  color: #c62828;
-  background: #fdeaea;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
-}
-.table-container {
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  overflow: hidden;
-}
-.categories-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.categories-table th,
-.categories-table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-.categories-table th {
-  background: #f8f9fa;
-  font-weight: 600;
-  color: #333;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.categories-table tr:hover td {
-  background: #fafafa;
-}
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-}
-.btn-primary {
-  background: #e91e63;
-  color: white;
-}
-.btn-primary:hover:not(:disabled) {
-  background: #c2185b;
-}
-.btn-outline {
-  background: transparent;
-  color: #e91e63;
-  border: 1px solid #e91e63;
-}
-.btn-outline:hover {
-  background: #e91e63;
-  color: white;
-}
-.btn-danger {
-  background: #c62828;
-  color: white;
-}
-.btn-danger:hover:not(:disabled) {
-  background: #b71c1c;
-}
-.btn-sm {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.75rem;
-}
-.loading-state,
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  text-align: center;
-  gap: 1rem;
-  color: #666;
-}
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #e91e63;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
 </style>

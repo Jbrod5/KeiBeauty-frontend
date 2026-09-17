@@ -1,163 +1,116 @@
 <template>
-  <div class="home-view">
-    <section class="hero">
-      <div class="hero-content">
-        <h1>Bienvenido a KeiBeauty</h1>
-        <p class="subtitle">Descubre el secreto de la belleza coreana</p>
-        <p class="description">
-          Productos auténticos de K-Beauty para una piel radiante y saludable.
-          Cuidado minimalista, ingredientes naturales, resultados visibles.
-        </p>
-        <router-link to="/catalogo" class="cta-button">Explorar Catálogo</router-link>
+  <div class="container py-4">
+    <!-- Hero -->
+    <section class="hero text-center p-5 mb-5 rounded-4">
+      <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+          <h1 class="display-4 fw-bold mb-2 hero-title">Bienvenido a KeiBeauty</h1>
+          <p class="fs-4 fw-medium mb-3 hero-subtitle">Descubre el secreto de la belleza coreana</p>
+          <p class="fs-5 mb-4 hero-description mx-auto" style="max-width: 600px;">
+            Productos auténticos de K-Beauty para una piel radiante y saludable.
+            Cuidado minimalista, ingredientes naturales, resultados visibles.
+          </p>
+          <router-link to="/catalogo" class="btn btn-primary btn-lg rounded-pill px-4 py-3 fw-semibold">
+            Explorar Catálogo
+          </router-link>
+        </div>
       </div>
     </section>
 
-    <section class="features">
-      <div class="feature-card">
-        <span class="feature-icon">✨</span>
-        <h3>Ingredientes Naturales</h3>
-        <p>Fórmulas con extractos botánicos, ácido hialurónico y centella asiática.</p>
+    <!-- Features -->
+    <section class="row g-4 mb-5">
+      <div class="col-12 col-md-4">
+        <div class="card h-100 text-center p-4 shadow-sm">
+          <div class="card-body">
+            <div class="feature-icon-wrapper mb-3">
+              <i class="bi bi-stars fs-1"></i>
+            </div>
+            <h3 class="h5 fw-bold mb-2 card-title-kei">Ingredientes Naturales</h3>
+            <p class="small mb-0 card-text-kei">Fórmulas con extractos botánicos, ácido hialurónico y centella asiática.</p>
+          </div>
+        </div>
       </div>
-      <div class="feature-card">
-        <span class="feature-icon">🌿</span>
-        <h3>Rutina Minimalista</h3>
-        <p>Pocos pasos, máximo efecto. La filosofía coreana del "skinimalism".</p>
+      <div class="col-12 col-md-4">
+        <div class="card h-100 text-center p-4 shadow-sm">
+          <div class="card-body">
+            <div class="feature-icon-wrapper mb-3">
+              <i class="bi bi-leaf fs-1"></i>
+            </div>
+            <h3 class="h5 fw-bold mb-2 card-title-kei">Rutina Minimalista</h3>
+            <p class="small mb-0 card-text-kei">Pocos pasos, máximo efecto. La filosofía coreana del "skinimalism".</p>
+          </div>
+        </div>
       </div>
-      <div class="feature-card">
-        <span class="feature-icon">🚀</span>
-        <h3>Envío Rápido</h3>
-        <p>Entrega en 24-48h. Productos directamente de Corea a tu puerta.</p>
+      <div class="col-12 col-md-4">
+        <div class="card h-100 text-center p-4 shadow-sm">
+          <div class="card-body">
+            <div class="feature-icon-wrapper mb-3">
+              <i class="bi bi-truck fs-1"></i>
+            </div>
+            <h3 class="h5 fw-bold mb-2 card-title-kei">Envío Rápido</h3>
+            <p class="small mb-0 card-text-kei">Entrega en 24-48h. Productos directamente de Corea a tu puerta.</p>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="cta-section">
-      <h2>¿Lista para brillar?</h2>
-      <p>Tu piel te lo agradecerá. Comienza tu rutina K-Beauty hoy.</p>
-      <router-link to="/catalogo" class="cta-button secondary">Ver Productos</router-link>
+    <!-- CTA -->
+    <section class="cta-section text-center p-5 rounded-4">
+      <h2 class="h2 fw-bold mb-2">¿Lista para brillar?</h2>
+      <p class="mb-4 cta-text">Tu piel te lo agradecerá. Comienza tu rutina K-Beauty hoy.</p>
+      <router-link to="/catalogo" class="btn btn-outline-light btn-lg rounded-pill px-4 fw-semibold cta-outline-btn">
+        Ver Productos
+      </router-link>
     </section>
   </div>
 </template>
 
 <script setup>
+// HomeView - vista de bienvenida estática, sin lógica adicional
 </script>
 
 <style scoped>
-.home-view {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
+/* Hero con paleta oficial */
 .hero {
-  text-align: center;
-  padding: 4rem 1rem;
-  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
-  border-radius: 1rem;
-  margin-bottom: 3rem;
+  background-color: var(--kei-fondo);
+  border: 1px solid var(--kei-gris-claro);
 }
-
-.hero h1 {
-  font-size: 3rem;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-  font-weight: 700;
+.hero-title {
+  color: var(--kei-casi-negro);
 }
-
-.subtitle {
-  font-size: 1.5rem;
-  color: #e91e63;
-  margin-bottom: 1rem;
-  font-weight: 500;
+.hero-subtitle {
+  color: var(--kei-gris-oscuro);
 }
-
-.description {
-  font-size: 1.1rem;
-  color: #666;
-  max-width: 600px;
-  margin: 0 auto 2rem;
+.hero-description {
+  color: var(--kei-gris-medio);
   line-height: 1.8;
 }
 
-.cta-button {
-  display: inline-block;
-  padding: 1rem 2rem;
-  background: #e91e63;
-  color: white;
-  text-decoration: none;
-  border-radius: 50px;
-  font-weight: 600;
-  font-size: 1.1rem;
-  transition: all 0.2s;
+/* Cards features */
+.feature-icon-wrapper {
+  color: var(--kei-beige);
+}
+.card-title-kei {
+  color: var(--kei-casi-negro);
+}
+.card-text-kei {
+  color: var(--kei-gris-medio);
 }
 
-.cta-button:hover {
-  background: #c2185b;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
-}
-
-.cta-button.secondary {
-  background: transparent;
-  border: 2px solid #e91e63;
-  color: #e91e63;
-}
-
-.cta-button.secondary:hover {
-  background: #e91e63;
-  color: white;
-}
-
-.features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-bottom: 4rem;
-}
-
-.feature-card {
-  text-align: center;
-  padding: 2rem;
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  transition: transform 0.2s;
-}
-
-.feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-}
-
-.feature-icon {
-  font-size: 2.5rem;
-  display: block;
-  margin-bottom: 1rem;
-}
-
-.feature-card h3 {
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.feature-card p {
-  color: #666;
-  font-size: 0.95rem;
-}
-
+/* CTA oscuro con paleta */
 .cta-section {
-  text-align: center;
-  padding: 3rem 1rem;
-  background: #2c3e50;
-  border-radius: 1rem;
-  color: white;
+  background-color: var(--kei-casi-negro);
+  color: var(--kei-fondo);
 }
-
-.cta-section h2 {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+.cta-text {
+  color: var(--kei-gris-claro);
 }
-
-.cta-section p {
-  color: #ccc;
-  margin-bottom: 1.5rem;
+.cta-outline-btn {
+  border-color: var(--kei-gris-claro);
+  color: var(--kei-fondo);
+}
+.cta-outline-btn:hover {
+  background-color: var(--kei-fondo);
+  color: var(--kei-casi-negro);
 }
 </style>
