@@ -76,15 +76,15 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/admin/productos',
-    name: 'admin-productos',
-    component: AdminProductsView,
+    path: '/admin/marcas',
+    name: 'admin-marcas',
+    component: () => import('../views/AdminMarcasView.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/admin/categorias',
-    name: 'admin-categorias',
-    component: AdminCategoriesView,
+    path: '/admin/productos',
+    name: 'admin-productos',
+    component: AdminProductsView,
     meta: { requiresAuth: true }
   },
   {
