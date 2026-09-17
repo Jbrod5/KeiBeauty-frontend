@@ -31,15 +31,33 @@
           <div class="row g-4 g-lg-5">
             <!-- Galería -->
             <div class="col-12 col-md-6">
-              <div class="ratio ratio-1x1 rounded-3 overflow-hidden d-flex align-items-center justify-content-center" style="background-color: var(--kei-fondo);">
+              <div class="position-relative ratio ratio-1x1 rounded-3 overflow-hidden d-flex align-items-center justify-content-center" style="background-color: var(--kei-fondo);">
                 <img
-                  v-if="product.imagen_url"
-                  :src="product.imagen_url"
+                  v-if="imagenActiva"
+                  :src="imagenActiva"
                   :alt="product.nombre"
                   class="w-100 h-100 object-fit-cover"
                 />
                 <div v-else class="d-flex align-items-center justify-content-center w-100 h-100 fw-bold display-1" style="color: var(--kei-beige);">
                   {{ product.nombre.charAt(0) }}
+                </div>
+                <button type="button" @click="mostrarModal=true" class="btn btn-light rounded-circle position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center shadow-sm" style="width:36px;height:36px;" title="Ver en grande">
+                  <i class="bi bi-zoom-in"></i>
+                </button>
+              </div>
+              <!-- Thumbnails -->
+              <div v-if="product.imagenes && product.imagenes.length>1" class="d-flex gap-2 mt-3 flex-wrap">
+                <button v-for="img in product.imagenes" :key="img.id" @click="imagenActiva = img.imagen_url" class="p-0 border-0 bg-transparent" :title="img.es_principal ? 'Principal' : 'Ver imagen'">
+                  <img :src="img.imagen_url" :alt="'thumb '+img.id" class="rounded" :style="imagenActiva===img.imagen_url ? 'width:64px;height:64px;object-fit:cover;border:2px solid #FFD700; box-shadow:0 2px 8px rgba(0,0,0,0.15);' : 'width:64px;height:64px;object-fit:cover;border:1px solid var(--kei-gris-claro);opacity:0.9;'" />
+                  <span v-if="img.es_principal" class="badge position-absolute" style="background:#FFD700;color:#000;font-size:0.5rem;transform:translate(-8px, -8px);"><i class="bi bi-star-fill"></i></span>
+                </button>
+              </div>
+              <div v-if="product.imagenes && product.imagenes.length>0" class="small mt-2" style="color: var(--kei-gris-medio);"><i class="bi bi-images me-1"></i>{{ product.imagenes.length }} imágenes — principal marcada con <i class="bi bi-star-fill" style="color:#FFD700;"></i></div>
+              <!-- Modal grande -->
+              <div v-if="mostrarModal" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background:rgba(0,0,0,0.8);z-index:1055;" @click.self="mostrarModal=false">
+                <div class="position-relative" style="max-width:90vw;max-height:90vh;">
+                  <img :src="imagenActiva" :alt="product.nombre" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;" />
+                  <button type="button" @click="mostrarModal=false" class="btn btn-light rounded-circle position-absolute top-0 end-0 m-3" style="width:40px;height:40px;"><i class="bi bi-x-lg"></i></button>
                 </div>
               </div>
             </div>
@@ -262,6 +280,8 @@ const resenasTotal = ref(0)
 const resenasCargando = ref(false)
 const puedeResenar = ref(false)
 const verificandoCompra = ref(false)
+const imagenActiva = ref('')
+const mostrarModal = ref(false)
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -286,6 +306,15 @@ async function loadProduct() {
     errorMessage.value = ''
     product.value = await getProductById(route.params.id)
     quantity.value = 1
+    // Imagen activa: principal o primera de galería
+    if (product.value) {
+      if (product.value.imagenes && product.value.imagenes.length > 0) {
+        const principal = product.value.imagenes.find(i => i.es_principal) || product.value.imagenes[0]
+        imagenActiva.value = principal.imagen_url
+      } else {
+        imagenActiva.value = product.value.imagen_url || ''
+      }
+    }
     // Sincronizar estado de favorito - inicializar correctamente
     if (product.value && authStore.isAuthenticated) {
       await favoritosStore.fetchFavoritos()

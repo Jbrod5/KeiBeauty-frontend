@@ -240,6 +240,32 @@ export async function ajustarInventario(productId, tipo, cantidad) {
   return response.data
 }
 
+export async function getProductoImagenes(productId) {
+  const response = await api.get(`/products/${productId}/imagenes`)
+  return response.data
+}
+
+export async function subirImagenesGaleria(productId, archivos) {
+  const formData = new FormData()
+  for (const f of archivos) {
+    formData.append('archivos', f)
+  }
+  const response = await api.post(`/products/${productId}/imagenes`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return response.data
+}
+
+export async function marcarImagenPrincipal(productId, imagenId) {
+  const response = await api.put(`/products/${productId}/imagenes/${imagenId}/principal`)
+  return response.data
+}
+
+export async function eliminarImagenGaleria(productId, imagenId) {
+  const response = await api.delete(`/products/${productId}/imagenes/${imagenId}`)
+  return response.data
+}
+
 export async function createMarca(data) {
   const response = await api.post('/marcas', data)
   return response.data
