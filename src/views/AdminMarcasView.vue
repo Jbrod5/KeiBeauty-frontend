@@ -1,46 +1,105 @@
 <template>
-  <div class="admin-marcas-view">
-    <header class="admin-header">
-      <h1>Gestión de Marcas</h1>
-      <p class="admin-subtitle">Administra marcas del catálogo</p>
+  <div class="container py-4">
+    <header class="text-center mb-4 py-3">
+      <h1 class="fw-bold" style="color: var(--kei-casi-negro);">Gestión de Marcas</h1>
+      <p style="color: var(--kei-gris-medio);">Administra marcas del catálogo</p>
     </header>
-    <div v-if="loading" class="loading-state"><p>Cargando marcas...</p></div>
-    <div v-else-if="error" class="error-state"><p>{{ error }}</p><button class="btn btn-primary" @click="loadMarcas">Reintentar</button></div>
+
+    <div v-if="loading" class="d-flex flex-column align-items-center justify-content-center py-5 gap-3" style="min-height: 300px;">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p style="color: var(--kei-gris-medio);">Cargando marcas...</p>
+    </div>
+
+    <div v-else-if="error && marcas.length === 0" class="alert alert-danger d-flex flex-column align-items-center text-center gap-3" role="alert">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ error }}</span>
+      </div>
+      <button class="btn btn-primary btn-sm rounded-pill" @click="loadMarcas">Reintentar</button>
+    </div>
+
     <div v-else>
-      <section style="background:white;padding:1.5rem;border-radius:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:2rem;">
-        <h2>{{ editMode ? 'Editar Marca' : 'Crear Marca' }}</h2>
-        <form @submit.prevent="saveMarca()">
-          <input v-model="form.nombre" placeholder="Nombre" required style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;margin-bottom:0.5rem;" />
-          <textarea v-model="form.descripcion" placeholder="Descripción" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;margin-bottom:0.5rem;"></textarea>
-          <input v-model="form.logo_url" placeholder="URL del logo (opcional)" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;margin-bottom:0.5rem;" />
-          <button type="submit" class="btn btn-primary">{{ editMode ? 'Guardar cambios' : 'Crear marca' }}</button>
-          <button v-if="editMode" type="button" @click="cancelEdit" class="btn btn-outline" style="margin-left:0.5rem;">Cancelar</button>
-        </form>
+      <div v-if="error" class="alert alert-danger d-flex align-items-center gap-2 py-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>{{ error }}</div>
+      </div>
+
+      <section class="card shadow-sm mb-4">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi" :class="editMode ? 'bi-pencil-square' : 'bi-plus-circle'" style="color: var(--kei-beige);"></i>
+          <h2 class="h6 fw-bold mb-0" style="color: var(--kei-casi-negro);">{{ editMode ? 'Editar Marca' : 'Crear Marca' }}</h2>
+        </div>
+        <div class="card-body">
+          <form @submit.prevent="saveMarca()" class="d-flex flex-column gap-3">
+            <div>
+              <label class="form-label">Nombre</label>
+              <input v-model="form.nombre" placeholder="Nombre de la marca" required class="form-control" />
+            </div>
+            <div>
+              <label class="form-label">Descripción</label>
+              <textarea v-model="form.descripcion" placeholder="Descripción opcional" rows="2" class="form-control"></textarea>
+            </div>
+            <div>
+              <label class="form-label">URL del logo (opcional)</label>
+              <input v-model="form.logo_url" placeholder="https://..." class="form-control" />
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary rounded-pill">
+                <i :class="editMode ? 'bi bi-check-lg' : 'bi bi-plus-lg'" class="me-2"></i>{{ editMode ? 'Guardar cambios' : 'Crear marca' }}
+              </button>
+              <button v-if="editMode" type="button" @click="cancelEdit" class="btn btn-outline-secondary rounded-pill">
+                <i class="bi bi-x-lg me-1"></i>Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
       </section>
-      <section style="background:white;padding:1.5rem;border-radius:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-        <table style="width:100%;border-collapse:collapse;">
-          <thead>
-            <tr style="background:#f8f9fa;">
-              <th style="padding:1rem;text-align:left;">ID</th>
-              <th style="padding:1rem;text-align:left;">Nombre</th>
-              <th style="padding:1rem;text-align:left;">Descripción</th>
-              <th style="padding:1rem;text-align:left;">Logo</th>
-              <th style="padding:1rem;text-align:left;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="m in marcas" :key="m.id" style="border-bottom:1px solid #eee;">
-              <td style="padding:1rem;"><strong>#{{ m.id }}</strong></td>
-              <td style="padding:1rem;">{{ m.nombre }}</td>
-              <td style="padding:1rem;">{{ m.descripcion || '-' }}</td>
-              <td style="padding:1rem;"><img v-if="m.logo_url" :src="m.logo_url" alt="logo" style="max-height:40px;max-width:80px;" /></td>
-              <td style="padding:1rem;">
-                <button @click="editMarca(m)" class="btn btn-sm btn-outline">Editar</button>
-                <button @click="eliminarMarca(m.id)" class="btn btn-sm btn-outline" style="margin-left:0.25rem;">Eliminar</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+
+      <section class="card shadow-sm overflow-hidden">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-award" style="color: var(--kei-beige);"></i>
+          <span class="fw-bold" style="color: var(--kei-casi-negro);">Marcas ({{ marcas.length }})</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="ps-3">ID</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Logo</th>
+                <th class="pe-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="m in marcas" :key="m.id">
+                <td class="ps-3"><span class="fw-bold" style="color: var(--kei-casi-negro);">#{{ m.id }}</span></td>
+                <td class="fw-medium" style="color: var(--kei-casi-negro);">{{ m.nombre }}</td>
+                <td style="color: var(--kei-gris-medio);">{{ m.descripcion || '-' }}</td>
+                <td>
+                  <img v-if="m.logo_url" :src="m.logo_url" alt="logo" class="rounded border" style="max-height: 40px; max-width: 80px; object-fit: contain; border-color: var(--kei-gris-claro) !important;" />
+                  <span v-else class="small" style="color: var(--kei-beige-medio);"><i class="bi bi-image me-1"></i>Sin logo</span>
+                </td>
+                <td class="pe-3">
+                  <div class="d-flex gap-2">
+                    <button @click="editMarca(m)" class="btn btn-outline-primary btn-sm rounded-pill">
+                      <i class="bi bi-pencil me-1"></i>Editar
+                    </button>
+                    <button @click="eliminarMarca(m.id)" class="btn btn-outline-secondary btn-sm rounded-pill">
+                      <i class="bi bi-trash me-1"></i>Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="marcas.length === 0" class="text-center py-5">
+          <i class="bi bi-award fs-1 mb-2 d-block" style="color: var(--kei-beige-medio);"></i>
+          <p class="mb-0" style="color: var(--kei-gris-medio);">No hay marcas registradas.</p>
+        </div>
       </section>
     </div>
   </div>
@@ -92,7 +151,4 @@ onMounted(async () => {
 })
 </script>
 <style scoped>
-.admin-marcas-view { max-width: 1200px; margin: 0 auto; padding: 1rem; }
-.admin-header { text-align: center; margin-bottom: 2rem; }
-.admin-header h1 { font-size: 2.5rem; color: #2c3e50; }
 </style>

@@ -1,139 +1,179 @@
 <template>
-  <div class="product-detail-view" v-if="product">
-    <nav class="breadcrumb" aria-label="Navegación">
-      <router-link to="/">Inicio</router-link>
-      <span class="separator">/</span>
-      <router-link to="/catalogo">Catálogo</router-link>
-      <span class="separator">/</span>
-      <span>{{ product.nombre }}</span>
-    </nav>
-
-    <div class="product-detail">
-      <div class="product-gallery">
-        <div class="main-image">
-          <img 
-            v-if="product.imagen_url" 
-            :src="product.imagen_url" 
-            :alt="product.nombre"
-            class="detail-img"
-          />
-          <div v-else class="detail-placeholder">{{ product.nombre.charAt(0) }}</div>
-        </div>
+  <div class="container py-4">
+    <!-- Estado carga -->
+    <div v-if="loading" class="d-flex flex-column align-items-center justify-content-center py-5" style="min-height: 400px;">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
       </div>
+      <p class="mt-3" style="color: var(--kei-gris-medio);">Cargando producto...</p>
+    </div>
 
-      <div class="product-info-detail">
-        <p class="product-brand-detail">{{ product.marca_nombre }}</p>
-        <h1 class="product-name-detail">{{ product.nombre }}</h1>
-        
-        <div class="product-price-detail">{{ formatPrice(product.precio) }}</div>
-        
-        <div class="product-stock" :class="stockClass">
-          <span v-if="product.stock > 10">🟢 En stock ({{ product.stock }} unidades)</span>
-          <span v-else-if="product.stock > 0">🟡 Pocas unidades ({{ product.stock }} restantes)</span>
-          <span v-else class="out-of-stock">🔴 Agotado</span>
-        </div>
+    <!-- Error -->
+    <div v-else-if="!product" class="d-flex flex-column align-items-center justify-content-center py-5 text-center" style="min-height: 400px;">
+      <h2 class="fw-bold" style="color: var(--kei-casi-negro);">Producto no encontrado</h2>
+      <p class="mb-3" style="color: var(--kei-gris-medio); max-width: 400px;">{{ errorMessage || 'El producto que buscas no existe o ha sido eliminado.' }}</p>
+      <router-link to="/catalogo" class="btn btn-primary rounded-pill">Volver al catálogo</router-link>
+    </div>
 
-        <div class="product-description-detail">
-          <h3>Descripción</h3>
-          <p>{{ product.descripcion }}</p>
-        </div>
+    <!-- Detalle -->
+    <div v-else>
+      <!-- Breadcrumb Bootstrap -->
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><router-link to="/">Inicio</router-link></li>
+          <li class="breadcrumb-item"><router-link to="/catalogo">Catálogo</router-link></li>
+          <li class="breadcrumb-item active" aria-current="page">{{ product.nombre }}</li>
+        </ol>
+      </nav>
 
-        <div class="product-details-grid" v-if="product.ingredientes_clave || product.tipo_piel">
-          <div class="detail-item" v-if="product.ingredientes_clave">
-            <strong>Ingredientes clave:</strong>
-            <span>{{ product.ingredientes_clave }}</span>
-          </div>
-          <div class="detail-item" v-if="product.tipo_piel">
-            <strong>Tipo de piel:</strong>
-            <span>{{ product.tipo_piel }}</span>
-          </div>
-          <div class="detail-item" v-if="product.tamano">
-            <strong>Tamaño:</strong>
-            <span>{{ product.tamano }}</span>
-          </div>
-          <div class="detail-item">
-            <strong>Categoría:</strong>
-            <span>{{ product.categoria_nombre }}</span>
-          </div>
-          <div class="detail-item">
-            <strong>Marca:</strong>
-            <span>{{ product.marca_nombre }}</span>
-          </div>
-        </div>
+      <div class="card shadow-sm overflow-hidden">
+        <div class="card-body p-4">
+          <div class="row g-4 g-lg-5">
+            <!-- Galería -->
+            <div class="col-12 col-md-6">
+              <div class="ratio ratio-1x1 rounded-3 overflow-hidden d-flex align-items-center justify-content-center" style="background-color: var(--kei-fondo);">
+                <img
+                  v-if="product.imagen_url"
+                  :src="product.imagen_url"
+                  :alt="product.nombre"
+                  class="w-100 h-100 object-fit-cover"
+                />
+                <div v-else class="d-flex align-items-center justify-content-center w-100 h-100 fw-bold display-1" style="color: var(--kei-beige);">
+                  {{ product.nombre.charAt(0) }}
+                </div>
+              </div>
+            </div>
 
-        <div class="product-actions">
-          <button 
-            class="btn btn-primary btn-add-cart"
-            @click="addToCart"
-            :disabled="product.stock === 0 || addingToCart"
-          >
-            <span v-if="!addingToCart">Añadir al carrito</span>
-            <span v-else class="loading">⟳</span>
-          </button>
-          <button 
-            class="btn btn-outline btn-wishlist" 
-            @click="toggleWishlist"
-            :class="{ 'active': product.es_favorito }"
-            :aria-label="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
-            :title="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
-          >
-            <span v-if="product.es_favorito">♥</span>
-            <span v-else>♡</span>
-          </button>
-          <button 
-            class="btn btn-outline btn-wishlist" 
-            @click="mostrarResena"
-            :title="authStore.isAuthenticated ? 'Dejar reseña' : 'Inicia sesión para reseñar'"
-          >
-            ⭐ Dejar reseña
-          </button>
-        </div>
+            <!-- Info -->
+            <div class="col-12 col-md-6 d-flex flex-column gap-3">
+              <p class="small fw-medium text-uppercase mb-0" style="color: var(--kei-beige); letter-spacing: 0.05em;">{{ product.marca_nombre }}</p>
+              <h1 class="h2 fw-bold mb-0" style="color: var(--kei-casi-negro);">{{ product.nombre }}</h1>
 
-        <div v-if="mostrarFormResena" class="resena-form" style="margin-top:1rem;padding:1rem;border:1px solid #ddd;border-radius:0.5rem;background:#fafafa;">
-          <h3>Dejar una reseña</h3>
-          <label>Calificación:</label>
-          <select v-model="calificacionResena" style="margin-left:0.5rem;padding:0.25rem;">
-            <option value="5">5 ★</option>
-            <option value="4">4 ★</option>
-            <option value="3">3 ★</option>
-            <option value="2">2 ★</option>
-            <option value="1">1 ★</option>
-          </select>
-          <textarea v-model="comentarioResena" placeholder="Comentario (opcional)" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:0.5rem;margin-top:0.5rem;min-height:80px;"></textarea>
-          <div style="margin-top:0.5rem;">
-            <button @click="enviarResena" class="btn btn-primary">Enviar reseña</button>
-            <button @click="cancelarResena" class="btn btn-outline" style="margin-left:0.5rem;">Cancelar</button>
-          </div>
-        </div>
+              <div class="fs-2 fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(product.precio) }}</div>
 
-        <div class="quantity-selector" v-if="product.stock > 0">
-          <label for="quantity">Cantidad:</label>
-          <div class="quantity-controls">
-            <button @click="decreaseQty" :disabled="quantity === 1" aria-label="Disminuir">−</button>
-            <input 
-              id="quantity" 
-              type="number" 
-              v-model.number="quantity" 
-              :min="1" 
-              :max="product.stock"
-              @change="clampQuantity"
-            />
-            <button @click="increaseQty" :disabled="quantity >= product.stock" aria-label="Aumentar">+</button>
+              <!-- Stock con badges + bi-circle-fill paleta -->
+              <div>
+                <span v-if="product.stock > 10" class="badge rounded-pill fs-6 fw-medium d-inline-flex align-items-center gap-2" style="background-color: var(--kei-fondo); color: var(--kei-gris-oscuro); border: 1px solid var(--kei-gris-claro);">
+                  <i class="bi bi-circle-fill" style="color: var(--kei-beige);"></i> En stock ({{ product.stock }} unidades)
+                </span>
+                <span v-else-if="product.stock > 0" class="badge rounded-pill fs-6 fw-medium d-inline-flex align-items-center gap-2" style="background-color: var(--kei-fondo); color: var(--kei-casi-negro); border: 1px solid var(--kei-beige-claro);">
+                  <i class="bi bi-circle-fill" style="color: var(--kei-beige-medio);"></i> Pocas unidades ({{ product.stock }} restantes)
+                </span>
+                <span v-else class="badge rounded-pill fs-6 fw-medium d-inline-flex align-items-center gap-2" style="background-color: var(--kei-gris-claro); color: var(--kei-casi-negro);">
+                  <i class="bi bi-circle-fill" style="color: var(--kei-gris-oscuro);"></i> Agotado
+                </span>
+              </div>
+
+              <!-- Alert error reseña si existe -->
+              <div v-if="errorMessage && product" class="alert alert-danger d-flex align-items-center gap-2 py-2" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>{{ errorMessage }}</div>
+              </div>
+
+              <div class="border-top pt-3" style="border-color: var(--kei-gris-claro) !important;">
+                <h3 class="h6 fw-bold" style="color: var(--kei-casi-negro);">Descripción</h3>
+                <p class="mb-0" style="color: var(--kei-gris-medio); line-height: 1.7;">{{ product.descripcion }}</p>
+              </div>
+
+              <div v-if="product.ingredientes_clave || product.tipo_piel" class="row g-3 py-3 border-top border-bottom" style="border-color: var(--kei-gris-claro) !important;">
+                <div class="col-6 d-flex flex-column gap-1" v-if="product.ingredientes_clave">
+                  <strong class="small text-uppercase" style="color: var(--kei-beige-medio);">Ingredientes clave:</strong>
+                  <span style="color: var(--kei-casi-negro);">{{ product.ingredientes_clave }}</span>
+                </div>
+                <div class="col-6 d-flex flex-column gap-1" v-if="product.tipo_piel">
+                  <strong class="small text-uppercase" style="color: var(--kei-beige-medio);">Tipo de piel:</strong>
+                  <span style="color: var(--kei-casi-negro);">{{ product.tipo_piel }}</span>
+                </div>
+                <div class="col-6 d-flex flex-column gap-1" v-if="product.tamano">
+                  <strong class="small text-uppercase" style="color: var(--kei-beige-medio);">Tamaño:</strong>
+                  <span style="color: var(--kei-casi-negro);">{{ product.tamano }}</span>
+                </div>
+                <div class="col-6 d-flex flex-column gap-1">
+                  <strong class="small text-uppercase" style="color: var(--kei-beige-medio);">Categoría:</strong>
+                  <span style="color: var(--kei-casi-negro);">{{ product.categoria_nombre }}</span>
+                </div>
+                <div class="col-6 d-flex flex-column gap-1">
+                  <strong class="small text-uppercase" style="color: var(--kei-beige-medio);">Marca:</strong>
+                  <span style="color: var(--kei-casi-negro);">{{ product.marca_nombre }}</span>
+                </div>
+              </div>
+
+              <!-- Acciones -->
+              <div class="d-flex flex-wrap gap-2">
+                <button
+                  class="btn btn-primary flex-grow-1 d-inline-flex align-items-center justify-content-center gap-2"
+                  @click="addToCart"
+                  :disabled="product.stock === 0 || addingToCart"
+                >
+                  <span v-if="!addingToCart">Añadir al carrito</span>
+                  <span v-else class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  <i v-if="!addingToCart" class="bi bi-bag"></i>
+                </button>
+                <button
+                  class="btn btn-outline-primary d-inline-flex align-items-center justify-content-center"
+                  @click="toggleWishlist"
+                  :class="{ 'active': product.es_favorito }"
+                  :aria-label="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+                  :title="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+                  style="width: 56px;"
+                >
+                  <i v-if="product.es_favorito" class="bi bi-heart-fill"></i>
+                  <i v-else class="bi bi-heart"></i>
+                </button>
+                <button
+                  class="btn btn-outline-secondary d-inline-flex align-items-center gap-2"
+                  @click="mostrarResena"
+                  :title="authStore.isAuthenticated ? 'Dejar reseña' : 'Inicia sesión para reseñar'"
+                >
+                  <i class="bi bi-star"></i> Dejar reseña
+                </button>
+              </div>
+
+              <!-- Form reseña con card + alert -->
+              <div v-if="mostrarFormResena" class="card mt-2" style="background-color: var(--kei-fondo);">
+                <div class="card-body">
+                  <h3 class="h6 fw-bold" style="color: var(--kei-casi-negro);">Dejar una reseña</h3>
+                  <label class="form-label">Calificación:</label>
+                  <select v-model="calificacionResena" class="form-select form-select-sm d-inline-block w-auto ms-2">
+                    <option value="5">5 <i class="bi bi-star-fill"></i></option>
+                    <option value="4">4 <i class="bi bi-star-fill"></i></option>
+                    <option value="3">3 <i class="bi bi-star-fill"></i></option>
+                    <option value="2">2 <i class="bi bi-star-fill"></i></option>
+                    <option value="1">1 <i class="bi bi-star-fill"></i></option>
+                  </select>
+                  <div class="d-flex gap-1 mt-2 mb-2">
+                    <i v-for="n in 5" :key="n" :class="n <= calificacionResena ? 'bi bi-star-fill' : 'bi bi-star'" style="color: var(--kei-beige);"></i>
+                  </div>
+                  <textarea v-model="comentarioResena" placeholder="Comentario (opcional)" class="form-control" rows="3"></textarea>
+                  <div class="d-flex gap-2 mt-3">
+                    <button @click="enviarResena" class="btn btn-primary btn-sm">Enviar reseña</button>
+                    <button @click="cancelarResena" class="btn btn-outline-secondary btn-sm">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Selector cantidad -->
+              <div v-if="product.stock > 0" class="d-flex align-items-center gap-3 pt-3 border-top" style="border-color: var(--kei-gris-claro) !important;">
+                <label for="quantity" class="form-label mb-0 fw-medium" style="color: var(--kei-casi-negro);">Cantidad:</label>
+                <div class="input-group" style="max-width: 160px;">
+                  <button class="btn btn-outline-secondary" @click="decreaseQty" :disabled="quantity === 1" aria-label="Disminuir">−</button>
+                  <input
+                    id="quantity"
+                    type="number"
+                    v-model.number="quantity"
+                    :min="1"
+                    :max="product.stock"
+                    @change="clampQuantity"
+                    class="form-control text-center"
+                  />
+                  <button class="btn btn-outline-secondary" @click="increaseQty" :disabled="quantity >= product.stock" aria-label="Aumentar">+</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="loading-state" v-else-if="loading">
-    <div class="spinner"></div>
-    <p>Cargando producto...</p>
-  </div>
-
-  <div class="error-state" v-else>
-    <h2>Producto no encontrado</h2>
-    <p>{{ errorMessage || 'El producto que buscas no existe o ha sido eliminado.' }}</p>
-    <router-link to="/catalogo" class="btn btn-primary">Volver al catálogo</router-link>
   </div>
 </template>
 
@@ -205,7 +245,6 @@ async function loadProduct() {
 
 function addToCart() {
   if (!product.value || product.value.stock === 0) return
-  
   addingToCart.value = true
   try {
     const productToAdd = { ...product.value }
@@ -275,12 +314,10 @@ function clampQuantity() {
 
 async function toggleWishlist() {
   if (!product.value) return
-  
   if (!authStore.isAuthenticated) {
     toast.info('Iniciá sesión para guardar favoritos')
     return
   }
-  
   await favoritosStore.toggle(product.value.id)
   // Forzar actualización reactiva
   if (product.value) {
@@ -298,345 +335,15 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.product-detail-view {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.breadcrumb a {
-  color: #e91e63;
-  text-decoration: none;
-}
-
-.breadcrumb a:hover {
-  text-decoration: underline;
-}
-
-.separator {
-  color: #999;
-}
-
-.product-detail {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  padding: 2rem;
-}
-
-.product-gallery {
-  position: relative;
-}
-
-.main-image {
-  aspect-ratio: 1;
-  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
-  border-radius: 0.75rem;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.detail-img {
-  width: 100%;
-  height: 100%;
+.object-fit-cover {
   object-fit: cover;
 }
-
-.detail-placeholder {
-  font-size: 6rem;
-  font-weight: 600;
-  color: #e91e63;
-}
-
-.product-info-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.product-brand-detail {
-  font-size: 0.9rem;
-  color: #e91e63;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.product-name-detail {
-  font-size: 2rem;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.product-price-detail {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #2c3e50;
-}
-
-.product-stock {
-  font-size: 0.95rem;
-  font-weight: 500;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  display: inline-block;
-}
-
-.product-stock.in-stock {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.product-stock.low-stock {
-  background: #fff8e1;
-  color: #f57f17;
-}
-
-.product-stock.out-of-stock {
-  background: #fdeaea;
-  color: #c62828;
-}
-
-.product-description-detail {
-  margin-top: 0.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.product-description-detail h3 {
-  font-size: 1.1rem;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.product-description-detail p {
-  color: #555;
-  line-height: 1.7;
-}
-
-.product-details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  padding: 1rem 0;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
-  margin: 1rem 0;
-}
-
-.detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.detail-item strong {
-  font-size: 0.85rem;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.detail-item span {
-  color: #333;
-  font-size: 0.95rem;
-}
-
-.product-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+.breadcrumb a {
+  color: var(--kei-gris-oscuro);
   text-decoration: none;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
 }
-
-.btn-primary {
-  background: #e91e63;
-  color: white;
-  flex: 1;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #c2185b;
-}
-
-.btn-primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.btn-outline {
-  background: transparent;
-  color: #e91e63;
-  border: 1px solid #e91e63;
-  width: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-outline:hover {
-  background: #e91e63;
-  color: white;
-}
-
-.btn-outline.active {
-  background: #e91e63;
-  color: white;
-  border-color: #e91e63;
-}
-
-.btn-outline.active:hover {
-  background: #c2185b;
-  border-color: #c2185b;
-}
-
-.btn-add-cart .loading {
-  animation: spin 1s linear infinite;
-}
-
-.quantity-selector {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.quantity-selector label {
-  font-weight: 500;
-  color: #333;
-}
-
-.quantity-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.quantity-controls button {
-  width: 40px;
-  height: 40px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-size: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.quantity-controls button:hover:not(:disabled) {
-  background: #f5f5f5;
-  border-color: #e91e63;
-}
-
-.quantity-controls button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.quantity-controls input {
-  width: 70px;
-  height: 40px;
-  border: 1px solid #ddd;
-  border-radius: 0.5rem;
-  text-align: center;
-  font-size: 1rem;
-}
-
-.quantity-controls input:focus {
-  outline: none;
-  border-color: #e91e63;
-  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.15);
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.loading-state,
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  text-align: center;
-  gap: 1rem;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #e91e63;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.error-state h2 {
-  color: #2c3e50;
-}
-
-.error-state p {
-  color: #666;
-  max-width: 400px;
-}
-
-@media (max-width: 768px) {
-  .product-detail {
-    grid-template-columns: 1fr;
-    padding: 1.5rem;
-  }
-  
-  .product-name-detail {
-    font-size: 1.5rem;
-  }
-  
-  .product-price-detail {
-    font-size: 2rem;
-  }
-  
-  .product-details-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .product-actions {
-    flex-direction: column;
-  }
-  
-  .btn-outline {
-    width: 100%;
-  }
+.breadcrumb a:hover {
+  color: var(--kei-casi-negro);
+  text-decoration: underline;
 }
 </style>
