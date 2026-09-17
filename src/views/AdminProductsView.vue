@@ -101,12 +101,17 @@
               <input v-model="form.tipo_piel" placeholder="Tipo de piel" class="form-control" />
             </div>
             <div class="mb-3">
-              <label class="form-label">URL de imagen (opcional)</label>
+              <label class="form-label">URL de imagen (opcional, se ignora si subes archivo)</label>
               <input v-model="form.imagen_url" placeholder="https://..." class="form-control" />
             </div>
             <div class="mb-3">
-              <label class="form-label">Archivo de imagen</label>
-              <input type="file" @change="handleImage($event)" accept="image/*" class="form-control" />
+              <label class="form-label">Archivo de imagen (ImageKit) <span class="small text-muted">— JPG/PNG/WebP</span></label>
+              <input type="file" @change="handleImage($event)" accept="image/jpeg,image/png,image/gif,image/webp" class="form-control" />
+              <div v-if="previewUrl" class="mt-2 d-flex align-items-center gap-2">
+                <img :src="previewUrl" alt="preview" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--kei-gris-claro);" />
+                <small style="color: var(--kei-gris-medio);">Vista previa</small>
+                <button type="button" @click="clearImage" class="btn btn-outline-secondary btn-sm rounded-pill">Quitar</button>
+              </div>
             </div>
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-primary rounded-pill">
@@ -204,6 +209,8 @@ const ajusteActivo = ref(null)
 const ajusteTipo = ref('')
 const ajusteCantidad = ref('')
 const form = ref({ nombre:'', precio:'', stock:'', marca_id:'', categoria_id:'', descripcion:'', ingredientes_clave:'', tipo_piel:'', imagen_url:'', tamano:'' })
+const archivoImagen = ref(null)
+const previewUrl = ref('')
 function formatPrice(price) { return new Intl.NumberFormat('es-GT', { style:'currency', currency:'GTQ', minimumFractionDigits:2 }).format(price) }
 function estadoBadgeStyle(estado) {
   if (estado === 'activo') return 'background-color: var(--kei-fondo); color: var(--kei-gris-oscuro); border: 1px solid var(--kei-beige-claro);'
@@ -231,22 +238,48 @@ async function loadCategories() {
   try { const res = await getCategories(); categorias.value = res.data || [] }
   catch (e) { console.error('Error categorías', e) }
 }
-function handleImage(event) {}
+function handleImage(event) {
+  const file = event.target.files && event.target.files[0]
+  if (!file) { archivoImagen.value = null; previewUrl.value = ''; return }
+  const permitidos = ['image/jpeg','image/png','image/gif','image/webp','image/jpg']
+  if (!permitidos.includes(file.type)) { error.value = 'Tipo no permitido: usa JPG/PNG/WebP'; return }
+  archivoImagen.value = file
+  previewUrl.value = URL.createObjectURL(file)
+  error.value = ''
+}
+function clearImage() {
+  archivoImagen.value = null
+  previewUrl.value = ''
+  const inp = document.querySelector('input[type="file"]')
+  if (inp) inp.value = ''
+}
 async function saveProduct() {
   try {
     if (editMode.value) {
+      // Si hay archivo nuevo, subir via ImageKit endpoint dedicado
+      if (archivoImagen.value) {
+        await uploadProductImage(editMode.value.id, archivoImagen.value)
+        await loadProducts()
+        editMode.value = false
+        form.value = { nombre:'', precio:'', stock:'', marca_id:'', categoria_id:'', descripcion:'', ingredientes_clave:'', tipo_piel:'', imagen_url:'', tamano:'' }
+        clearImage()
+        return
+      }
       await updateProduct(editMode.value.id, form.value)
       editMode.value = false
+      form.value = { nombre:'', precio:'', stock:'', marca_id:'', categoria_id:'', descripcion:'', ingredientes_clave:'', tipo_piel:'', imagen_url:'', tamano:'' }
+      clearImage()
+      await loadProducts()
     } else {
       const formData = new FormData()
       for (const k in form.value) {
         if (form.value[k] !== null && form.value[k] !== undefined && form.value[k] !== '') { formData.append(k, form.value[k]) }
       }
-      const archivoInput = document.querySelector('input[type="file"]')
-      if (archivoInput && archivoInput.files[0]) { formData.append('archivo', archivoInput.files[0]) }
+      if (archivoImagen.value) { formData.append('archivo', archivoImagen.value) }
       const res = await createProduct(formData)
       if (res && res.data) {
         form.value = { nombre:'', precio:'', stock:'', marca_id:'', categoria_id:'', descripcion:'', ingredientes_clave:'', tipo_piel:'', imagen_url:'', tamano:'' }
+        clearImage()
         await loadProducts()
       }
     }
