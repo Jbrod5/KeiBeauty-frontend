@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
-    allowedHosts: true // <--- Cambiado de 'all' a true (booleano)
+    // Vite 5 no acepta booleano: lista explícita (el '.' inicial cubre subdominios)
+    allowedHosts: ['localhost', '127.0.0.1', '.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io']
   }
 })
