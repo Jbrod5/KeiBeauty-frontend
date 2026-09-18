@@ -2,7 +2,7 @@
   <nav class="navbar navbar-expand-lg sticky-top shadow-sm">
     <div class="container">
       <router-link to="/" class="navbar-brand d-flex align-items-center gap-2">
-        <i class="bi bi-stars" style="color: var(--kei-oliva);"></i>
+        <img :src="logoKei" alt="Logo KeiBeauty" class="logo-navbar" />
         <span class="font-display">KeiBeauty</span>
       </router-link>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarKei" aria-controls="navbarKei" aria-expanded="false" aria-label="Toggle navigation">
@@ -111,6 +111,7 @@ import { useRouter } from 'vue-router'
 import { useCartStore } from './stores/cartStore'
 import { useAuthStore } from './stores/authStore'
 import { useNotificacionStore } from './stores/notificacionStore'
+import logoKei from './assets/kei-beauty.jpg'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -166,4 +167,12 @@ watch(isAuthenticated, (val) => {
 <style scoped>
 .navbar { background: #fff !important; border-bottom: 2px solid var(--kei-oliva-claro); }
 .nav-link.router-link-active { color: var(--kei-oliva) !important; font-weight: 600; }
+/* Logo de la empresa en el navbar */
+.logo-navbar {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--kei-gris-claro);
+}
 </style>
