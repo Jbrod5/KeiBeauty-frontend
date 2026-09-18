@@ -6,9 +6,9 @@
       <p style="color: var(--kei-gris-medio);">Descubre nuestra selección de K-Beauty auténtico</p>
     </header>
 
-    <!-- Toolbar: búsqueda + filtros categoría y marca -->
+    <!-- Toolbar: búsqueda + filtros categoría, marca y orden por precio -->
     <div class="row g-3 mb-3 align-items-center">
-      <div class="col-12 col-md-5 col-lg-4">
+      <div class="col-12 col-lg-3">
         <label for="search" class="visually-hidden">Buscar productos</label>
         <div class="input-group">
           <span class="input-group-text" style="background-color: var(--kei-fondo); border-color: var(--kei-gris-claro);">
@@ -23,7 +23,7 @@
           />
         </div>
       </div>
-      <div class="col-6 col-md-3 col-lg-4">
+      <div class="col-6 col-lg-3">
         <select v-model="selectedCategory" class="form-select rounded-pill">
           <option value="">Todas las categorías</option>
           <option v-for="cat in categories" :key="cat.id" :value="cat.id">
@@ -31,7 +31,7 @@
           </option>
         </select>
       </div>
-      <div class="col-6 col-md-4 col-lg-4">
+      <div class="col-6 col-lg-3">
         <select v-model="selectedMarca" class="form-select rounded-pill">
           <option value="">Todas las marcas</option>
           <option v-for="m in marcas" :key="m.id" :value="m.id">
@@ -39,10 +39,17 @@
           </option>
         </select>
       </div>
+      <div class="col-12 col-lg-3">
+        <select v-model="ordenPrecio" class="form-select rounded-pill" aria-label="Ordenar por precio">
+          <option value="">Ordenar: destacados</option>
+          <option value="asc">Precio: menor a mayor</option>
+          <option value="desc">Precio: mayor a menor</option>
+        </select>
+      </div>
     </div>
 
     <!-- Filtros activos -->
-    <div v-if="selectedCategory || selectedMarca || searchQuery" class="d-flex flex-wrap gap-2 align-items-center mb-4 p-3 rounded" style="background-color: var(--kei-fondo); border: 1px solid var(--kei-gris-claro);">
+    <div v-if="selectedCategory || selectedMarca || searchQuery || ordenPrecio" class="d-flex flex-wrap gap-2 align-items-center mb-4 p-3 rounded" style="background-color: var(--kei-fondo); border: 1px solid var(--kei-gris-claro);">
       <span v-if="selectedCategory" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-gris-oscuro); color: var(--kei-fondo);">
         <i class="bi bi-tags"></i> {{ getCategoryName(selectedCategory) }}
         <button @click="selectedCategory = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro categoría"></button>
@@ -54,6 +61,10 @@
       <span v-if="searchQuery" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-gris-oscuro); color: var(--kei-fondo);">
         <i class="bi bi-search"></i> "{{ searchQuery }}"
         <button @click="searchQuery = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro búsqueda"></button>
+      </span>
+      <span v-if="ordenPrecio" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-oliva); color: #fff;">
+        <i class="bi bi-arrow-down-up"></i> {{ ordenPrecio === 'asc' ? 'Menor a mayor' : 'Mayor a menor' }}
+        <button @click="ordenPrecio = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar orden por precio"></button>
       </span>
       <button class="btn btn-link btn-sm text-decoration-none p-0 ms-2" style="color: var(--kei-beige);" @click="clearFilters">Limpiar todo</button>
     </div>
@@ -69,7 +80,7 @@
     <!-- Grid productos -->
     <div v-else class="row g-4">
       <div
-        v-for="product in products"
+        v-for="product in productosOrdenados"
         :key="product.id"
         class="col-12 col-sm-6 col-lg-4 col-xl-3"
       >
@@ -146,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useCartStore } from '../stores/cartStore'
 import { useFavoritosStore } from '../stores/favoritosStore'
@@ -165,9 +176,18 @@ const authStore = useAuthStore()
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const selectedMarca = ref('')
+const ordenPrecio = ref('')
 const categories = ref([])
 const marcas = ref([])
 const debounceTimer = ref(null)
+
+// Orden por precio en cliente (el backend no expone ordenamiento)
+const productosOrdenados = computed(() => {
+  if (ordenPrecio.value !== 'asc' && ordenPrecio.value !== 'desc') return products.value
+  const copia = [...products.value]
+  copia.sort((a, b) => ordenPrecio.value === 'asc' ? a.precio - b.precio : b.precio - a.precio)
+  return copia
+})
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -277,6 +297,7 @@ function clearFilters() {
   searchQuery.value = ''
   selectedCategory.value = ''
   selectedMarca.value = ''
+  ordenPrecio.value = ''
 }
 
 watch(searchQuery, () => {

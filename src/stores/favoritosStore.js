@@ -18,8 +18,9 @@ export const useFavoritosStore = defineStore('favoritos', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await getFavoritos()
-      favoritos.value = response.data || []
+      // getFavoritos devuelve el cuerpo {data: [...], message}: extraer el arreglo
+      const cuerpo = await getFavoritos()
+      favoritos.value = cuerpo?.data || []
     } catch (err) {
       const message = err.response?.data?.message || 'Error al cargar favoritos'
       error.value = message
@@ -31,10 +32,12 @@ export const useFavoritosStore = defineStore('favoritos', () => {
 
   async function agregar(productoId) {
     try {
-      const response = await agregarFavorito(productoId)
-      const nuevo = response.data
+      // agregarFavorito devuelve el response axios completo ({data: {data, message}, ...})
+      const respuesta = await agregarFavorito(productoId)
+      const nuevo = respuesta.data?.data || {}
       if (!esFavorito(productoId)) {
-        favoritos.value.unshift(nuevo)
+        // Forzar producto_id para que el Set de ids quede consistente
+        favoritos.value.unshift({ ...nuevo, producto_id: productoId })
       }
       return { success: true }
     } catch (err) {
