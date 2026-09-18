@@ -37,7 +37,18 @@
                 <small style="color: var(--kei-beige-medio);">Se creará la marca al crear el producto</small>
               </div>
             </div>
-            <div class="col-12 col-md-6"><label class="form-label">Categoría *</label><select v-model="form.categoria_id" required class="form-select"><option value="">Selecciona categoría</option><option v-for="c in categorias" :key="c.id" :value="c.id">{{ c.nombre }}</option></select></div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Categoría *</label>
+              <select v-model="form.categoria_id" :required="!usarCategoriaNueva" :disabled="usarCategoriaNueva" class="form-select"><option value="">Selecciona categoría</option><option v-for="c in categorias" :key="c.id" :value="c.id">{{ c.nombre }}</option></select>
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="checkNuevaCategoria" v-model="usarCategoriaNueva" />
+                <label class="form-check-label small" for="checkNuevaCategoria" style="color: var(--kei-oliva);">Usar categoría no listada</label>
+              </div>
+              <div v-if="usarCategoriaNueva" class="mt-2">
+                <input v-model="nuevaCategoriaNombre" placeholder="Nombre de la nueva categoría" required class="form-control form-control-sm" />
+                <small style="color: var(--kei-beige-medio);">Se creará la categoría al crear el producto</small>
+              </div>
+            </div>
           </div>
           <div class="mb-3"><label class="form-label">Descripción</label><textarea v-model="form.descripcion" rows="2" class="form-control"></textarea></div>
           <div class="mb-3"><label class="form-label">Ingredientes clave</label><textarea v-model="form.ingredientes_clave" rows="2" class="form-control"></textarea></div>
@@ -96,12 +107,13 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
-import { getCategories, getMarcas, createProduct, createMarca, subirImagenesGaleria, marcarImagenPrincipal } from '../services/api'
+import { getCategories, getMarcas, createProduct, createMarca, createCategory, subirImagenesGaleria, marcarImagenPrincipal } from '../services/api'
 const router = useRouter()
 const authStore = useAuthStore()
 const marcas = ref([]); const categorias = ref([]); const error = ref(''); const exito = ref(''); const guardando = ref(false)
 const form = ref({ nombre:'', precio:'', stock:'', marca_id:'', categoria_id:'', descripcion:'', ingredientes_clave:'', tipo_piel:'', imagen_url:'', tamano:'' })
 const usarMarcaNueva = ref(false); const nuevaMarcaNombre = ref('')
+const usarCategoriaNueva = ref(false); const nuevaCategoriaNombre = ref('')
 const galeria = ref([]) // { file, url, es_principal }
 const preview = ref(''); const previewOrigen = ref('')
 
@@ -145,14 +157,24 @@ async function crear(){
       // refrescar lista
       const m = await getMarcas(); marcas.value = m.data||[]
     }
+    let categoriaId = form.value.categoria_id
+    if(usarCategoriaNueva.value){
+      if(!nuevaCategoriaNombre.value.trim()) throw new Error('Debes escribir el nombre de la nueva categoría')
+      const rc = await createCategory({ nombre: nuevaCategoriaNombre.value.trim() })
+      categoriaId = rc.data.id
+      exito.value = (exito.value||'') + `Categoría "${nuevaCategoriaNombre.value.trim()}" creada. `
+      // refrescar lista
+      const c = await getCategories(); categorias.value = c.data||[]
+    }
     // Crear producto sin imagen si hay galería múltiple, luego subir galería
     const fd = new FormData()
     for(const k in form.value){
-      if(k==='marca_id') continue
+      if(k==='marca_id' || k==='categoria_id') continue
       if(k==='imagen_url' && galeria.value.length>0) continue // ignorar URL si hay archivos
       if(form.value[k]!=='' && form.value[k]!==null) fd.append(k, form.value[k])
     }
     fd.append('marca_id', marcaId)
+    fd.append('categoria_id', categoriaId)
     // Si solo hay 1 imagen y no hay galería múltiple, usar archivo único como antes (compatibilidad)
     // Pero con galería múltiple, creamos producto sin archivo y luego subimos
     let productoId = null
