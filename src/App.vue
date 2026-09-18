@@ -108,7 +108,6 @@
 <script setup>
 import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Collapse } from 'bootstrap'
 import { useCartStore } from './stores/cartStore'
 import { useAuthStore } from './stores/authStore'
 import { useNotificacionStore } from './stores/notificacionStore'
@@ -121,12 +120,13 @@ const notifStore = useNotificacionStore()
 
 // En móvil el menú del navbar es desplegable: contraerlo automáticamente
 // después de cada navegación para no tapar el contenido.
+// Se cierra con un clic programático en el toggler para usar la única
+// instancia de Bootstrap (main.js) y no duplicar manejadores de eventos.
 function cerrarMenuNavbar() {
   const elemento = document.getElementById('navbarKei')
-  if (!elemento || !elemento.classList.contains('show')) return
-  const instancia = Collapse.getInstance(elemento)
-  if (instancia) instancia.hide()
-  else elemento.classList.remove('show')
+  const toggler = document.querySelector('.navbar-toggler')
+  if (!elemento || !toggler) return
+  if (elemento.classList.contains('show')) toggler.click()
 }
 router.afterEach(() => cerrarMenuNavbar())
 
