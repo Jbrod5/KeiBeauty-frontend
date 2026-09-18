@@ -108,6 +108,7 @@
 <script setup>
 import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { Collapse } from 'bootstrap'
 import { useCartStore } from './stores/cartStore'
 import { useAuthStore } from './stores/authStore'
 import { useNotificacionStore } from './stores/notificacionStore'
@@ -117,6 +118,17 @@ const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 const notifStore = useNotificacionStore()
+
+// En móvil el menú del navbar es desplegable: contraerlo automáticamente
+// después de cada navegación para no tapar el contenido.
+function cerrarMenuNavbar() {
+  const elemento = document.getElementById('navbarKei')
+  if (!elemento || !elemento.classList.contains('show')) return
+  const instancia = Collapse.getInstance(elemento)
+  if (instancia) instancia.hide()
+  else elemento.classList.remove('show')
+}
+router.afterEach(() => cerrarMenuNavbar())
 
 const cartCount = computed(() => cartStore.totalItems)
 const isAuthenticated = computed(() => authStore.isAuthenticated)
@@ -174,5 +186,18 @@ watch(isAuthenticated, (val) => {
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid var(--kei-gris-claro);
+}
+/* En móvil los desplegables del navbar (notificaciones, perfil) se muestran
+   como lámina fija bajo la barra: así nunca quedan cortados por el viewport. */
+@media (max-width: 575.98px) {
+  .navbar .dropdown-menu {
+    position: fixed;
+    top: 62px;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto !important;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+  }
 }
 </style>
