@@ -244,7 +244,9 @@ export const useAuthStore = defineStore('auth', () => {
       setUser(response.data.usuario)
       return { success: true }
     } catch (err) {
-      if (err.response?.status === 401 && err.response?.data?.msg === 'Token has expired') {
+      const estado = err.response?.status
+      // Token expirado: intentar renovar con refresh token
+      if (estado === 401 && err.response?.data?.msg === 'Token has expired') {
         const refreshed = await tryRefreshToken()
         if (refreshed) {
           try {
@@ -253,6 +255,13 @@ export const useAuthStore = defineStore('auth', () => {
             return { success: true }
           } catch {}
         }
+        return { success: false }
+      }
+      // Token inválido o corrupto (401/422, ej. firmado con otro secret):
+      // limpiar sesión para no reintentar en loop con un token podrido
+      if (estado === 401 || estado === 422) {
+        clearTokens()
+        clearUser()
       }
       return { success: false }
     }
@@ -319,6 +328,12 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     userName,
     isIn2FAFlow,
+    setTokens,
+    clearTokens,
+    setUser,
+    clearUser,
+    setTempAuth,
+    clearTempAuth,
     login,
     register,
     forgotPassword,
