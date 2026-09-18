@@ -1,7 +1,29 @@
 import axios from 'axios';
 
+// URL base del backend: override manual (localStorage) > variable de entorno > defecto.
+// El override permite apuntar a un backend con URL cambiante (ej. túnel ngrok)
+// sin recompilar, desde la vista /config-api o con ?api=<url>.
+const CLAVE_URL_BASE_API = 'api_base_url'
+const URL_BASE_API_DEFECTO = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
+export function obtenerUrlBaseApi() {
+  return localStorage.getItem(CLAVE_URL_BASE_API) || URL_BASE_API_DEFECTO
+}
+
+export function guardarUrlBaseApi(url) {
+  localStorage.setItem(CLAVE_URL_BASE_API, url)
+}
+
+export function restablecerUrlBaseApi() {
+  localStorage.removeItem(CLAVE_URL_BASE_API)
+}
+
+export function hayOverrideUrlBaseApi() {
+  return !!localStorage.getItem(CLAVE_URL_BASE_API)
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: obtenerUrlBaseApi(),
   headers: {
     'Content-Type': 'application/json'
   },
@@ -10,6 +32,12 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    // Resolver la URL base en cada petición (puede cambiar en caliente desde /config-api)
+    config.baseURL = obtenerUrlBaseApi()
+    // ngrok gratuito intercepta navegaciones: este header evita la página de aviso
+    if (config.baseURL && config.baseURL.includes('ngrok')) {
+      config.headers['ngrok-skip-browser-warning'] = '1'
+    }
     // Solo usar token temporal para endpoints de 2FA; para el resto usar solo access_token
     const tempToken = localStorage.getItem('temp_token')
     const accessToken = localStorage.getItem('access_token')

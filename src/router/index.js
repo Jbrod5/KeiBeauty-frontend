@@ -19,6 +19,7 @@ import AdminProductsView from '../views/AdminProductsView.vue'
 const OrderDetailView = () => import('../views/OrderDetailView.vue')
 const TwoFactorView = () => import('../views/TwoFactorView.vue')
 const FavoritosView = () => import('../views/FavoritosView.vue')
+const ConfigApiView = () => import('../views/ConfigApiView.vue')
 
 
 const routes = [
@@ -30,6 +31,12 @@ const routes = [
     path: '/sobre-nosotros',
     name: 'sobre-nosotros',
     component: HomeView,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/config-api',
+    name: 'config-api',
+    component: ConfigApiView,
     meta: { requiresAuth: false }
   },
   {

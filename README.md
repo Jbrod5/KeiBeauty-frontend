@@ -106,6 +106,7 @@ se entra y se ven productos). La landing informativa vive en `/sobre-nosotros`.
 | Ruta | Componente | Auth | Admin | Descripción |
 |---|---|---|---|---|
 | `/` | — | No | — | Redirect → `/catalogo` |
+| `/config-api` | `ConfigApiView.vue` | No | — | Fija la URL del backend (manual o `?api=<url>`); probar conexión |
 | `/sobre-nosotros` | `HomeView.vue` | No | — | Landing "Sobre nosotros" (empresa, marcas, skincare/haircare) |
 | `/catalogo` | `CatalogView.vue` | No | — | Catálogo con búsqueda (debounce), filtros categoría/marca, favoritos, añadir al carrito |
 | `/producto/:id` | `ProductDetailView.vue` | No | — | Galería, stock, reseñas, cantidad, alerta "avísame" |
@@ -141,6 +142,13 @@ activo (`temp_token`), toda navegación ajena a `/verificar-2fa` se redirige ah�
 Base: `VITE_API_URL` (`http://localhost:5000/api`). El interceptor adjunta
 `Authorization: Bearer <access_token>` (o el `temp_token` solo en endpoints 2FA)
 y `X-Guest-Token` para carrito invitado sin sesión.
+
+**URL del backend dinámica (sin recompilar):** la URL efectiva se resuelve en
+cada petición con `obtenerUrlBaseApi()` (`src/services/api.js`): primero
+`localStorage.api_base_url` (fijada desde `/config-api`), si no `VITE_API_URL`,
+si no el defecto local. Helpers: `guardarUrlBaseApi(url)`,
+`restablecerUrlBaseApi()`, `hayOverrideUrlBaseApi()`. Si la URL contiene
+`ngrok` se agrega el header `ngrok-skip-browser-warning: 1` automáticamente.
 
 ### Autenticación (`authStore.js` + vistas Login/Registro/Perfil/2FA/Password)
 
@@ -310,6 +318,56 @@ grep -rP "[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]" src/   # debe dar 0 (sin emoji
 grep -rn "#[0-9a-fA-F]" src/  # solo paleta.css y #fff en superficies (coherente con paleta)
 ```
 
+## Ejecución, despliegue y ngrok
+
+### Qué página abrir
+
+- **Local:** `http://localhost:5173` → redirige solo a `/catalogo` (la tienda).
+  Landing informativa: `http://localhost:5173/sobre-nosotros`.
+- **Construido (`dist/`):** servir la carpeta con cualquier estático + fallback
+  SPA a `index.html` (ver `nginx.conf`).
+
+### Desarrollo / preview / producción
+
+```bash
+npm run dev      # desarrollo en http://localhost:5173 (hot reload)
+npm run build    # genera dist/ (verificación obligatoria antes de mergear)
+npm run preview  # sirve el build local para probar producción
+# Docker (producción): docker build -t keibeauty-frontend . && docker run -p 80:80 keibeauty-frontend
+```
+
+### Probar desde el teléfono con ngrok
+
+ngrok expone tu PC a internet con una URL pública (cambia en cada arranque salvo
+dominio reservado). Pasos:
+
+```bash
+# 1. Instalar ngrok y autenticar (una sola vez)
+ngrok config add-authtoken <tu-authtoken>
+
+# 2. Exponer frontend y backend (dos terminales)
+ngrok http 5173
+ngrok http 5000
+# Anotar ambas URLs, ej:
+# frontend: https://abcd1234.ngrok-free.app
+# backend:  https://efgh5678.ngrok-free.app
+```
+
+3. El backend ya acepta orígenes ngrok (`CORS_ORIGINS_REGEX_EXTRA`, ver README
+   del backend). Si recreaste la BD o el `.env`, recordar esa variable.
+4. En el teléfono, abrir **una sola vez** (modo transparente):
+   `https://abcd1234.ngrok-free.app/config-api?api=https://efgh5678.ngrok-free.app/api`
+   La vista guarda la dirección, muestra confirmación y tiene botón
+   **Probar conexión** (consulta `/health`). Desde ahí todo funciona:
+   catálogo, login, carrito, checkout.
+5. Cada vez que ngrok dé URLs nuevas, repetir solo el paso 4 con las nuevas.
+6. Alternativa manual: abrir `/config-api`, pegar la URL y **Guardar** (o
+   **Volver al valor por defecto** para localhost).
+
+> Notas: en `vite.config.js` el dev server usa `host: true` y `allowedHosts`
+> para aceptar el dominio ngrok. `VITE_API_URL` solo aplica cuando NO hay
+> override guardado (el override de `/config-api` tiene prioridad).
+
 ## GitFlow
 
 Igual que el backend: `main` (producción) · `develop` (integración) ·
@@ -330,10 +388,3 @@ rebase, force push, tocar `main`, borrar tags. En Windows: `git config core.auto
 | Nginx muestra 404 al recargar `/catalogo` | Falta `try_files $uri $uri/ /index.html;` en `nginx.conf` (ya incluido). |
 | Carrito vacío tras login | Normal si el carrito era de invitado en otro navegador: el `guest_token` vive en `localStorage` local. |
 
-## Pendiente (explícito, no implementado)
-
-- Tests automatizados (no hay suite; solo verificación manual + `npm run build`).
-- Exportación de reportes a PDF (solo Excel).
-- Componentes reutilizables en `src/components/` (vacío; la UI vive en vistas).
-- Modo offline / PWA.
-- CI/CD con GitHub Actions.
