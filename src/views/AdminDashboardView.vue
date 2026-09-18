@@ -2,7 +2,7 @@
   <div class="container">
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><router-link to="/">Inicio</router-link></li>
+        <li class="breadcrumb-item"><router-link to="/catalogo">Catálogo</router-link></li>
         <li class="breadcrumb-item active">Panel Admin</li>
       </ol>
     </nav>

@@ -10,8 +10,8 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarKei">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
-          <li class="nav-item"><router-link to="/" class="nav-link">Inicio</router-link></li>
           <li class="nav-item"><router-link to="/catalogo" class="nav-link">Catálogo</router-link></li>
+          <li class="nav-item"><router-link to="/sobre-nosotros" class="nav-link">Sobre nosotros</router-link></li>
           <li v-if="!isAdmin" class="nav-item">
             <router-link to="/carrito" class="nav-link position-relative">
               <i class="bi bi-bag me-1"></i>Carrito

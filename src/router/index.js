@@ -24,7 +24,11 @@ const FavoritosView = () => import('../views/FavoritosView.vue')
 const routes = [
   {
     path: '/',
-    name: 'home',
+    redirect: '/catalogo'
+  },
+  {
+    path: '/sobre-nosotros',
+    name: 'sobre-nosotros',
     component: HomeView,
     meta: { requiresAuth: false }
   },
@@ -204,7 +208,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (guestOnly && authStore.isAuthenticated) {
-    next('/')
+    next('/catalogo')
     return
   }
 
