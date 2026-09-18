@@ -338,6 +338,19 @@ npm run preview  # sirve el build local para probar producción
 
 ### Probar desde el teléfono con ngrok
 
+**Opción A (recomendada): una sola URL.** La API puede servir el build del
+frontend (`STATIC_DIR`, ver README del backend): un solo `ngrok http 5000` y
+todo corre mismo origen (sin CORS):
+
+```bash
+npm run build
+ngrok http 5000
+# Tienda:  https://<url>/            (redirige a /catalogo)
+# Config:  https://<url>/config-api?api=https://<url>/api
+```
+
+**Opción B: dos túneles** (frontend dev + backend).
+
 ngrok expone tu PC a internet con una URL pública (cambia en cada arranque salvo
 dominio reservado). Pasos:
 
