@@ -111,7 +111,7 @@ KeiBeauty-frontend/
 | `/admin/marcas` | `AdminMarcasView.vue` | Sí | Sí* | CRUD marcas |
 | `/admin/categorias` | `AdminCategoriesView.vue` | Sí | Sí* | CRUD categorías |
 | `/admin/pedidos` | `AdminOrdersView.vue` | Sí | Sí* | Estados + guía |
-| `/admin/pedidos/:id` | `OrderDetailView.vue` | Sí | Sí* | Detalle con acciones admin |
+| `/admin/pedidos/:id` | `OrderDetailView.vue` | Sí | Sí* | Detalle con cambio de estado y subida de guía |
 | `/admin/resenas` | `AdminResenasView.vue` | Sí | Sí* | Gestión de reseñas |
 | `/admin/reportes` | `AdminReportesView.vue` | Sí | Sí* | Reportes + Excel |
 
@@ -152,12 +152,12 @@ en endpoints 2FA) y `X-Guest-Token` para carrito invitado.
 | `getProducts(p)` | `GET /products?categoria&marca&buscar&con_favorito` | query | `{data: [<producto>]}` | `CatalogView` |
 | `getProductById(id)` | `GET /products/<id>` | — | `{data: <producto>}` | `ProductDetailView` |
 | `getMarcas()/getCategories()` | `GET /products/marcas`, `/categorias` | — | `{data}` | filtros `CatalogView` |
-| `createProduct/updateProduct/deleteProduct` | `POST/PUT/DELETE /products` | JSON o `FormData` (admin) | `{data}` | vistas admin |
+| `createProduct/updateProduct/deleteProduct` | `POST/PUT/DELETE /products` | JSON o `FormData` (admin) | `{data}` | vistas admin (crear acepta marca/categoría nueva como texto) |
 | `uploadProductImage/getProductoImagenes/subirImagenesGaleria/marcarImagenPrincipal/eliminarImagenGaleria` | `/products/<id>/imagen…` | `FormData` (admin) | `{data}` | edición admin, detalle |
 | `ajustarInventario(id,t,c)` | `POST /products/<id>/inventario` | `{tipo, cantidad, costo_unitario?}` (admin) | `{data}` | `AdminProductsView` |
 | `getCart/addToCart/updateCartItem/removeCartItem/clearCart` | `/carrito…` | `{producto_id, cantidad}` / `{cantidad}` | `{data: <carrito>}` | `cartStore`, `CartView` |
 | `createOrder(d)` | `POST /pedidos` | `{direccion_envio}` (+ contacto/ítems si invitado) | `{data: <pedido>}` (`201`) | `CheckoutView` |
-| `getOrders/getOrderById/updateOrderStatus/uploadGuia` | `/pedidos…` | `{estado}` / `FormData{archivo}` | `{data}` | historial, detalle, admin |
+| `getOrders/getOrderById/updateOrderStatus/uploadGuia` | `/pedidos…` | `{estado}` / `FormData{archivo}` | `{data}` | historial, detalle (admin: estado + guía), AdminOrdersView |
 | `getFavoritos/agregarFavorito/quitarFavorito` | `/favoritos…` | JWT | `{data}` | `favoritosStore` |
 | `getResenas/createResena/updateResena/deleteResena` | `/resenas…` | `{producto_id, calificacion 1-5, comentario?}` | `{data, promedio, total}` | detalle, admin |
 | `createCategory/updateCategory/deleteCategory` | `/categorias…` | `{nombre, descripcion?}` (admin) | `{data}` | `AdminCategoriesView` |

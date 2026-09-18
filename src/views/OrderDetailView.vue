@@ -2,8 +2,8 @@
   <div class="container py-4" style="max-width: 880px;">
     <div v-if="order">
       <header class="mb-4 pb-3 border-bottom" style="border-color: var(--kei-gris-claro) !important;">
-        <router-link to="/mis-pedidos" class="btn btn-link text-decoration-none p-0 mb-3 d-inline-flex align-items-center gap-2" style="color: var(--kei-gris-oscuro);">
-          <i class="bi bi-arrow-left"></i> Volver a Mis Pedidos
+        <router-link :to="rutaVolver" class="btn btn-link text-decoration-none p-0 mb-3 d-inline-flex align-items-center gap-2" style="color: var(--kei-gris-oscuro);">
+          <i class="bi bi-arrow-left"></i> {{ esAdmin ? 'Volver a Pedidos' : 'Volver a Mis Pedidos' }}
         </router-link>
         <h1 class="h3 fw-bold mb-2" style="color: var(--kei-casi-negro);">Detalle del Pedido #{{ order.id }}</h1>
         <div class="d-flex flex-wrap align-items-center gap-3">
@@ -17,6 +17,48 @@
       </header>
 
       <div class="d-flex flex-column gap-4">
+        <!-- Gestión del pedido (solo admin) -->
+        <section v-if="esAdmin" class="card shadow-sm" style="border-color: var(--kei-oliva-claro) !important;">
+          <div class="card-header d-flex align-items-center gap-2" style="background-color: var(--kei-oliva-suave) !important;">
+            <i class="bi bi-shield-check" style="color: var(--kei-oliva-oscuro);"></i>
+            <h2 class="h6 fw-bold mb-0" style="color: var(--kei-casi-negro);">Gestión del pedido</h2>
+          </div>
+          <div class="card-body">
+            <div v-if="mensajeAdmin" class="alert alert-success d-flex align-items-center gap-2"><i class="bi bi-check-circle-fill"></i><div>{{ mensajeAdmin }}</div></div>
+            <div v-if="errorAdmin" class="alert alert-danger d-flex align-items-center gap-2"><i class="bi bi-exclamation-triangle-fill"></i><div>{{ errorAdmin }}</div></div>
+            <div class="row g-3 align-items-end mb-3">
+              <div class="col-12 col-md-6">
+                <label for="estadoPedido" class="form-label fw-semibold">Estado del pedido</label>
+                <select id="estadoPedido" v-model="nuevoEstado" class="form-select">
+                  <option value="pendiente">Pendiente</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="enviado">Enviado</option>
+                  <option value="entregado">Entregado</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <button class="btn btn-primary rounded-pill w-100" @click="cambiarEstado" :disabled="guardandoEstado || !nuevoEstado || (order && nuevoEstado === order.estado)">
+                  <span v-if="guardandoEstado" class="spinner-border spinner-border-sm me-2"></span>
+                  <i v-else class="bi bi-arrow-repeat me-1"></i>Actualizar estado
+                </button>
+              </div>
+            </div>
+            <div class="row g-3 align-items-end">
+              <div class="col-12 col-md-6">
+                <label for="archivoGuia" class="form-label fw-semibold">Imagen de guía</label>
+                <input id="archivoGuia" type="file" accept="image/jpeg,image/png,image/gif,image/webp" @change="onArchivoGuia" class="form-control" />
+              </div>
+              <div class="col-12 col-md-6">
+                <button class="btn btn-outline-primary rounded-pill w-100" @click="subirGuia" :disabled="subiendoGuia || !archivoGuia">
+                  <span v-if="subiendoGuia" class="spinner-border spinner-border-sm me-2"></span>
+                  <i v-else class="bi bi-cloud-upload me-1"></i>Subir guía
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section class="card shadow-sm">
           <div class="card-header d-flex align-items-center gap-2">
             <i class="bi bi-geo-alt" style="color: var(--kei-beige);"></i>
@@ -105,10 +147,10 @@
         </section>
 
         <div class="d-flex justify-content-end gap-2">
-          <router-link to="/mis-pedidos" class="btn btn-outline-primary rounded-pill">
+          <router-link :to="rutaVolver" class="btn btn-outline-primary rounded-pill">
             <i class="bi bi-arrow-left me-2"></i>Volver a Pedidos
           </router-link>
-          <router-link to="/catalogo" class="btn btn-primary rounded-pill">
+          <router-link v-if="!esAdmin" to="/catalogo" class="btn btn-primary rounded-pill">
             <i class="bi bi-bag me-2"></i>Seguir Comprando
           </router-link>
         </div>
@@ -136,16 +178,69 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useToast } from 'vue-toastification'
 import { useAuthStore } from '../stores/authStore'
-import { getOrderById } from '../services/api'
+import { getOrderById, updateOrderStatus, uploadGuia } from '../services/api'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const order = ref(null)
 const loading = ref(true)
 const errorMessage = ref('')
+
+// Gestión admin del pedido
+const esAdmin = computed(() => authStore.isAdmin)
+const rutaVolver = computed(() => esAdmin.value ? '/admin/pedidos' : '/mis-pedidos')
+const nuevoEstado = ref('')
+const guardandoEstado = ref(false)
+const archivoGuia = ref(null)
+const subiendoGuia = ref(false)
+const mensajeAdmin = ref('')
+const errorAdmin = ref('')
+
+async function cambiarEstado() {
+  if (!order.value || !nuevoEstado.value) return
+  mensajeAdmin.value = ''
+  errorAdmin.value = ''
+  guardandoEstado.value = true
+  try {
+    const actualizado = await updateOrderStatus(order.value.id, nuevoEstado.value)
+    order.value = actualizado
+    nuevoEstado.value = actualizado.estado
+    mensajeAdmin.value = `Estado actualizado a "${actualizado.estado}". Se notificó al cliente.`
+    toast.success('Estado del pedido actualizado')
+  } catch (err) {
+    errorAdmin.value = err.response?.data?.message || 'Error al actualizar el estado'
+  } finally {
+    guardandoEstado.value = false
+  }
+}
+
+function onArchivoGuia(evento) {
+  archivoGuia.value = evento.target.files?.[0] || null
+}
+
+async function subirGuia() {
+  if (!order.value || !archivoGuia.value) return
+  mensajeAdmin.value = ''
+  errorAdmin.value = ''
+  subiendoGuia.value = true
+  try {
+    await uploadGuia(order.value.id, archivoGuia.value)
+    archivoGuia.value = null
+    const guestToken = route.query.guest_token || localStorage.getItem('guest_token')
+    order.value = await getOrderById(order.value.id, guestToken, route.query.email_contacto)
+    mensajeAdmin.value = 'Imagen de guía subida correctamente.'
+    toast.success('Guía subida')
+  } catch (err) {
+    errorAdmin.value = err.response?.data?.message || 'Error al subir la guía'
+  } finally {
+    subiendoGuia.value = false
+  }
+}
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -214,6 +309,7 @@ async function loadOrder() {
     const emailContacto = route.query.email_contacto
     const result = await getOrderById(orderId, guestToken, emailContacto)
     order.value = result
+    nuevoEstado.value = result.estado
   } catch (err) {
     console.error('Error loading order:', err)
     errorMessage.value = err.response?.data?.message || 'Error al cargar el pedido'
