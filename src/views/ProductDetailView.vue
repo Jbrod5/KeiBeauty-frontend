@@ -76,6 +76,9 @@
                 <img v-if="product.marca_logo_url" :src="product.marca_logo_url" :alt="product.marca_nombre" :style="product.es_favorito ? 'width:28px;height:28px;object-fit:contain;border-radius:50%;border:2px solid var(--kei-rojo);background:#fff;' : 'width:28px;height:28px;object-fit:contain;border-radius:50%;border:1px solid var(--kei-gris-claro);background:#fff;'" />
                 <span v-else class="d-inline-flex align-items-center justify-content-center rounded-circle" :style="product.es_favorito ? 'width:28px;height:28px;background:var(--kei-rojo-claro);border:2px solid var(--kei-rojo);' : 'width:28px;height:28px;background:var(--kei-fondo);border:1px solid var(--kei-gris-claro);'"><i class="bi bi-award" :style="product.es_favorito ? 'color:var(--kei-rojo);font-size:14px;' : 'color:var(--kei-beige);font-size:14px;'"></i></span>
                 <p class="small fw-bold text-uppercase mb-0" :style="product.es_favorito ? 'color: var(--kei-rojo); letter-spacing: 0.05em;' : 'color: var(--kei-oliva); letter-spacing: 0.05em;'">{{ product.marca_nombre }}</p>
+                <router-link :to="`/catalogo?marca=${product.marca_id}`" class="small text-decoration-none" style="color: var(--kei-beige-medio);">
+                  <i class="bi bi-arrow-right-circle me-1"></i>Ver más de esta marca
+                </router-link>
                 <span v-if="product.es_favorito" class="badge rounded-pill ms-1" style="background: var(--kei-rojo); font-size: 0.6rem;"><i class="bi bi-heart-fill me-1"></i>Favorito</span>
               </div>
               <h1 class="h2 fw-bold mb-0 font-display" style="color: var(--kei-casi-negro);">{{ product.nombre }}</h1>

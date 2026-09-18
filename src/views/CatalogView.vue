@@ -158,6 +158,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useCartStore } from '../stores/cartStore'
 import { useFavoritosStore } from '../stores/favoritosStore'
@@ -165,6 +166,7 @@ import { useAuthStore } from '../stores/authStore'
 import { getProducts, getCategories, getMarcas } from '../services/api'
 
 const toast = useToast()
+const route = useRoute()
 
 const products = ref([])
 const loading = ref(true)
@@ -316,6 +318,10 @@ watch(selectedMarca, () => {
 })
 
 onMounted(async () => {
+  // Prefiltrar desde la URL (ej. /catalogo?marca=2 desde el detalle de producto)
+  if (route.query.marca) selectedMarca.value = route.query.marca
+  if (route.query.categoria) selectedCategory.value = route.query.categoria
+  if (route.query.buscar) searchQuery.value = route.query.buscar
   await loadCategories()
   await loadMarcas()
   await loadProducts()
