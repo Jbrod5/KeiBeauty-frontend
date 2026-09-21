@@ -1,112 +1,246 @@
 <template>
-  <div class="order-detail-view" v-if="order">
-    <header class="order-detail-header">
-      <router-link to="/mis-pedidos" class="back-link">
-        ← Volver a Mis Pedidos
-      </router-link>
-      <h1>Detalle del Pedido #{{ order.id }}</h1>
-      <div class="order-meta">
-        <span class="order-date">{{ formatDate(order.fecha_pedido) }}</span>
-        <span class="order-status" :class="statusClass(order.estado)">{{ statusLabel(order.estado) }}</span>
-      </div>
-    </header>
-
-    <div class="order-detail-content">
-      <section class="shipping-info">
-        <h2>Información de Envío</h2>
-        <dl class="shipping-details">
-          <div>
-            <dt>Dirección</dt>
-            <dd>{{ order.direccion_envio }}</dd>
-          </div>
-          <div v-if="order.email_contacto">
-            <dt>Email de contacto</dt>
-            <dd>{{ order.email_contacto }}</dd>
-          </div>
-          <div v-if="order.telefono_contacto">
-            <dt>Teléfono</dt>
-            <dd>{{ order.telefono_contacto }}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section class="order-items">
-        <h2>Productos</h2>
-        <div class="items-table-container">
-          <table class="items-table">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th class="text-center">Cant.</th>
-                <th class="text-right">Precio unit.</th>
-                <th class="text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="detalle in order.detalles" :key="detalle.id">
-                <td>
-                  <div class="product-cell">
-                    <div class="product-image">
-                      <img 
-                        v-if="detalle.producto?.imagen_url" 
-                        :src="detalle.producto.imagen_url" 
-                        :alt="detalle.producto.nombre"
-                      />
-                      <span v-else class="product-placeholder">{{ (detalle.nombre_producto || detalle.producto?.nombre || '?').charAt(0) }}</span>
-                    </div>
-                    <div class="product-info">
-                      <span class="product-name">{{ detalle.nombre_producto || detalle.producto?.nombre }}</span>
-                      <span class="product-brand" v-if="detalle.producto?.marca_nombre">{{ detalle.producto.marca_nombre }}</span>
-                    </div>
-                  </div>
-                </td>
-                <td class="text-center">{{ detalle.cantidad }}</td>
-                <td class="text-right">{{ formatPrice(detalle.precio_unitario) }}</td>
-                <td class="text-right">{{ formatPrice(detalle.subtotal) }}</td>
-              </tr>
-            </tbody>
-          </table>
+  <div class="container py-4" style="max-width: 880px;">
+    <div v-if="order">
+      <header class="mb-4 pb-3 border-bottom" style="border-color: var(--kei-gris-claro) !important;">
+        <router-link :to="rutaVolver" class="btn btn-link text-decoration-none p-0 mb-3 d-inline-flex align-items-center gap-2" style="color: var(--kei-gris-oscuro);">
+          <i class="bi bi-arrow-left"></i> {{ esAdmin ? 'Volver a Pedidos' : 'Volver a Mis Pedidos' }}
+        </router-link>
+        <h1 class="h3 fw-bold mb-2" style="color: var(--kei-casi-negro);">Detalle del Pedido #{{ order.id }}</h1>
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          <span class="small d-inline-flex align-items-center gap-2" style="color: var(--kei-gris-medio);">
+            <i class="bi bi-calendar3"></i>{{ formatDate(order.fecha_pedido) }}
+          </span>
+          <span class="badge rounded-pill text-uppercase px-3 py-2" :style="statusBadgeStyle(order.estado)">
+            <i :class="statusIcon(order.estado)" class="me-1"></i>{{ statusLabel(order.estado) }}
+          </span>
         </div>
-      </section>
+      </header>
 
-      <section class="order-total">
-        <div class="total-row">
-          <span>Total</span>
-          <span class="total-amount">{{ formatPrice(order.monto_total) }}</span>
+      <div class="d-flex flex-column gap-4">
+        <!-- Gestión del pedido (solo admin) -->
+        <section v-if="esAdmin" class="card shadow-sm" style="border-color: var(--kei-oliva-claro) !important;">
+          <div class="card-header d-flex align-items-center gap-2" style="background-color: var(--kei-oliva-suave) !important;">
+            <i class="bi bi-shield-check" style="color: var(--kei-oliva-oscuro);"></i>
+            <h2 class="h6 fw-bold mb-0" style="color: var(--kei-casi-negro);">Gestión del pedido</h2>
+          </div>
+          <div class="card-body">
+            <div v-if="mensajeAdmin" class="alert alert-success d-flex align-items-center gap-2"><i class="bi bi-check-circle-fill"></i><div>{{ mensajeAdmin }}</div></div>
+            <div v-if="errorAdmin" class="alert alert-danger d-flex align-items-center gap-2"><i class="bi bi-exclamation-triangle-fill"></i><div>{{ errorAdmin }}</div></div>
+            <div class="row g-3 align-items-end mb-3">
+              <div class="col-12 col-md-6">
+                <label for="estadoPedido" class="form-label fw-semibold">Estado del pedido</label>
+                <select id="estadoPedido" v-model="nuevoEstado" class="form-select">
+                  <option value="pendiente">Pendiente</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="enviado">Enviado</option>
+                  <option value="entregado">Entregado</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <button class="btn btn-primary rounded-pill w-100" @click="cambiarEstado" :disabled="guardandoEstado || !nuevoEstado || (order && nuevoEstado === order.estado)">
+                  <span v-if="guardandoEstado" class="spinner-border spinner-border-sm me-2"></span>
+                  <i v-else class="bi bi-arrow-repeat me-1"></i>Actualizar estado
+                </button>
+              </div>
+            </div>
+            <div class="row g-3 align-items-end">
+              <div class="col-12 col-md-6">
+                <label for="archivoGuia" class="form-label fw-semibold">Imagen de guía</label>
+                <input id="archivoGuia" type="file" accept="image/jpeg,image/png,image/gif,image/webp" @change="onArchivoGuia" class="form-control" />
+              </div>
+              <div class="col-12 col-md-6">
+                <button class="btn btn-outline-primary rounded-pill w-100" @click="subirGuia" :disabled="subiendoGuia || !archivoGuia">
+                  <span v-if="subiendoGuia" class="spinner-border spinner-border-sm me-2"></span>
+                  <i v-else class="bi bi-cloud-upload me-1"></i>Subir guía
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card shadow-sm">
+          <div class="card-header d-flex align-items-center gap-2">
+            <i class="bi bi-geo-alt" style="color: var(--kei-beige);"></i>
+            <h2 class="h6 fw-bold mb-0" style="color: var(--kei-casi-negro);">Información de Envío</h2>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <div class="small text-uppercase fw-medium mb-1" style="color: var(--kei-beige-medio); letter-spacing: 0.05em; font-size: 0.75rem;">Dirección</div>
+                <div style="color: var(--kei-casi-negro);">{{ order.direccion_envio }}</div>
+              </div>
+              <div v-if="order.email_contacto" class="col-12 col-md-6">
+                <div class="small text-uppercase fw-medium mb-1" style="color: var(--kei-beige-medio); letter-spacing: 0.05em; font-size: 0.75rem;">Email de contacto</div>
+                <div style="color: var(--kei-casi-negro);">{{ order.email_contacto }}</div>
+              </div>
+              <div v-if="order.telefono_contacto" class="col-12 col-md-6">
+                <div class="small text-uppercase fw-medium mb-1" style="color: var(--kei-beige-medio); letter-spacing: 0.05em; font-size: 0.75rem;">Teléfono</div>
+                <div style="color: var(--kei-casi-negro);">{{ order.telefono_contacto }}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="order.url_guia" class="card shadow-sm">
+          <div class="card-header d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-image" style="color: var(--kei-beige);"></i>
+            <h2 class="h6 fw-bold mb-0" style="color: var(--kei-casi-negro);">Imagen de Guía</h2>
+          </div>
+          <div class="card-body text-center">
+            <img :src="order.url_guia" alt="Guía del pedido" class="img-fluid rounded-3 border" style="max-height: 480px; border-color: var(--kei-gris-claro) !important;" />
+          </div>
+        </section>
+
+        <section class="card shadow-sm">
+          <div class="card-header d-flex align-items-center gap-2">
+            <i class="bi bi-bag" style="color: var(--kei-beige);"></i>
+            <h2 class="h6 fw-bold mb-0" style="color: var(--kei-casi-negro);">Productos</h2>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th class="ps-3 ps-md-4">Producto</th>
+                    <th class="text-center">Cant.</th>
+                    <th class="text-end">Precio unit.</th>
+                    <th class="text-end pe-3 pe-md-4">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="detalle in order.detalles" :key="detalle.id">
+                    <td class="ps-3 ps-md-4">
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-2 overflow-hidden d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: var(--kei-fondo);">
+                          <img
+                            v-if="detalle.producto?.imagen_url"
+                            :src="detalle.producto.imagen_url"
+                            :alt="detalle.producto.nombre"
+                            class="w-100 h-100 object-fit-cover"
+                          />
+                          <span v-else class="fw-bold" style="color: var(--kei-beige);">{{ (detalle.nombre_producto || detalle.producto?.nombre || '?').charAt(0) }}</span>
+                        </div>
+                        <div class="d-flex flex-column">
+                          <span class="fw-medium small" style="color: var(--kei-casi-negro);">{{ detalle.nombre_producto || detalle.producto?.nombre }}</span>
+                          <span class="small text-uppercase" v-if="detalle.producto?.marca_nombre" style="color: var(--kei-beige); letter-spacing: 0.03em; font-size: 0.75rem;">{{ detalle.producto.marca_nombre }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge rounded-pill" style="background-color: var(--kei-fondo); color: var(--kei-casi-negro); border: 1px solid var(--kei-gris-claro);">{{ detalle.cantidad }}</span>
+                    </td>
+                    <td class="text-end" style="color: var(--kei-gris-medio);">{{ formatPrice(detalle.precio_unitario) }}</td>
+                    <td class="text-end pe-3 pe-md-4 fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(detalle.subtotal) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="card shadow-sm">
+          <div class="card-body d-flex justify-content-between align-items-center">
+            <span class="fw-medium" style="color: var(--kei-gris-medio);">Total</span>
+            <span class="fs-4 fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(order.monto_total) }}</span>
+          </div>
+        </section>
+
+        <div class="d-flex justify-content-end gap-2">
+          <router-link :to="rutaVolver" class="btn btn-outline-primary rounded-pill">
+            <i class="bi bi-arrow-left me-2"></i>Volver a Pedidos
+          </router-link>
+          <router-link v-if="!esAdmin" to="/catalogo" class="btn btn-primary rounded-pill">
+            <i class="bi bi-bag me-2"></i>Seguir Comprando
+          </router-link>
         </div>
-      </section>
-
-      <div class="order-actions">
-        <router-link to="/mis-pedidos" class="btn btn-outline">Volver a Mis Pedidos</router-link>
       </div>
     </div>
-  </div>
 
-  <div v-else-if="loading" class="loading-state">
-    <div class="spinner"></div>
-    <p>Cargando pedido...</p>
-  </div>
+    <div v-else-if="loading" class="d-flex flex-column align-items-center justify-content-center py-5 gap-3" style="min-height: 300px;">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p style="color: var(--kei-gris-medio);">Cargando pedido...</p>
+    </div>
 
-  <div v-else class="error-state">
-    <h2>Pedido no encontrado</h2>
-    <p>{{ errorMessage || 'El pedido que buscas no existe o ha sido eliminado.' }}</p>
-    <router-link to="/mis-pedidos" class="btn btn-primary">Volver a Mis Pedidos</router-link>
+    <div v-else class="card shadow-sm text-center p-5">
+      <div class="card-body">
+        <i class="bi bi-exclamation-circle fs-1 mb-3 d-block" style="color: var(--kei-beige-medio);"></i>
+        <h2 class="h5 fw-bold mb-2" style="color: var(--kei-casi-negro);">Pedido no encontrado</h2>
+        <p class="mb-3" style="color: var(--kei-gris-medio);">{{ errorMessage || 'El pedido que buscas no existe o ha sido eliminado.' }}</p>
+        <router-link to="/mis-pedidos" class="btn btn-primary rounded-pill">Volver a Mis Pedidos</router-link>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useToast } from 'vue-toastification'
 import { useAuthStore } from '../stores/authStore'
-import { getOrderById } from '../services/api'
+import { getOrderById, updateOrderStatus, uploadGuia } from '../services/api'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const order = ref(null)
 const loading = ref(true)
 const errorMessage = ref('')
+
+// Gestión admin del pedido
+const esAdmin = computed(() => authStore.isAdmin)
+const rutaVolver = computed(() => esAdmin.value ? '/admin/pedidos' : '/mis-pedidos')
+const nuevoEstado = ref('')
+const guardandoEstado = ref(false)
+const archivoGuia = ref(null)
+const subiendoGuia = ref(false)
+const mensajeAdmin = ref('')
+const errorAdmin = ref('')
+
+async function cambiarEstado() {
+  if (!order.value || !nuevoEstado.value) return
+  mensajeAdmin.value = ''
+  errorAdmin.value = ''
+  guardandoEstado.value = true
+  try {
+    const actualizado = await updateOrderStatus(order.value.id, nuevoEstado.value)
+    order.value = actualizado
+    nuevoEstado.value = actualizado.estado
+    mensajeAdmin.value = `Estado actualizado a "${actualizado.estado}". Se notificó al cliente.`
+    toast.success('Estado del pedido actualizado')
+  } catch (err) {
+    errorAdmin.value = err.response?.data?.message || 'Error al actualizar el estado'
+  } finally {
+    guardandoEstado.value = false
+  }
+}
+
+function onArchivoGuia(evento) {
+  archivoGuia.value = evento.target.files?.[0] || null
+}
+
+async function subirGuia() {
+  if (!order.value || !archivoGuia.value) return
+  mensajeAdmin.value = ''
+  errorAdmin.value = ''
+  subiendoGuia.value = true
+  try {
+    await uploadGuia(order.value.id, archivoGuia.value)
+    archivoGuia.value = null
+    const guestToken = route.query.guest_token || localStorage.getItem('guest_token')
+    order.value = await getOrderById(order.value.id, guestToken, route.query.email_contacto)
+    mensajeAdmin.value = 'Imagen de guía subida correctamente.'
+    toast.success('Guía subida')
+  } catch (err) {
+    errorAdmin.value = err.response?.data?.message || 'Error al subir la guía'
+  } finally {
+    subiendoGuia.value = false
+  }
+}
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -144,6 +278,28 @@ function statusClass(status) {
   return `status-${status}`
 }
 
+function statusIcon(status) {
+  const map = {
+    pendiente: 'bi bi-clock',
+    confirmado: 'bi bi-check-circle',
+    enviado: 'bi bi-truck',
+    entregado: 'bi bi-box-seam',
+    cancelado: 'bi bi-x-circle'
+  }
+  return map[status] || 'bi bi-circle'
+}
+
+function statusBadgeStyle(status) {
+  const styles = {
+    pendiente: 'background-color: var(--kei-beige-claro); color: var(--kei-casi-negro); border: 1px solid var(--kei-beige-medio);',
+    confirmado: 'background-color: var(--kei-fondo); color: var(--kei-gris-oscuro); border: 1px solid var(--kei-gris-claro);',
+    enviado: 'background-color: var(--kei-beige); color: #fff;',
+    entregado: 'background-color: var(--kei-gris-oscuro); color: #fff;',
+    cancelado: 'background-color: #f8e8e8; color: #7a3a3a; border: 1px solid #e0c0c0;'
+  }
+  return styles[status] || 'background-color: var(--kei-fondo); color: var(--kei-casi-negro); border: 1px solid var(--kei-gris-claro);'
+}
+
 async function loadOrder() {
   loading.value = true
   errorMessage.value = ''
@@ -153,6 +309,7 @@ async function loadOrder() {
     const emailContacto = route.query.email_contacto
     const result = await getOrderById(orderId, guestToken, emailContacto)
     order.value = result
+    nuevoEstado.value = result.estado
   } catch (err) {
     console.error('Error loading order:', err)
     errorMessage.value = err.response?.data?.message || 'Error al cargar el pedido'
@@ -168,309 +325,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.order-detail-view {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.order-detail-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #e91e63;
-  text-decoration: none;
-  font-weight: 500;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
-.back-link:hover {
-  text-decoration: underline;
-}
-
-.order-detail-header h1 {
-  font-size: 1.75rem;
-  color: #2c3e50;
-  margin: 0 0 0.5rem;
-}
-
-.order-meta {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.order-date {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.order-status {
-  padding: 0.375rem 0.875rem;
-  border-radius: 50px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.status-pendiente {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-.status-confirmado {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-.status-enviado {
-  background: #f3e5f5;
-  color: #7b1fa2;
-}
-
-.status-entregado {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-cancelado {
-  background: #fce4ec;
-  color: #c62828;
-}
-
-.order-detail-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.shipping-info,
-.order-items,
-.order-total {
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  padding: 1.5rem;
-}
-
-.shipping-info h2,
-.order-items h2 {
-  font-size: 1.1rem;
-  color: #2c3e50;
-  margin: 0 0 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #eee;
-}
-
-.shipping-details {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.shipping-details div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.shipping-details dt {
-  font-size: 0.8rem;
-  color: #999;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.shipping-details dd {
-  font-size: 0.95rem;
-  color: #333;
-  margin: 0;
-}
-
-.items-table-container {
-  overflow-x: auto;
-}
-
-.items-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.items-table th,
-.items-table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.items-table th {
-  background: #f8f9fa;
-  font-weight: 600;
-  color: #333;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.items-table td {
-  color: #333;
-}
-
-.items-table tbody tr:hover td {
-  background: #fafafa;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.product-cell {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.product-image {
-  width: 50px;
-  height: 50px;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.product-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.product-placeholder {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #e91e63;
-}
-
-.product-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  min-width: 0;
-}
-
-.product-name {
-  font-size: 0.9rem;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.product-brand {
-  font-size: 0.75rem;
-  color: #e91e63;
-  font-weight: 500;
-}
-
-.order-total {
-  text-align: right;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.total-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.total-row span:first-child {
-  color: #666;
-  font-size: 1rem;
-}
-
-.total-amount {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2c3e50;
-}
-
-.order-actions {
-  text-align: right;
-  padding-top: 1rem;
-}
-
-.loading-state,
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  text-align: center;
-  gap: 1rem;
-  color: #666;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #e91e63;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.error-state {
-  color: #c62828;
-  background: #fdeaea;
-  border-radius: 1rem;
-  padding: 2rem;
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-.error-state .btn {
-  margin-top: 0.5rem;
-}
-
-@media (max-width: 768px) {
-  .order-detail-header h1 {
-    font-size: 1.5rem;
-  }
-  
-  .order-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .order-items-preview .item-details {
-    flex-direction: column;
-  }
-  
-  .order-actions {
-    flex-direction: column;
-    width: 100%;
-  }
-}
+.object-fit-cover { object-fit: cover; }
 </style>

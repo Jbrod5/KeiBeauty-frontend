@@ -1,0 +1,178 @@
+/* Tipografía KeiBeauty: Playfair Display (titulares elegantes) + Inter (cuerpo legible) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+/* Paleta oficial KeiBeauty - variables CSS (verde oliva) */
+:root {
+  --kei-gris-oscuro: #4D4D59;
+  --kei-gris-medio: #565659;
+  --kei-casi-negro: #3A3E40;
+  --kei-gris-claro: #D9D9D7;
+  --kei-beige: #737166;
+  --kei-beige-medio: #8C8A80;
+  --kei-beige-claro: #A6A498;
+  --kei-fondo: #F2F2F2;
+  --kei-negro: #0D0D0D;
+  /* Oliva vibrante pero no fosforescente - base oliva claro #8CB07A */
+  --kei-oliva: #8CB07A;
+  --kei-oliva-claro: #C1D1B4;
+  --kei-oliva-oscuro: #6E8A5A;
+  --kei-oliva-suave: #EAF0E2;
+  /* Rojo tradicional intenso para favoritos/marca - rojo más vivo */
+  --kei-rojo: #C0392B;
+  --kei-rojo-oscuro: #922B21;
+  --kei-rojo-claro: #F2C8CC;
+
+  /* Derivados para Bootstrap - oliva vibrante como primario */
+  --bs-primary: #8CB07A;
+  --bs-secondary: #4D4D59;
+  --bs-light: #F2F2F2;
+  --bs-dark: #3A3E40;
+  --bs-body-bg: #F2F2F2;
+  --bs-body-color: #3A3E40;
+  --bs-border-color: #D9D9D7;
+}
+
+/* Body y fondo global */
+body {
+  background-color: var(--kei-fondo) !important;
+  color: var(--kei-casi-negro) !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+h1, h2, h3, .font-display {
+  font-family: 'Playfair Display', serif !important;
+  letter-spacing: -0.02em;
+}
+.navbar-brand {
+  font-family: 'Playfair Display', serif !important;
+  letter-spacing: 0.04em;
+}
+
+/* --- Overrides Bootstrap con paleta --- */
+
+/* Botones - oliva como primario para más color */
+.btn-primary {
+  background-color: var(--kei-oliva) !important;
+  border-color: var(--kei-oliva) !important;
+  color: #fff !important;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--kei-oliva-oscuro) !important;
+  border-color: var(--kei-oliva-oscuro) !important;
+  color: #fff !important;
+}
+.btn-secondary {
+  background-color: var(--kei-gris-oscuro) !important;
+  border-color: var(--kei-gris-oscuro) !important;
+  color: #fff !important;
+}
+.btn-secondary:hover {
+  background-color: var(--kei-casi-negro) !important;
+  border-color: var(--kei-casi-negro) !important;
+}
+.btn-outline-primary {
+  color: var(--kei-oliva) !important;
+  border-color: var(--kei-oliva) !important;
+}
+.btn-outline-primary:hover {
+  background-color: var(--kei-oliva) !important;
+  border-color: var(--kei-oliva) !important;
+  color: #fff !important;
+}
+.btn-outline-secondary {
+  color: var(--kei-gris-oscuro) !important;
+  border-color: var(--kei-gris-oscuro) !important;
+}
+.btn-outline-secondary:hover {
+  background-color: var(--kei-gris-oscuro) !important;
+  color: #fff !important;
+}
+
+/* Fondos y textos - oliva protagonista */
+.bg-primary { background-color: var(--kei-oliva) !important; }
+.bg-secondary { background-color: var(--kei-gris-oscuro) !important; }
+.bg-light { background-color: var(--kei-fondo) !important; }
+.bg-dark { background-color: var(--kei-casi-negro) !important; }
+.text-primary { color: var(--kei-oliva) !important; }
+.text-secondary { color: var(--kei-gris-oscuro) !important; }
+.text-dark { color: var(--kei-casi-negro) !important; }
+.text-muted { color: var(--kei-beige-medio) !important; }
+.border-primary { border-color: var(--kei-oliva) !important; }
+
+/* Navbar - acento oliva */
+.navbar { background-color: #fff !important; border-bottom: 2px solid var(--kei-oliva-claro); }
+.navbar-brand { color: var(--kei-casi-negro) !important; font-weight: 700; }
+.nav-link { color: var(--kei-gris-medio) !important; }
+.nav-link:hover, .nav-link.active { color: var(--kei-oliva) !important; }
+
+/* Cards */
+.card {
+  border: 1px solid var(--kei-gris-claro) !important;
+  background-color: #fff !important;
+  border-radius: 0.75rem !important;
+}
+.card-header {
+  background-color: #fff !important;
+  border-bottom: 1px solid var(--kei-gris-claro) !important;
+  color: var(--kei-casi-negro) !important;
+}
+
+/* Badges - oliva */
+.badge.bg-primary { background-color: var(--kei-oliva) !important; }
+.badge.bg-secondary { background-color: var(--kei-gris-oscuro) !important; }
+.badge.bg-success { background-color: #5a6b4a !important; } /* oliva desaturado */
+.badge.bg-danger { background-color: #7a3a3a !important; }
+
+/* Forms - focus oliva */
+.form-control, .form-select {
+  border-color: var(--kei-gris-claro) !important;
+  background-color: #fff !important;
+  color: var(--kei-casi-negro) !important;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--kei-oliva) !important;
+  box-shadow: 0 0 0 0.25rem rgba(140, 176, 122, 0.25) !important;
+}
+.form-label { color: var(--kei-casi-negro) !important; font-weight: 500; }
+
+/* Tablas */
+.table { --bs-table-border-color: var(--kei-gris-claro); }
+.table thead th { background-color: var(--kei-fondo) !important; color: var(--kei-casi-negro) !important; border-bottom-color: var(--kei-beige-claro) !important; }
+.table-hover tbody tr:hover { background-color: rgba(242,242,242,0.7) !important; }
+
+/* Alerts */
+.alert-primary { background-color: var(--kei-beige-claro) !important; color: var(--kei-casi-negro) !important; border-color: var(--kei-beige-medio) !important; }
+.alert-info { background-color: var(--kei-fondo) !important; color: var(--kei-gris-oscuro) !important; border-color: var(--kei-gris-claro) !important; }
+.alert-danger { background-color: #f8e8e8 !important; color: #5a2a2a !important; border-color: #e0c0c0 !important; }
+
+/* Modales */
+.modal-header { border-bottom: 1px solid var(--kei-gris-claro) !important; }
+.modal-footer { border-top: 1px solid var(--kei-gris-claro) !important; }
+
+/* Paginación, spinner, etc. - oliva */
+.page-link { color: var(--kei-oliva) !important; border-color: var(--kei-gris-claro) !important; }
+.page-item.active .page-link { background-color: var(--kei-oliva) !important; border-color: var(--kei-oliva) !important; color: #fff !important; }
+.spinner-border { color: var(--kei-oliva) !important; }
+
+/* Links */
+a { color: var(--kei-gris-oscuro); }
+a:hover { color: var(--kei-casi-negro); }
+
+/* Utilities paleta */
+.bg-kei-oscuro { background-color: var(--kei-gris-oscuro) !important; color: #fff; }
+.bg-kei-medio { background-color: var(--kei-gris-medio) !important; color: #fff; }
+.bg-kei-beige { background-color: var(--kei-beige) !important; color: #fff; }
+.bg-kei-claro { background-color: var(--kei-gris-claro) !important; }
+.bg-kei-fondo { background-color: var(--kei-fondo) !important; }
+.bg-kei-oliva { background-color: var(--kei-oliva) !important; color: #fff; }
+.bg-kei-oliva-suave { background-color: var(--kei-oliva-suave) !important; }
+.text-kei-oscuro { color: var(--kei-gris-oscuro) !important; }
+.text-kei-beige { color: var(--kei-beige) !important; }
+.text-kei-oliva { color: var(--kei-oliva) !important; }
+.border-kei { border-color: var(--kei-gris-claro) !important; }
+
+/* Footer - oliva oscuro */
+.footer-kei { background-color: var(--kei-casi-negro) !important; color: var(--kei-fondo) !important; border-top: 4px solid var(--kei-oliva); }
+/* Hero y acentos oliva suaves */
+.bg-oliva-suave { background-color: var(--kei-oliva-suave) !important; }

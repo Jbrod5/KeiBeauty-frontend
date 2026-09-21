@@ -1,74 +1,134 @@
 <template>
-  <header class="header">
-    <nav class="nav container">
-      <router-link to="/" class="logo">KeiBeauty</router-link>
-      <ul class="nav-links">
-        <li><router-link to="/">Inicio</router-link></li>
-        <li><router-link to="/catalogo">Catálogo</router-link></li>
-        <li>
-          <router-link to="/carrito" class="cart-link">
-            🛒 Carrito
-            <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
-          </router-link>
-        </li>
-      </ul>
-
-      <div class="nav-actions">
-        <div v-if="!isAuthenticated" class="auth-buttons">
-          <router-link to="/login" class="btn btn-outline">Iniciar Sesión</router-link>
-          <router-link to="/registro" class="btn btn-primary">Registrarse</router-link>
-        </div>
-
-        <div v-else class="user-menu">
-          <div class="user-avatar" @click="toggleDropdown">
-            <span>{{ userInitial }}</span>
-          </div>
-          <ul v-if="showDropdown" class="dropdown-menu" role="menu">
-            <li role="none">
-              <span class="dropdown-header" role="menuitem">{{ userName }}</span>
-            </li>
-            <li role="none">
-              <span class="dropdown-email" role="menuitem">{{ userEmail }}</span>
-            </li>
-            <li role="none"><hr class="dropdown-divider" /></li>
-            <li role="none">
-              <router-link to="/perfil" class="dropdown-item" role="menuitem">Mi Perfil</router-link>
-            </li>
-            <li role="none">
-              <router-link to="/mis-pedidos" class="dropdown-item" role="menuitem">Mis Pedidos</router-link>
-            </li>
-            <li role="none">
-              <router-link to="/perfil/favoritos" class="dropdown-item" role="menuitem">Mis Favoritos</router-link>
-            </li>
-            <li v-if="isAdmin" role="none">
-              <router-link to="/admin" class="dropdown-item" role="menuitem">Panel Admin</router-link>
-            </li>
-            <li role="none"><hr class="dropdown-divider" /></li>
-            <li role="none">
-              <button @click="logout" class="dropdown-item dropdown-logout" role="menuitem">Cerrar Sesión</button>
-            </li>
-          </ul>
+  <nav class="navbar navbar-expand-lg sticky-top shadow-sm">
+    <div class="container">
+      <router-link to="/" class="navbar-brand d-flex align-items-center gap-2">
+        <img :src="logoKei" alt="Logo KeiBeauty" class="logo-navbar" />
+        <span class="font-display">KeiBeauty</span>
+      </router-link>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarKei" aria-controls="navbarKei" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarKei">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+          <li class="nav-item"><router-link to="/catalogo" class="nav-link">Catálogo</router-link></li>
+          <li class="nav-item"><router-link to="/sobre-nosotros" class="nav-link">Sobre nosotros</router-link></li>
+          <li v-if="!isAdmin" class="nav-item">
+            <router-link to="/carrito" class="nav-link position-relative">
+              <i class="bi bi-bag me-1"></i>Carrito
+              <span v-if="cartCount > 0" class="badge rounded-pill ms-1" style="background: var(--kei-oliva);">{{ cartCount }}</span>
+            </router-link>
+          </li>
+          <li v-if="isAdmin" class="nav-item">
+            <router-link to="/admin" class="nav-link fw-semibold" style="color: var(--kei-oliva) !important;"><i class="bi bi-speedometer2 me-1"></i>Panel Admin</router-link>
+          </li>
+        </ul>
+        <div class="d-flex align-items-center gap-2">
+          <template v-if="!isAuthenticated">
+            <router-link to="/login" class="btn btn-outline-primary btn-sm rounded-pill px-3">Iniciar sesión</router-link>
+            <router-link to="/registro" class="btn btn-primary btn-sm rounded-pill px-3">Registrarse</router-link>
+          </template>
+          <template v-else>
+            <!-- Campana notificaciones -->
+            <div class="dropdown">
+              <button class="btn btn-light position-relative rounded-circle d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width:38px;height:38px; border:1px solid var(--kei-gris-claro);">
+                <i class="bi bi-bell" style="color: var(--kei-oliva); font-size:1.1rem;"></i>
+                <span v-if="notifStore.noLeidas > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem;">{{ notifStore.noLeidas > 9 ? '9+' : notifStore.noLeidas }}</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow" style="width:360px; max-height:400px; overflow:auto;">
+                <li class="dropdown-header d-flex justify-content-between align-items-center">
+                  <span class="fw-bold">Notificaciones</span>
+                  <button v-if="notifStore.noLeidas>0" @click="notifStore.marcarTodasLeidas()" class="btn btn-sm btn-link p-0" style="font-size:0.7rem; color: var(--kei-oliva);">Marcar todas leídas</button>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li v-if="notifStore.notificaciones.length===0" class="text-center py-3 small" style="color: var(--kei-gris-medio);">Sin notificaciones</li>
+                <li v-for="n in notifStore.notificaciones" :key="n.id" class="px-2 py-1" :style="n.leido ? 'opacity:0.7;' : 'background: var(--kei-oliva-suave);'">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1" @click="handleNotifClick(n)" style="cursor:pointer;">
+                      <div class="small fw-semibold" style="color: var(--kei-casi-negro);"><i :class="iconoNotif(n.tipo)" class="me-1" style="color: var(--kei-oliva);"></i>{{ n.titulo }}</div>
+                      <div class="small" style="color: var(--kei-gris-medio);">{{ n.mensaje }}</div>
+                      <small style="color: var(--kei-beige-medio);">{{ formatFecha(n.fecha_creacion) }}</small>
+                    </div>
+                    <button v-if="!n.leido" @click.stop="notifStore.marcarLeida(n.id)" class="btn btn-sm ms-2" title="Marcar leída" style="color: var(--kei-oliva);"><i class="bi bi-check2-circle"></i></button>
+                  </div>
+                  <hr class="my-1" style="border-color: var(--kei-gris-claro);" />
+                </li>
+              </ul>
+            </div>
+            <!-- Avatar -->
+            <div class="dropdown">
+              <button class="btn rounded-circle d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width:40px;height:40px;background: var(--kei-oliva);color:#fff;border:none;">
+                {{ userInitial }}
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li><span class="dropdown-item-text fw-semibold font-display">{{ userName }}</span></li>
+                <li><span class="dropdown-item-text small text-muted">{{ userEmail }}</span></li>
+                <li><span v-if="isAdmin" class="dropdown-item-text"><span class="badge" style="background: var(--kei-oliva);">Administrador</span></span></li>
+                <li><hr class="dropdown-divider" /></li>
+                <li><router-link to="/perfil" class="dropdown-item"><i class="bi bi-person me-2"></i>Mi perfil</router-link></li>
+                <template v-if="!isAdmin">
+                  <li><router-link to="/mis-pedidos" class="dropdown-item"><i class="bi bi-box-seam me-2"></i>Mis pedidos</router-link></li>
+                  <li><router-link to="/perfil/favoritos" class="dropdown-item"><i class="bi bi-heart me-2"></i>Mis favoritos</router-link></li>
+                </template>
+                <template v-if="isAdmin">
+                  <li><hr class="dropdown-divider" /></li>
+                  <li><h6 class="dropdown-header">Administración</h6></li>
+                  <li><router-link to="/admin" class="dropdown-item"><i class="bi bi-speedometer2 me-2"></i>Dashboard</router-link></li>
+                  <li><router-link to="/admin/productos" class="dropdown-item"><i class="bi bi-box-seam me-2"></i>Productos</router-link></li>
+                  <li><router-link to="/admin/productos/crear" class="dropdown-item ps-4 small"><i class="bi bi-plus-lg me-1"></i>Crear producto</router-link></li>
+                  <li><router-link to="/admin/marcas" class="dropdown-item"><i class="bi bi-award me-2"></i>Marcas</router-link></li>
+                  <li><router-link to="/admin/categorias" class="dropdown-item"><i class="bi bi-tags me-2"></i>Categorías</router-link></li>
+                <li><router-link to="/admin/pedidos" class="dropdown-item"><i class="bi bi-receipt me-2"></i>Pedidos</router-link></li>
+                <li><router-link to="/admin/resenas" class="dropdown-item"><i class="bi bi-star me-2"></i>Reseñas</router-link></li>
+                <li><router-link to="/admin/reportes" class="dropdown-item"><i class="bi bi-bar-chart-line me-2"></i>Reportes</router-link></li>
+                </template>
+                <li><hr class="dropdown-divider" /></li>
+                <li><button @click="logout" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</button></li>
+              </ul>
+            </div>
+          </template>
         </div>
       </div>
-    </nav>
-  </header>
-  <main class="main container">
+    </div>
+  </nav>
+  <main class="container py-4" style="min-height: calc(100vh - 140px);">
     <router-view />
   </main>
-  <footer class="footer">
-    <p>&copy; 2024 KeiBeauty. Cuidado de la piel coreano.</p>
+  <footer class="footer-kei text-center py-4 mt-auto">
+    <div class="container">
+      <p class="mb-1 font-display"><i class="bi bi-stars me-1"></i> KeiBeauty — Tu ritual esencial</p>
+      <small style="color: var(--kei-beige-claro)">Cuidado de la piel coreano · Xela, Guatemala · WhatsApp 3971 8418</small>
+    </div>
   </footer>
+  <!-- Botón WhatsApp flotante -->
+  <a :href="whatsappUrl" target="_blank" rel="noopener" class="btn rounded-circle shadow d-flex align-items-center justify-content-center position-fixed" style="width:56px;height:56px; bottom:20px; right:20px; background:#25D366; color:#fff; z-index:1040; font-size:1.6rem;" title="Chatear por WhatsApp">
+    <i class="bi bi-whatsapp"></i>
+  </a>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from './stores/cartStore'
 import { useAuthStore } from './stores/authStore'
+import { useNotificacionStore } from './stores/notificacionStore'
+import logoKei from './assets/kei-beauty.jpg'
 
 const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
+const notifStore = useNotificacionStore()
+
+// En móvil el menú del navbar es desplegable: contraerlo automáticamente
+// después de cada navegación para no tapar el contenido.
+// Se cierra con un clic programático en el toggler para usar la única
+// instancia de Bootstrap (main.js) y no duplicar manejadores de eventos.
+function cerrarMenuNavbar() {
+  const elemento = document.getElementById('navbarKei')
+  const toggler = document.querySelector('.navbar-toggler')
+  if (!elemento || !toggler) return
+  if (elemento.classList.contains('show')) toggler.click()
+}
+router.afterEach(() => cerrarMenuNavbar())
 
 const cartCount = computed(() => cartStore.totalItems)
 const isAuthenticated = computed(() => authStore.isAuthenticated)
@@ -76,262 +136,68 @@ const isAdmin = computed(() => authStore.isAdmin)
 const userName = computed(() => authStore.userName)
 const userEmail = computed(() => authStore.user?.email || '')
 const userInitial = computed(() => authStore.user?.nombre?.charAt(0)?.toUpperCase() || 'U')
-
-const showDropdown = ref(false)
-
-function toggleDropdown() {
-  showDropdown.value = !showDropdown.value
-}
+const whatsappUrl = computed(() => import.meta.env.VITE_WHATSAPP_URL || 'https://wa.me/50239718418')
 
 function logout() {
   authStore.logout()
-  showDropdown.value = false
   router.push('/')
 }
+function iconoNotif(tipo){
+  if(tipo==='pedido_estado') return 'bi bi-box-seam'
+  if(tipo==='pedido_guia') return 'bi bi-truck'
+  if(tipo==='producto_stock') return 'bi bi-bell'
+  return 'bi bi-info-circle'
+}
+function formatFecha(f){
+  if(!f) return ''
+  return new Date(f).toLocaleString('es-GT', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'})
+}
+function handleNotifClick(n){
+  notifStore.marcarLeida(n.id)
+  if(n.datos?.pedido_id){
+    router.push(`/mis-pedidos/${n.datos.pedido_id}`)
+  } else if(n.datos?.producto_id){
+    router.push(`/producto/${n.datos.producto_id}`)
+  }
+}
 
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.user-menu')) {
-    showDropdown.value = false
+let pollInterval = null
+onMounted(() => {
+  if (isAuthenticated.value) notifStore.fetchNotificaciones()
+  pollInterval = setInterval(() => {
+    if (isAuthenticated.value) notifStore.fetchNotificaciones()
+  }, 30000)
+})
+watch(isAuthenticated, (val) => {
+  if (val) notifStore.fetchNotificaciones()
+  else {
+    if(pollInterval) clearInterval(pollInterval)
   }
 })
 </script>
 
 <style scoped>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.navbar { background: #fff !important; border-bottom: 2px solid var(--kei-oliva-claro); }
+.nav-link.router-link-active { color: var(--kei-oliva) !important; font-weight: 600; }
+/* Logo de la empresa en el navbar */
+.logo-navbar {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--kei-gris-claro);
 }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #fafafa;
-  color: #333;
-  line-height: 1.6;
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-.header {
-  background: #fff;
-  border-bottom: 1px solid #eee;
-  padding: 1rem 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2c3e50;
-  text-decoration: none;
-}
-
-.nav-links {
-  display: flex;
-  gap: 2rem;
-  list-style: none;
-}
-
-.nav-links a {
-  text-decoration: none;
-  color: #555;
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-.nav-links a:hover {
-  color: #e91e63;
-}
-
-.cart-link {
-  position: relative;
-  text-decoration: none;
-  color: #555;
-  font-weight: 500;
-}
-
-.cart-badge {
-  position: absolute;
-  top: -8px;
-  right: -12px;
-  background: #e91e63;
-  color: white;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nav-actions {
-  display: flex;
-  align-items: center;
-}
-
-.auth-buttons {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: #e91e63;
-  color: white;
-  border: none;
-}
-
-.btn-primary:hover {
-  background: #c2185b;
-}
-
-.btn-outline {
-  background: transparent;
-  color: #e91e63;
-  border: 1px solid #e91e63;
-}
-
-.btn-outline:hover {
-  background: #e91e63;
-  color: white;
-}
-
-.user-menu {
-  position: relative;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.user-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  min-width: 220px;
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  border: 1px solid #eee;
-  list-style: none;
-  padding: 0.5rem 0;
-  z-index: 200;
-  animation: dropdownIn 0.15s ease-out;
-}
-
-@keyframes dropdownIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.dropdown-header {
-  display: block;
-  padding: 0.75rem 1rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.dropdown-email {
-  display: block;
-  padding: 0 1rem 0.75rem;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.dropdown-divider {
-  border: none;
-  border-top: 1px solid #eee;
-  margin: 0.5rem 0.
-
-}
-
-.dropdown-item {
-  display: block;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: none;
-  border: none;
-  text-align: left;
-  font-size: 0.9rem;
-  color: #333;
-  cursor: pointer;
-  transition: background 0.2s;
-  text-decoration: none;
-}
-
-.dropdown-item:hover {
-  background: #fafafa;
-  color: #e91e63;
-}
-
-.dropdown-logout {
-  color: #e53935;
-}
-
-.dropdown-logout:hover {
-  background: #fdeaea;
-}
-
-.main {
-  padding: 2rem 0;
-  min-height: calc(100vh - 200px);
-}
-
-.footer {
-  background: #2c3e50;
-  color: #fff;
-  text-align: center;
-  padding: 1.5rem 0;
-  margin-top: auto;
-}
-
-@media (max-width: 768px) {
-  .nav-links {
-    display: none;
-  }
-  
-  .auth-buttons .btn-outline {
-    display: none;
+/* En móvil los desplegables del navbar (notificaciones, perfil) se muestran
+   como lámina fija bajo la barra: así nunca quedan cortados por el viewport. */
+@media (max-width: 575.98px) {
+  .navbar .dropdown-menu {
+    position: fixed;
+    top: 62px;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto !important;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
   }
 }
 </style>

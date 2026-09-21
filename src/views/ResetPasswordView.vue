@@ -1,50 +1,65 @@
 <template>
-  <div class="auth-view">
-    <div class="auth-container">
-      <div class="auth-card">
-        <header class="auth-header">
-          <h1>Restablecer Contraseña</h1>
-          <p>Ingresa tu nueva contraseña</p>
-        </header>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+              <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background-color: var(--kei-fondo); border: 1px solid var(--kei-gris-claro);">
+                <i class="bi bi-shield-lock fs-4" style="color: var(--kei-gris-oscuro);"></i>
+              </div>
+              <h1 class="h3 fw-bold mb-2" style="color: var(--kei-casi-negro);">Restablecer Contraseña</h1>
+              <p class="mb-0 small" style="color: var(--kei-gris-medio);">Ingresa tu nueva contraseña</p>
+            </div>
 
-        <form @submit.prevent="handleSubmit" class="auth-form" novalidate>
-          <div class="form-group">
-            <label for="password">Nueva contraseña</label>
-            <input
-              id="password"
-              type="password"
-              v-model="form.password"
-              required
-              autocomplete="new-password"
-              :aria-invalid="errors.password ? 'true' : 'false'"
-            />
-            <span v-if="errors.password" class="error-message" role="alert">{{ errors.password }}</span>
+            <form @submit.prevent="handleSubmit" novalidate>
+              <div class="mb-3">
+                <label for="password" class="form-label">Nueva contraseña</label>
+                <input
+                  id="password"
+                  type="password"
+                  v-model="form.password"
+                  required
+                  autocomplete="new-password"
+                  :class="['form-control', errors.password ? 'is-invalid' : '']"
+                  :aria-invalid="errors.password ? 'true' : 'false'"
+                />
+                <div v-if="errors.password" class="invalid-feedback d-block">{{ errors.password }}</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="confirmPassword" class="form-label">Confirmar contraseña</label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  v-model="form.confirmPassword"
+                  required
+                  autocomplete="new-password"
+                  :class="['form-control', errors.confirmPassword ? 'is-invalid' : '']"
+                  :aria-invalid="errors.confirmPassword ? 'true' : 'false'"
+                />
+                <div v-if="errors.confirmPassword" class="invalid-feedback d-block">{{ errors.confirmPassword }}</div>
+              </div>
+
+              <div v-if="authError" class="alert alert-danger d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle me-2 flex-shrink-0"></i>
+                <div>{{ authError }}</div>
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100" :disabled="loading">
+                <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                {{ loading ? 'Restableciendo...' : 'Restablecer contraseña' }}
+              </button>
+            </form>
+
+            <div class="text-center mt-4">
+              <p class="mb-0 small" style="color: var(--kei-gris-medio);">
+                ¿Recordaste tu contraseña?
+                <router-link to="/login" class="text-decoration-none fw-medium" style="color: var(--kei-gris-oscuro);">Inicia sesión</router-link>
+              </p>
+            </div>
           </div>
-
-          <div class="form-group">
-            <label for="confirmPassword">Confirmar contraseña</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              v-model="form.confirmPassword"
-              required
-              autocomplete="new-password"
-              :aria-invalid="errors.confirmPassword ? 'true' : 'false'"
-            />
-            <span v-if="errors.confirmPassword" class="error-message" role="alert">{{ errors.confirmPassword }}</span>
-          </div>
-
-          <div v-if="authError" class="auth-error" role="alert">{{ authError }}</div>
-
-          <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
-            <span v-if="loading" class="spinner"></span>
-            <span v-else>Restablecer contraseña</span>
-          </button>
-        </form>
-
-        <footer class="auth-footer">
-          <p>¿Recordaste tu contraseña? <router-link to="/login">Inicia sesión</router-link></p>
-        </footer>
+        </div>
       </div>
     </div>
   </div>
@@ -126,150 +141,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.auth-view {
-  min-height: calc(100vh - 200px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
-}
-
-.auth-container {
-  width: 100%;
-  max-width: 420px;
-}
-
-.auth-card {
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-  padding: 2.5rem;
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.auth-header h1 {
-  font-size: 1.75rem;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.auth-header p {
-  color: #666;
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-weight: 500;
-  color: #333;
-  font-size: 0.9rem;
-}
-
-.form-group input {
-  padding: 0.875rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #e91e63;
-  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.15);
-}
-
-.form-group input[aria-invalid="true"] {
-  border-color: #e53935;
-}
-
-.error-message {
-  font-size: 0.8rem;
-  color: #e53935;
-}
-
-.auth-error {
-  padding: 0.75rem 1rem;
-  background: #fdeaea;
-  border: 1px solid #f5c6cb;
-  border-radius: 0.5rem;
-  color: #c62828;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: #e91e63;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #c2185b;
-}
-
-.btn-primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.btn-block {
-  width: 100%;
-}
-
-.spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid transparent;
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.auth-footer {
-  margin-top: 1.5rem;
-  text-align: center;
-  color: #666;
-}
-
-.auth-footer a {
-  color: #e91e63;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.auth-footer a:hover {
-  text-decoration: underline;
+.card {
+  border-color: var(--kei-gris-claro) !important;
 }
 </style>

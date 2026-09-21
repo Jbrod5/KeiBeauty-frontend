@@ -1,476 +1,275 @@
 # KeiBeauty Frontend
 
-Frontend del e-commerce KeiBeauty para productos K-Beauty (belleza coreana). Construido con Vue 3, Vite, Vue Router, Pinia y Axios.
+Interfaz del e-commerce **KeiBeauty** (nombre comercial en redes: **Kei Esencia**),
+empresa guatemalteca de K-Beauty fundada en 2021 en Quetzaltenango. SPA donde los
+clientes exploran el catálogo con filtros y orden por precio, gestionan carrito y
+favoritos, compran como invitados o registrados, siguen sus pedidos y reciben
+notificaciones; incluye panel administrativo (productos, marcas, categorías,
+pedidos con guía, reseñas y reportes con Excel) y página `/config-api` para
+apuntar al backend sin recompilar.
 
-## Stack Tecnológico
+Proyecto de Seminario de Sistemas 1 — USAC-CUNOC. Fase 2.
 
-- **Vue 3** - Composition API con `<script setup>`
-- **Vite** - Build tool y dev server
-- **Vue Router 4** - Enrutamiento SPA
-- **Pinia** - Gestión de estado global
-- **Axios** - Cliente HTTP para API REST
-- **Docker & Nginx** - Contenedorización multi-etapa para producción
+## Stack tecnológico
 
-## Estructura del Proyecto
+| Tecnología | Versión | Uso |
+|---|---|---|
+| Vue 3 | ^3.4.0 | Composition API con `<script setup>` |
+| Vite | ^5.0.0 | Dev server y build (puerto 5173) |
+| Vue Router | ^4.3.0 | SPA + guards auth/2FA/guest |
+| Pinia | ^2.1.0 | Estado global (auth, carrito, favoritos, notificaciones) |
+| Axios | ^1.6.0 | HTTP con interceptores JWT/guest |
+| Bootstrap | ^5.3.8 | Framework CSS |
+| Bootstrap Icons | ^1.13.1 | Iconos vectoriales (sin emojis en la UI) |
+| vue-toastification | ^2.0.0-rc.5 | Toasts en español |
+| Docker + Nginx | — | Producción multi-etapa (`nginx.conf` con fallback SPA) |
+
+## Requisitos previos
+
+- Node.js 18+ y npm
+- Docker (opcional, producción)
+- Backend en `http://localhost:5000` (ver README del backend)
+- Git
+
+> **Windows/WSL:** `git config core.autocrlf true`. Se recomienda WSL2.
+
+## Instalación en local
+
+```bash
+git clone git@github.com:Jbrod5/KeiBeauty-frontend.git KeiBeauty-frontend
+cd KeiBeauty-frontend
+
+cp .env.example .env
+# Revisar VITE_API_URL (defecto http://localhost:5000/api)
+
+npm install
+npm run dev     # http://localhost:5173
+npm run build   # dist/ (verificación obligatoria antes de mergear)
+npm run preview # sirve el build local
+```
+
+## Variables de entorno
+
+| Variable | Obligatoria | Descripción | Ejemplo |
+|---|---|---|---|
+| `VITE_API_URL` | Sí | URL base de la API (sin `/` final) | `http://localhost:5000/api` |
+| `VITE_WHATSAPP_URL` | No | Contacto WhatsApp | `https://wa.me/50239718418?text=Hola...` |
+
+`VITE_*` se inyecta al compilar; aplica cuando NO hay override de `/config-api`.
+
+## Estructura del proyecto
 
 ```
 KeiBeauty-frontend/
-├── index.html                 # Entry point HTML
-├── package.json               # Dependencias y scripts
-├── vite.config.js             # Configuración Vite
-├── .env                       # Variables de entorno (no versionar)
-├── .env.example               # Ejemplo de variables de entorno
-├── .gitignore                 # Archivos ignorados por Git
-├── Dockerfile                 # Multi-stage build (Node → Nginx)
-├── nginx.conf                 # Configuración Nginx para SPA
-├── README.md                  # Este archivo
+├── index.html               # Entry HTML (favicon /kei-beauty.jpg)
+├── package.json             # Dependencias y scripts (dev/build/preview)
+├── vite.config.js           # Vite 5173 + allowedHosts (localhost, ngrok)
+├── .env.example             # VITE_API_URL, VITE_WHATSAPP_URL
+├── Dockerfile               # node build → nginx production
+├── nginx.conf               # try_files ... /index.html
+├── public/kei-beauty.jpg    # Logo (favicon URL estable)
 └── src/
-    ├── main.js                # Bootstrap de la app
-    ├── App.vue                # Layout principal + header/nav
-    ├── router/
-    │   └── index.js           # Rutas y guards de autenticación
-    ├── stores/
-    │   ├── authStore.js       # Pinia store: auth, usuario, tokens
-    │   └── cartStore.js       # Pinia store: carrito de compras
-    ├── services/
-    │   └── api.js             # Instancia Axios + endpoints API
-    ├── views/
-    │   ├── HomeView.vue       # Página de inicio (hero, features)
-    │   ├── CatalogView.vue    # Catálogo de productos
-    │   ├── ProductDetailView.vue # Detalle de producto
-    │   ├── LoginView.vue      # Formulario de login
-    │   └── RegisterView.vue   # Formulario de registro
-    ├── components/            # Componentes reutilizables (futuro)
-    └── assets/                # Estilos globales, imágenes (futuro)
+    ├── main.js              # App + Pinia + Router + Toast + paleta + initAuth
+    ├── App.vue              # Navbar (logo, catálogo, sobre nosotros, carrito,
+    │                        # campana, avatar) + footer + WhatsApp flotante
+    ├── assets/estilos/paleta.css  # Variables --kei-* + overrides Bootstrap
+    ├── assets/kei-beauty.jpg      # Logo importado en el navbar
+    ├── router/index.js      # Rutas, redirect / → /catalogo, guards
+    ├── services/api.js      # Axios + ~40 funciones + URL dinámica
+    ├── stores/              # authStore, cartStore, favoritosStore, notificacionStore
+    ├── views/               # 24 vistas (ver tabla de rutas)
+    └── components/          # Vacío: la UI vive en vistas
 ```
 
-## Variables de Entorno
+## Rutas de la aplicación
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `VITE_API_URL` | URL base de la API backend | `http://localhost:5000/api` |
+`/` redirige a `/catalogo`. Landing en `/sobre-nosotros`.
 
-Crear archivo `.env` basado en `.env.example`:
+| Ruta | Componente | Auth | Admin | Descripción |
+|---|---|---|---|---|
+| `/` | — | No | — | Redirect → `/catalogo` |
+| `/sobre-nosotros` | `HomeView.vue` | No | — | Landing (empresa, marcas, skincare/haircare) |
+| `/config-api` | `ConfigApiView.vue` | No | — | Fija la URL del backend (`?api=<url>`) + probar conexión |
+| `/catalogo` | `CatalogView.vue` | No | — | Búsqueda (debounce), filtros categoría/marca, orden por precio, favoritos |
+| `/catalogo?marca=<id>` | `CatalogView.vue` | No | — | Prefiltrado (enlace "Ver más de esta marca" del detalle) |
+| `/producto/:id` | `ProductDetailView.vue` | No | — | Galería, stock, reseñas, alerta "avísame", enlace a marca |
+| `/carrito` | `CartView.vue` | No | — | Carrito invitado + autenticado |
+| `/checkout` | `CheckoutView.vue` | No | — | Checkout autenticado o invitado |
+| `/login` | `LoginView.vue` | Invitado | — | Login (deriva a 2FA si aplica) |
+| `/registro` | `RegisterView.vue` | Invitado | — | Registro de cliente |
+| `/olvide-contrasena` | `ForgotPasswordView.vue` | Invitado | — | Solicita email de recuperación |
+| `/reestablecer-contrasena` | `ResetPasswordView.vue` | Invitado | — | Nueva contraseña con token |
+| `/verificar-2fa` | `TwoFactorView.vue` | Flujo 2FA | — | Código de 6 dígitos |
+| `/perfil` | `ProfileView.vue` | Sí | — | Datos + activar/desactivar 2FA |
+| `/perfil/favoritos` | `FavoritosView.vue` | Sí | — | Favoritos |
+| `/mis-pedidos` | `OrderHistoryView.vue` | Sí | — | Historial |
+| `/mis-pedidos/:id` | `OrderDetailView.vue` | Sí | — | Detalle propio |
+| `/admin` | `AdminDashboardView.vue` | Sí | Sí* | Dashboard |
+| `/admin/productos` | `AdminProductsView.vue` | Sí | Sí* | CRUD + inventario |
+| `/admin/productos/crear` | `AdminProductoCrearView.vue` | Sí | Sí* | Crear (multipart) |
+| `/admin/productos/:id/editar` | `AdminProductoEditarView.vue` | Sí | Sí* | Editar + galería |
+| `/admin/marcas` | `AdminMarcasView.vue` | Sí | Sí* | CRUD marcas |
+| `/admin/categorias` | `AdminCategoriesView.vue` | Sí | Sí* | CRUD categorías |
+| `/admin/pedidos` | `AdminOrdersView.vue` | Sí | Sí* | Estados + guía |
+| `/admin/pedidos/:id` | `OrderDetailView.vue` | Sí | Sí* | Detalle con cambio de estado y subida de guía |
+| `/admin/resenas` | `AdminResenasView.vue` | Sí | Sí* | Gestión de reseñas |
+| `/admin/reportes` | `AdminReportesView.vue` | Sí | Sí* | Reportes + Excel |
+
+\* El guard exige autenticación; el rol `admin` lo verifica cada vista al
+montarse. Rutas `guest` redirigen a `/catalogo` con sesión. Con flujo 2FA
+activo todo redirige a `/verificar-2fa`.
+
+## Consumo de la API
+
+**URL dinámica (sin recompilar):** cada petición resuelve su base con
+`obtenerUrlBaseApi()` (`src/services/api.js`): `localStorage.api_base_url`
+(fijada en `/config-api`) > `VITE_API_URL` > defecto local. Helpers:
+`guardarUrlBaseApi`, `restablecerUrlBaseApi`, `hayOverrideUrlBaseApi`. Con
+`ngrok` en la URL se agrega `ngrok-skip-browser-warning: 1`.
+
+El interceptor adjunta `Authorization: Bearer <access_token>` (o `temp_token`
+en endpoints 2FA) y `X-Guest-Token` para carrito invitado.
+
+### Autenticación
+
+| Función | Endpoint | Envía | Recibe | Usada desde |
+|---|---|---|---|---|
+| `login(c)` | `POST /auth/login` | `{email, password}` | `{mensaje, usuario, access_token, refresh_token}` o `{data: {requiere_2fa, email, token_temporal}}` | `authStore`, `LoginView` |
+| `register(d)` | `POST /auth/registro` | `{nombre, email, password, telefono?, direccion_envio}` | tokens + usuario (`201`) | `authStore`, `RegisterView` |
+| `getProfile()` | `GET /auth/perfil` | JWT | `{usuario}` | `authStore.initAuth` |
+| `refreshToken(t)` | `POST /auth/refresh` | JWT-refresh | `{access_token}` | `authStore` |
+| `forgotPassword(e)` | `POST /auth/olvide-contrasena` | `{email}` | `{data: null, message}` | `ForgotPasswordView` |
+| `resetPassword(t,p,c)` | `POST /auth/reestablecer-contrasena` | `{token, password, confirm_password}` | `{data: null, message}` | `ResetPasswordView` |
+| `verify2FA(e,c,t)` | `POST /auth/verificar-2fa` | `{codigo}` (temp JWT) | tokens + usuario | `authStore`, `TwoFactorView` |
+| `resend2FA(e,t)` | `POST /auth/reenviar-codigo-2fa` | temp JWT | `{data: null, message}` | `authStore` |
+| `cancelarLogin(t)` | `POST /auth/cancelar-login` | temp JWT | `{message}` | `authStore` |
+| `activar2FA()/desactivar2FA()` | `POST /auth/activar-2fa`, `/desactivar-2fa` | JWT | `{data: {two_factor_enabled}}` | `ProfileView` |
+
+### Catálogo, carrito, pedidos y admin
+
+| Función | Endpoint | Envía | Recibe | Usada desde |
+|---|---|---|---|---|
+| `getProducts(p)` | `GET /products?categoria&marca&buscar&con_favorito` | query | `{data: [<producto>]}` | `CatalogView` |
+| `getProductById(id)` | `GET /products/<id>` | — | `{data: <producto>}` | `ProductDetailView` |
+| `getMarcas()/getCategories()` | `GET /products/marcas`, `/categorias` | — | `{data}` | filtros `CatalogView` |
+| `createProduct/updateProduct/deleteProduct` | `POST/PUT/DELETE /products` | JSON o `FormData` (admin) | `{data}` | vistas admin (crear acepta marca/categoría nueva como texto) |
+| `uploadProductImage/getProductoImagenes/subirImagenesGaleria/marcarImagenPrincipal/eliminarImagenGaleria` | `/products/<id>/imagen…` | `FormData` (admin) | `{data}` | edición admin, detalle |
+| `ajustarInventario(id,t,c)` | `POST /products/<id>/inventario` | `{tipo, cantidad, costo_unitario?}` (admin) | `{data}` | `AdminProductsView` |
+| `getCart/addToCart/updateCartItem/removeCartItem/clearCart` | `/carrito…` | `{producto_id, cantidad}` / `{cantidad}` | `{data: <carrito>}` | `cartStore`, `CartView` |
+| `createOrder(d)` | `POST /pedidos` | `{direccion_envio}` (+ contacto/ítems si invitado) | `{data: <pedido>}` (`201`) | `CheckoutView` |
+| `getOrders/getOrderById/updateOrderStatus/uploadGuia` | `/pedidos…` | `{estado}` / `FormData{archivo}` | `{data}` | historial, detalle (admin: estado + guía), AdminOrdersView |
+| `getFavoritos/agregarFavorito/quitarFavorito` | `/favoritos…` | JWT | `{data}` | `favoritosStore` |
+| `getResenas/createResena/updateResena/deleteResena` | `/resenas…` | `{producto_id, calificacion 1-5, comentario?}` | `{data, promedio, total}` | detalle, admin |
+| `createCategory/updateCategory/deleteCategory` | `/categorias…` | `{nombre, descripcion?}` (admin) | `{data}` | `AdminCategoriesView` |
+| `createMarca/updateMarca/deleteMarca` | `/marcas…` | JSON o `FormData` (admin) | `{data}` | `AdminMarcasView` |
+| `getAlertaProducto/crearAlertaProducto/eliminarAlertaProducto` | `/notificaciones/producto/<id>/alerta` | JWT | `{data}` | detalle ("Avísame") |
+| `getReportes*` (6) + `descargarExcel` | `/reportes/*?desde&hasta&limit(&excel=1)` | query (admin) | `{data}` o `.xlsx` | `AdminReportesView` |
+
+Notificaciones in-app (`GET /notificaciones`, `PUT .../leida`, `PUT /leer-todas`)
+se consumen directo con `api` desde `notificacionStore.js` (campana en `App.vue`,
+polling 30 s con sesión).
+
+## Stores de Pinia
+
+- **`authStore`** (`auth`): `user`, tokens en `localStorage`, `loading/error`;
+  `isAuthenticated`, `isAdmin`, `isIn2FAFlow`; `login` (deriva a 2FA),
+  `register`, `verify2FA/resend2FA/cancelLogin`, `activar/desactivar2FA`,
+  `fetchProfile` (reintenta con refresh; limpia sesión ante 401/422),
+  `logout`, `initAuth`.
+- **`cartStore`** (`cart`): `items`, `guestToken` persistido; `totalItems`,
+  `totalPrice`; `fetchCart/addItem/updateQuantity/removeItem/clearCartItems`
+  con reversión optimista.
+- **`favoritosStore`** (`favoritos`): lista + `favoritosIds` (Set);
+  `fetch/agregar/quitar/toggle/esFavorito/clearFavoritos`.
+- **`notificacionStore`** (`notificacion`): últimas 50 + `noLeidas`;
+  `fetchNotificaciones/marcarLeida/marcarTodasLeidas`.
+
+## Diseño y paleta
+
+Variables en `src/assets/estilos/paleta.css` (única fuente de color):
+
+```css
+--kei-gris-oscuro: #4D4D59; --kei-gris-medio: #565659; --kei-casi-negro: #3A3E40;
+--kei-gris-claro: #D9D9D7; --kei-beige: #737166; --kei-beige-medio: #8C8A80;
+--kei-beige-claro: #A6A498; --kei-fondo: #F2F2F2; --kei-negro: #0D0D0D;
+--kei-oliva: #8CB07A; --kei-oliva-claro: #C1D1B4; --kei-oliva-oscuro: #6E8A5A;
+--kei-oliva-suave: #EAF0E2; --kei-rojo: #C0392B;
+```
+
+`btn-primary` → oliva; `btn-secondary` → gris oscuro; navbar blanca con borde
+oliva; footer casi negro. Tipografías: Playfair Display (titulares) + Inter
+(cuerpo). Iconos: Bootstrap Icons; la UI no usa emojis. Tras cambios visuales:
+`npm run build` + `grep -rP "[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]" src/`
+(solo coincide el binario del logo).
+
+## GitFlow
+
+`main` · `develop` · `feature/*` · `hotfix/*`. Rama desde `develop`, commits en
+español, merge `--no-ff`, push de rama y `develop`, sin borrar ramas. Prohibido:
+rebase, force push, `main`, borrar tags. Windows: `git config core.autocrlf true`.
+
+## Despliegue
+
+### Qué página abrir
+
+- **Local:** `http://localhost:5173` → redirige a `/catalogo`. Landing:
+  `/sobre-nosotros`. Config API: `/config-api`.
+- El backend solo expone JSON en local (`http://localhost:5000`,
+  `/health` para verificar).
+
+### Despliegue del frontend a través del backend (modo actual)
+
+Por ahora la tienda se sirve desde la API, en una sola URL:
+
+- **Ruta:** `/` y cualquier ruta SPA (`/catalogo`, `/sobre-nosotros`,
+  `/config-api`, ...) devuelven el build; `/health` y `/api/*` siguen JSON.
+- **Por qué así:** una sola URL para probar en teléfono con ngrok (un solo
+  túnel en vez de dos), mismo origen entre tienda y API (sin CORS) y un solo
+  servicio en ejecución.
+- **Cómo:** `npm run build` aquí + `STATIC_DIR=/frontend-dist` en el `.env` del
+  backend (su `docker-compose.yml` monta `../KeiBeauty-frontend/dist`) +
+  `docker compose up -d api` allá.
+
+### Producción independiente (Docker + Nginx)
+
+`docker build -t keibeauty-frontend . && docker run -p 80:80 keibeauty-frontend`
+(`nginx.conf` con fallback SPA). `VITE_API_URL` se fija al compilar.
+
+### Probar desde el teléfono con ngrok
+
+**Opción A (actual): una sola URL** con el modo anterior:
 
 ```bash
-cp .env.example .env
-# Editar .env con la URL correcta del backend
+npm run build
+# en el backend: ngrok http 5000
+# Tienda:  https://<url>/
+# Config:  https://<url>/config-api?api=https://<url>/api
 ```
 
-## Instalación y Ejecución
-
-### Requisitos Previos
-
-- **Node.js 18+** y **npm**
-- **Docker** y **Docker Compose** (para producción)
-- Backend KeiBeauty corriendo en `http://localhost:5000` (ver repositorio backend)
-
-### Linux (Ubuntu/Debian/Fedora/Arch)
-
-#### Desarrollo Local
-
-```bash
-# 1. Clonar repositorio
-git clone <repo-url>
-cd KeiBeauty-frontend
-
-# 2. Instalar dependencias
-npm install
-
-# 3. Configurar variables de entorno
-cp .env.example .env
-# Editar .env si el backend no está en localhost:5000
-
-# 4. Ejecutar en modo desarrollo
-npm run dev
-# Servidor disponible en http://localhost:5173
-```
-
-#### Con Docker (Producción)
-
-```bash
-# 1. Construir imagen
-docker build -t keibeauty-frontend .
-
-# 2. Ejecutar contenedor
-docker run -d -p 80:80 --name keibeauty-frontend keibeauty-frontend
-
-# O con docker-compose (si existe docker-compose.yml en raíz del proyecto)
-docker compose up --build -d frontend
-```
-
-### Windows con WSL2
-
-#### Opción A: Desarrollo en WSL (Recomendado)
-
-```powershell
-# 1. Abrir terminal WSL (Ubuntu)
-wsl
-
-# 2. Navegar al proyecto (montado en /mnt/c/... o clonado dentro de WSL)
-cd /home/usuario/KeiBeauty-frontend
-
-# 3. Seguir pasos de "Linux - Desarrollo Local"
-npm install
-cp .env.example .env
-npm run dev
-```
-
-#### Opción B: Docker Desktop + WSL2
-
-```powershell
-# 1. Instalar Docker Desktop para Windows
-#    - Habilitar "Use WSL 2 based engine"
-#    - En Settings > Resources > WSL Integration, activar Ubuntu
-
-# 2. En PowerShell (directorio del proyecto)
-docker build -t keibeauty-frontend .
-docker run -d -p 80:80 keibeauty-frontend
-```
-
-## Scripts Disponibles
-
-```bash
-npm run dev      # Servidor de desarrollo (Vite) en puerto 5173
-npm run build    # Build de producción en carpeta dist/
-npm run preview  # Previsualizar build de producción localmente
-```
-
-## Autenticación
-
-### Flujo de Autenticación
-
-1. **Registro** (`POST /api/auth/registro`)
-2. **Login** (`POST /api/auth/login`) → Recibe `access_token` y `refresh_token`
-3. **Tokens guardados** en `localStorage` (`access_token`, `refresh_token`)
-4. **Interceptores Axios** añaden `Authorization: Bearer <access_token>` a peticiones protegidas
-5. **Refresh automático** en 401 → `POST /api/auth/refresh` con `refresh_token`
-6. **Logout** limpia tokens y estado de usuario
-
-### Endpoints de Autenticación (desde `src/services/api.js`)
-
-| Función | Endpoint | Método | Descripción |
-|---------|----------|--------|-------------|
-| `login(credentials)` | `/auth/login` | POST | Iniciar sesión |
-| `register(userData)` | `/auth/registro` | POST | Registrar usuario |
-| `getProfile()` | `/auth/perfil` | GET | Obtener perfil (requiere JWT) |
-| `refreshToken(refresh)` | `/auth/refresh` | POST | Renovar access token |
-
-### JSON de Request/Response
-
-#### POST /api/auth/registro
-
-**Request:**
-```json
-{
-  "nombre": "Juan Perez",
-  "email": "juan@test.com",
-  "password": "password123",
-  "telefono": "+34600111222",
-  "direccion_envio": "Calle Test 123"
-}
-```
-
-**Response (201):**
-```json
-{
-  "mensaje": "Usuario registrado exitosamente.",
-  "usuario": {
-    "id": 2,
-    "nombre": "Juan Perez",
-    "email": "juan@test.com",
-    "telefono": "+34600111222",
-    "direccion_envio": "Calle Test 123",
-    "rol": "cliente",
-    "fecha_registro": "2026-09-14T02:23:46.506030"
-  },
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
-}
-```
-
-#### POST /api/auth/login
-
-**Request:**
-```json
-{
-  "email": "juan@test.com",
-  "password": "password123"
-}
-```
-
-**Response (200):**
-```json
-{
-  "mensaje": "Login exitoso.",
-  "usuario": { ... },
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
-}
-```
-
-#### GET /api/auth/perfil
-
-**Headers:**
-```
-Authorization: Bearer <access_token>
-```
-
-**Response (200):**
-```json
-{
-  "usuario": {
-    "id": 2,
-    "nombre": "Juan Perez",
-    "email": "juan@test.com",
-    "telefono": "+34600111222",
-    "direccion_envio": "Calle Test 123",
-    "rol": "cliente",
-    "fecha_registro": "2026-09-14T02:23:46.506030"
-  }
-}
-```
-
-### Store de Autenticación (`src/stores/authStore.js`)
-
-```javascript
-import { useAuthStore } from '@/stores/authStore'
-
-const authStore = useAuthStore()
-
-// Estado
-authStore.user              // Objeto usuario actual (reactivo)
-authStore.isAuthenticated   // boolean: true si hay token y usuario
-authStore.isAdmin           // boolean: true si rol === 'admin'
-authStore.userName          // string: nombre del usuario
-authStore.loading           // boolean: petición en curso
-authStore.error             // string: último error
-
-// Acciones
-await authStore.login({ email, password })
-await authStore.register({ nombre, email, password, telefono?, direccion_envio? })
-await authStore.fetchProfile()  // Cargar perfil al iniciar app
-authStore.logout()              // Limpiar tokens y usuario
-await authStore.initAuth()      // Llamar al montar app (en router guard)
-```
-
-### Guards de Ruta (`src/router/index.js`)
-
-- **Rutas públicas**: `/`, `/catalogo`, `/producto/:id`, `/carrito`, `/login`, `/registro`
-- **Rutas protegidas**: Requieren `meta.requiresAuth !== false` (por defecto true)
-- **Solo invitados**: `meta.guest: true` (login, registro) → Redirige a `/` si autenticado
-- **Redirección post-login**: Guarda `redirect` en query params
-
-## Catálogo de Productos
-
-### Endpoints de Productos (desde `src/services/api.js`)
-
-| Función | Endpoint | Método | Descripción |
-|---------|----------|--------|-------------|
-| `getProducts()` | `/products` | GET | Listar productos |
-| `getProductById(id)` | `/products/:id` | GET | Obtener producto |
-
-### JSON Response - GET /api/products
-
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "nombre": "Low pH Good Morning Gel Cleanser",
-      "descripcion": "Limpiador gel suave...",
-      "ingredientes_clave": "Aceite de arbol de te, BHA, centella asiatica",
-      "tipo_piel": "Mixta, grasa, sensible",
-      "precio": 14.90,
-      "stock": 50,
-      "imagen_url": "https://example.com/products/cosrx-cleanser.jpg",
-      "estado": "activo",
-      "marca_id": 1,
-      "categoria_id": 1,
-      "marca_nombre": "COSRX",
-      "categoria_nombre": "Limpieza",
-      "fecha_creacion": "2026-09-14T01:46:23.411889"
-    }
-  ],
-  "message": "Productos obtenidos exitosamente."
-}
-```
-
-### Vista Catálogo (`src/views/CatalogView.vue`)
-
-- Grid responsivo de productos con imagen, nombre, marca, descripción, precio en GTQ (Q)
-- Botón "Añadir" → Llama a `cartStore.addItem(product)` con campos: id, nombre, marca_nombre, precio, imagen_url, quantity
-- Loading state por producto mientras se añade
-- Formato de moneda: `Intl.NumberFormat('es-GT', {style: 'currency', currency: 'GTQ'})`
-- Fallback visual para productos sin imagen_url
-- Filtros preparados (comentados, por categoría)
-
-### Vista Detalle de Producto (`src/views/ProductDetailView.vue`)
-
-- Ruta: `/producto/:id`
-- Galería de imagen principal
-- Nombre, marca, precio en GTQ, indicador de stock (verde/amarillo/rojo)
-- Descripción completa, ingredientes clave, tipo de piel, categoría, marca
-- Selector de cantidad con validación contra stock disponible
-- Botón "Añadir al carrito" (respeta stock)
-- Botón wishlist (placeholder)
-
-## Carrito de Compras
-
-### Store (`src/stores/cartStore.js`)
-
-```javascript
-import { useCartStore } from '@/stores/cartStore'
-
-const cartStore = useCartStore()
-
-// Estado reactivo
-cartStore.items          // Array de items { id, producto_id, nombre, marca_nombre, precio, imagen_url, cantidad, subtotal }
-cartStore.totalItems     // Computed: suma de cantidades
-cartStore.totalPrice     // Computed: suma de subtotales
-cartStore.loading        // boolean: carga en curso
-cartStore.error          // string: último error
-
-// Acciones (sincronizan con backend)
-await cartStore.fetchCart()             // Cargar carrito desde backend
-await cartStore.addItem(product)        // Añadir item (POST /api/carrito/items)
-await cartStore.updateQuantity(id, qty) // Actualizar cantidad (PUT /api/carrito/items/<id>)
-await cartStore.removeItem(itemId)      // Eliminar item (DELETE /api/carrito/items/<id>)
-await cartStore.clearCart()             // Vaciar carrito (DELETE /api/carrito)
-cartStore.setItems([])                  // Sincronizar manualmente
-```
-
-### Flujo "Añadir al Carrito" (con backend)
-
-1. Usuario clicca "Añadir" en `CatalogView.vue` o `ProductDetailView.vue`
-2. `cartStore.addItem(product)` → actualización optimista en UI + POST /api/carrito/items
-3. Si éxito: reemplaza con respuesta del backend (incluye IDs reales, subtotales)
-4. Si error: rollback automático + muestra error
-5. Badge en header actualiza `cartCount` reactivamente
-6. Vista `/carrito` muestra items con cantidades, subtotales y total en GTQ
-
-### Persistencia
-
-- **Usuario autenticado**: Carrito sincronizado con backend (persiste entre sesiones)
-- **Usuario invitado**: Solo estado local en Pinia (se pierde al recargar)
-- **Al hacer login**: Carrito invitado se migra automáticamente al backend
-- **Al hacer logout**: Carrito local se limpia
-
-## Formato de Moneda
-
-Todos los precios se muestran en **Quetzales Guatemaltecos (GTQ)** usando:
-
-```javascript
-new Intl.NumberFormat('es-GT', {
-  style: 'currency',
-  currency: 'GTQ',
-  minimumFractionDigits: 2
-})
-```
-
-Ejemplo de salida: `Q 149.00`
-
-## Docker - Multi-stage Build
-
-### Dockerfile
-
-```dockerfile
-# Etapa 1: Build con Node.js
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# Etapa 2: Producción con Nginx Alpine
-FROM nginx:alpine AS production
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-### nginx.conf (SPA Optimizado)
-
-```nginx
-server {
-    listen 80;
-    server_name localhost;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    # SPA fallback - crítico para Vue Router
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Cache de assets estáticos (1 año)
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Compresión gzip
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-}
-```
-
-### Construir y Ejecutar
-
-```bash
-# Build imagen
-docker build -t keibeauty-frontend .
-
-# Ejecutar
-docker run -d -p 80:80 --name keibeauty-frontend keibeauty-frontend
-
-# Ver logs
-docker logs -f keibeauty-frontend
-
-# Detener
-docker stop keibeauty-frontend
-```
-
-## Despliegue en Producción
-
-### Variables de Entorno Producción
-
-```env
-VITE_API_URL=https://api.keibeauty.com/api
-```
-
-### Checklist Producción
-
-- [ ] Cambiar `VITE_API_URL` a URL de producción
-- [ ] Configurar `CORS_ORIGINS` en backend con dominio del frontend
-- [ ] Usar secrets manager para variables sensibles (no commitear `.env`)
-- [ ] Configurar HTTPS (certificados SSL en Nginx o reverse proxy)
-- [ ] Habilitar cache headers en CDN/CloudFlare
-- [ ] Configurar health checks en orquestador (K8s, ECS, etc.)
-
-## Estructura de Commits (GitFlow)
-
-```
-main           # Producción
-develop        # Integración continua
-feature/*      # Nuevas features (ej: feature/checkout, feature/admin-panel)
-hotfix/*       # Fixes urgentes en main
-release/*      # Preparación releases
-```
-
-## Próximos Pasos (Roadmap)
-
-- [ ] Vista Carrito (`/carrito`) con cantidades, totales, checkout
-- [ ] Checkout: dirección, envío, pago (Stripe/MercadoPago)
-- [ ] Historial de Pedidos (`/mis-pedidos`)
-- [ ] Panel Admin: CRUD productos, gestión pedidos, usuarios
-- [ ] Persistencia carrito en `localStorage`
-- [ ] Tests unitarios (Vitest) y E2E (Cypress/Playwright)
-- [ ] PWA: Service Worker, manifest, offline support
-- [ ] i18n: Español/Inglés
-
-## Licencia
-
-Proyecto privado - KeiBeauty 2024
+**Opción B: dos túneles** (dev + API por separado): `ngrok http 5173` y
+`ngrok http 5000`; el backend acepta orígenes ngrok
+(`CORS_ORIGINS_REGEX_EXTRA`); en el teléfono abrir
+`https://<front>/config-api?api=https://<back>/api`. El dev server acepta hosts
+ngrok (`allowedHosts` en `vite.config.js`). Con URL nueva de ngrok se repite
+solo el paso de `/config-api`.
+
+Autenticar ngrok una sola vez: `ngrok config add-authtoken <tu-authtoken>`.
+
+## Testing y CI
+
+`package.json` define `dev`, `build` y `preview`; el repositorio no incluye
+suite de tests ni workflows de CI (no existe `.github/`). La verificación es
+`npm run build` sin errores más pruebas manuales del flujo en navegador.
+
+## Troubleshooting
+
+| Problema | Solución |
+|---|---|
+| `vite: not found` | `npm install` |
+| Pantalla en blanco + CORS | Backend apagado o sin origen en `CORS_ORIGINS`; revisar `VITE_API_URL` |
+| 401/422 en loop | `localStorage` con token viejo: la app lo limpia sola; si persiste, limpiar storage y reingresar |
+| Redirige a `/verificar-2fa` | Quedó `temp_token`: cancelar login o limpiar storage |
+| Imágenes rotas (inicial) | `imagen_url` caída o ImageKit sin configurar en backend |
+| Cambio de `VITE_*` sin efecto | El override de `/config-api` tiene prioridad; restablecerlo |
+| 404 al recargar ruta en Nginx | `try_files ... /index.html` (ya en `nginx.conf`) |
+| Carrito vacío tras login | El `guest_token` es por navegador (`localStorage`) |

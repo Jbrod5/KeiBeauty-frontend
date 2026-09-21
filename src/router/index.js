@@ -11,18 +11,32 @@ const ForgotPasswordView = () => import('../views/ForgotPasswordView.vue')
 const ResetPasswordView = () => import('../views/ResetPasswordView.vue')
 const CheckoutView = () => import('../views/CheckoutView.vue')
 const OrderHistoryView = () => import('../views/OrderHistoryView.vue')
+const AdminCategoriesView = () => import('../views/AdminCategoriesView.vue')
 const AdminOrdersView = () => import('../views/AdminOrdersView.vue')
+const AdminDashboardView = () => import('../views/AdminDashboardView.vue')
 const ProfileView = () => import('../views/ProfileView.vue')
+import AdminProductsView from '../views/AdminProductsView.vue'
 const OrderDetailView = () => import('../views/OrderDetailView.vue')
 const TwoFactorView = () => import('../views/TwoFactorView.vue')
 const FavoritosView = () => import('../views/FavoritosView.vue')
+const ConfigApiView = () => import('../views/ConfigApiView.vue')
 
 
 const routes = [
   {
     path: '/',
-    name: 'home',
+    redirect: '/catalogo'
+  },
+  {
+    path: '/sobre-nosotros',
+    name: 'sobre-nosotros',
     component: HomeView,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/config-api',
+    name: 'config-api',
+    component: ConfigApiView,
     meta: { requiresAuth: false }
   },
   {
@@ -74,9 +88,63 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/admin',
+    name: 'admin-dashboard',
+    component: AdminDashboardView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/categorias',
+    name: 'admin-categorias',
+    component: AdminCategoriesView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/resenas',
+    name: 'admin-resenas',
+    component: () => import('../views/AdminResenasView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/marcas',
+    name: 'admin-marcas',
+    component: () => import('../views/AdminMarcasView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/productos',
+    name: 'admin-productos',
+    component: AdminProductsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/productos/crear',
+    name: 'admin-productos-crear',
+    component: () => import('../views/AdminProductoCrearView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/productos/:id/editar',
+    name: 'admin-productos-editar',
+    component: () => import('../views/AdminProductoEditarView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/admin/pedidos',
     name: 'admin-orders',
     component: AdminOrdersView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/pedidos/:id',
+    name: 'admin-order-detail',
+    component: OrderDetailView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/reportes',
+    name: 'admin-reportes',
+    component: () => import('../views/AdminReportesView.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -147,7 +215,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (guestOnly && authStore.isAuthenticated) {
-    next('/')
+    next('/catalogo')
     return
   }
 

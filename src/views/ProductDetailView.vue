@@ -1,111 +1,273 @@
 <template>
-  <div class="product-detail-view" v-if="product">
-    <nav class="breadcrumb" aria-label="Navegación">
-      <router-link to="/">Inicio</router-link>
-      <span class="separator">/</span>
-      <router-link to="/catalogo">Catálogo</router-link>
-      <span class="separator">/</span>
-      <span>{{ product.nombre }}</span>
-    </nav>
+  <div class="container py-4">
+    <!-- Estado carga -->
+    <div v-if="loading" class="d-flex flex-column align-items-center justify-content-center py-5" style="min-height: 400px;">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3" style="color: var(--kei-gris-medio);">Cargando producto...</p>
+    </div>
 
-    <div class="product-detail">
-      <div class="product-gallery">
-        <div class="main-image">
-          <img 
-            v-if="product.imagen_url" 
-            :src="product.imagen_url" 
-            :alt="product.nombre"
-            class="detail-img"
-          />
-          <div v-else class="detail-placeholder">{{ product.nombre.charAt(0) }}</div>
+    <!-- Error -->
+    <div v-else-if="!product" class="d-flex flex-column align-items-center justify-content-center py-5 text-center" style="min-height: 400px;">
+      <h2 class="fw-bold" style="color: var(--kei-casi-negro);">Producto no encontrado</h2>
+      <p class="mb-3" style="color: var(--kei-gris-medio); max-width: 400px;">{{ errorMessage || 'El producto que buscas no existe o ha sido eliminado.' }}</p>
+      <router-link to="/catalogo" class="btn btn-primary rounded-pill">Volver al catálogo</router-link>
+    </div>
+
+    <!-- Detalle -->
+    <div v-else>
+      <!-- Breadcrumb Bootstrap -->
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><router-link to="/catalogo">Catálogo</router-link></li>
+          <li class="breadcrumb-item active" aria-current="page">{{ product.nombre }}</li>
+        </ol>
+      </nav>
+
+      <div class="card shadow-sm overflow-hidden">
+        <div class="card-body p-4">
+          <div class="row g-4 g-lg-5">
+            <!-- Galería -->
+            <div class="col-12 col-md-6">
+              <div class="position-relative rounded-3 overflow-hidden d-flex align-items-center justify-content-center" style="background-color: var(--kei-fondo); aspect-ratio:1;">
+                <img
+                  v-if="imagenActiva"
+                  :src="imagenActiva"
+                  :alt="product.nombre"
+                  class="w-100 h-100 object-fit-cover"
+                  style="position:absolute; top:0; left:0;"
+                />
+                <div v-else class="d-flex align-items-center justify-content-center w-100 h-100 fw-bold display-1" style="color: var(--kei-beige);">
+                  {{ product.nombre.charAt(0) }}
+                </div>
+                <!-- Botones laterales - izquierda/derecha separados sin superposición -->
+                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenAnterior" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px; left:12px; top:50%; transform:translateY(-50%); z-index:3;" aria-label="Anterior">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click="imagenSiguiente" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:38px;height:38px; right:12px; top:50%; transform:translateY(-50%); z-index:3;" aria-label="Siguiente">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+                <button type="button" @click="mostrarModal=true" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow-sm" style="width:36px;height:36px; top:12px; right:12px; z-index:2;" title="Ver en grande">
+                  <i class="bi bi-zoom-in"></i>
+                </button>
+              </div>
+              <!-- Thumbnails -->
+              <div v-if="product.imagenes && product.imagenes.length>1" class="d-flex gap-2 mt-3 flex-wrap">
+                <button v-for="img in product.imagenes" :key="img.id" @click="imagenActiva = img.imagen_url" class="p-0 border-0 bg-transparent flex-shrink-0 position-relative" :title="img.es_principal ? 'Principal' : 'Ver imagen'">
+                  <img :src="img.imagen_url" :alt="'thumb '+img.id" class="rounded" :style="imagenActiva===img.imagen_url ? 'width:64px;height:64px;object-fit:cover;border:2px solid #FFD700; box-shadow:0 2px 8px rgba(0,0,0,0.15);' : 'width:64px;height:64px;object-fit:cover;border:1px solid var(--kei-gris-claro);opacity:0.9;'" />
+                  <span v-if="img.es_principal" class="badge position-absolute top-0 start-0 m-1" style="background:#FFD700;color:#000;font-size:0.5rem;"><i class="bi bi-star-fill"></i></span>
+                </button>
+              </div>
+              <!-- Modal grande con navegación -->
+              <div v-if="mostrarModal" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background:rgba(0,0,0,0.8);z-index:1055;" @click.self="mostrarModal=false">
+                <div class="position-relative d-flex align-items-center justify-content-center" style="max-width:90vw;max-height:90vh;">
+                  <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click.stop="imagenAnterior" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:42px;height:42px; left:16px; top:50%; transform:translateY(-50%); z-index:2;"><i class="bi bi-chevron-left"></i></button>
+                  <img :src="imagenActiva" :alt="product.nombre" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;" />
+                  <button v-if="product.imagenes && product.imagenes.length>1" type="button" @click.stop="imagenSiguiente" class="btn btn-light rounded-circle position-absolute d-flex align-items-center justify-content-center shadow" style="width:42px;height:42px; right:16px; top:50%; transform:translateY(-50%); z-index:2;"><i class="bi bi-chevron-right"></i></button>
+                  <button type="button" @click="mostrarModal=false" class="btn btn-light rounded-circle position-absolute" style="width:40px;height:40px; top:16px; right:16px; z-index:3;"><i class="bi bi-x-lg"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Info -->
+            <div class="col-12 col-md-6 d-flex flex-column gap-3">
+              <div class="d-flex align-items-center gap-2">
+                <img v-if="product.marca_logo_url" :src="product.marca_logo_url" :alt="product.marca_nombre" :style="product.es_favorito ? 'width:28px;height:28px;object-fit:contain;border-radius:50%;border:2px solid var(--kei-rojo);background:#fff;' : 'width:28px;height:28px;object-fit:contain;border-radius:50%;border:1px solid var(--kei-gris-claro);background:#fff;'" />
+                <span v-else class="d-inline-flex align-items-center justify-content-center rounded-circle" :style="product.es_favorito ? 'width:28px;height:28px;background:var(--kei-rojo-claro);border:2px solid var(--kei-rojo);' : 'width:28px;height:28px;background:var(--kei-fondo);border:1px solid var(--kei-gris-claro);'"><i class="bi bi-award" :style="product.es_favorito ? 'color:var(--kei-rojo);font-size:14px;' : 'color:var(--kei-beige);font-size:14px;'"></i></span>
+                <p class="small fw-bold text-uppercase mb-0" :style="product.es_favorito ? 'color: var(--kei-rojo); letter-spacing: 0.05em;' : 'color: var(--kei-oliva); letter-spacing: 0.05em;'">{{ product.marca_nombre }}</p>
+                <router-link :to="`/catalogo?marca=${product.marca_id}`" class="small text-decoration-none" style="color: var(--kei-beige-medio);">
+                  <i class="bi bi-arrow-right-circle me-1"></i>Ver más de esta marca
+                </router-link>
+                <span v-if="product.es_favorito" class="badge rounded-pill ms-1" style="background: var(--kei-rojo); font-size: 0.6rem;"><i class="bi bi-heart-fill me-1"></i>Favorito</span>
+              </div>
+              <h1 class="h2 fw-bold mb-0 font-display" style="color: var(--kei-casi-negro);">{{ product.nombre }}</h1>
+
+              <div class="fs-2 fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(product.precio) }}</div>
+
+              <!-- Stock con badges + bi-circle-fill paleta -->
+              <div>
+                <span v-if="product.stock > 10" class="badge rounded-pill fs-6 fw-medium d-inline-flex align-items-center gap-2" style="background-color: var(--kei-fondo); color: var(--kei-gris-oscuro); border: 1px solid var(--kei-gris-claro);">
+                  <i class="bi bi-circle-fill" style="color: var(--kei-beige);"></i> En stock ({{ product.stock }} unidades)
+                </span>
+                <span v-else-if="product.stock > 0" class="badge rounded-pill fs-6 fw-medium d-inline-flex align-items-center gap-2" style="background-color: var(--kei-fondo); color: var(--kei-casi-negro); border: 1px solid var(--kei-beige-claro);">
+                  <i class="bi bi-circle-fill" style="color: var(--kei-beige-medio);"></i> Pocas unidades ({{ product.stock }} restantes)
+                </span>
+                <span v-else class="badge rounded-pill fs-6 fw-medium d-inline-flex align-items-center gap-2" style="background-color: var(--kei-gris-claro); color: var(--kei-casi-negro);">
+                  <i class="bi bi-circle-fill" style="color: var(--kei-gris-oscuro);"></i> Agotado
+                </span>
+              </div>
+
+              <!-- Avisame cuando esté disponible (solo sin stock, solo clientes) -->
+              <div v-if="product.stock===0 && !isAdmin" class="mt-2">
+                <button v-if="!alertaActiva" @click="activarAlerta" :disabled="cargandoAlerta" class="btn btn-outline-primary btn-sm rounded-pill d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-bell"></i> Avísame cuando esté disponible
+                </button>
+                <button v-else @click="desactivarAlerta" :disabled="cargandoAlerta" class="btn btn-primary btn-sm rounded-pill d-inline-flex align-items-center gap-2" style="background: var(--kei-oliva); border-color: var(--kei-oliva);">
+                  <i class="bi bi-bell-fill"></i> Aviso activado — Cancelar
+                </button>
+                <small class="d-block mt-1" style="color: var(--kei-gris-medio);">Te notificaremos cuando vuelva a tener stock.</small>
+              </div>
+
+              <!-- Alert error reseña si existe -->
+              <div v-if="errorMessage && product" class="alert alert-danger d-flex align-items-center gap-2 py-2" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>{{ errorMessage }}</div>
+              </div>
+
+              <div class="border-top pt-3" style="border-color: var(--kei-gris-claro) !important;">
+                <h3 class="h6 fw-bold" style="color: var(--kei-casi-negro);">Descripción</h3>
+                <p class="mb-0" style="color: var(--kei-gris-medio); line-height: 1.7;">{{ product.descripcion }}</p>
+              </div>
+
+              <div v-if="product.ingredientes_clave || product.tipo_piel" class="row g-3 py-3 border-top border-bottom" style="border-color: var(--kei-gris-claro) !important;">
+                <div class="col-6 d-flex flex-column gap-1" v-if="product.ingredientes_clave">
+                  <strong class="small text-uppercase" style="color: var(--kei-beige-medio);">Ingredientes clave:</strong>
+                  <span style="color: var(--kei-casi-negro);">{{ product.ingredientes_clave }}</span>
+                </div>
+                <div class="col-6 d-flex flex-column gap-1" v-if="product.tipo_piel">
+                  <strong class="small text-uppercase" style="color: var(--kei-beige-medio);">Tipo de piel:</strong>
+                  <span style="color: var(--kei-casi-negro);">{{ product.tipo_piel }}</span>
+                </div>
+                <div class="col-6 d-flex flex-column gap-1" v-if="product.tamano">
+                  <strong class="small text-uppercase" style="color: var(--kei-beige-medio);">Tamaño:</strong>
+                  <span style="color: var(--kei-casi-negro);">{{ product.tamano }}</span>
+                </div>
+                <div class="col-6 d-flex flex-column gap-1">
+                  <strong class="small text-uppercase" style="color: var(--kei-beige-medio);">Categoría:</strong>
+                  <span style="color: var(--kei-casi-negro);">{{ product.categoria_nombre }}</span>
+                </div>
+                <div class="col-6 d-flex flex-column gap-1">
+                  <strong class="small text-uppercase" style="color: var(--kei-beige-medio);">Marca:</strong>
+                  <span style="color: var(--kei-casi-negro);">{{ product.marca_nombre }}</span>
+                </div>
+              </div>
+
+              <!-- Acciones -->
+              <div class="d-flex flex-wrap gap-2">
+                <button
+                  v-if="!isAdmin"
+                  class="btn btn-primary flex-grow-1 d-inline-flex align-items-center justify-content-center gap-2"
+                  @click="addToCart"
+                  :disabled="product.stock === 0 || addingToCart"
+                >
+                  <span v-if="!addingToCart">Añadir al carrito</span>
+                  <span v-else class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  <i v-if="!addingToCart" class="bi bi-bag"></i>
+                </button>
+                <button
+                  class="btn d-inline-flex align-items-center justify-content-center"
+                  :class="product.es_favorito ? 'btn-primary' : 'btn-outline-primary'"
+                  @click="toggleWishlist"
+                  :aria-label="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+                  :title="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+                  :style="product.es_favorito ? 'width:56px;background:var(--kei-rojo);border-color:var(--kei-rojo);color:#fff;' : 'width:56px;'"
+                >
+                  <i v-if="product.es_favorito" class="bi bi-heart-fill"></i>
+                  <i v-else class="bi bi-heart"></i>
+                </button>
+                <button
+                  v-if="!isAdmin"
+                  class="btn d-inline-flex align-items-center gap-2"
+                  :class="puedeResenar ? 'btn-outline-secondary' : 'btn-outline-secondary disabled'"
+                  @click="mostrarResena"
+                  :disabled="!puedeResenar || verificandoCompra"
+                  :title="!authStore.isAuthenticated ? 'Inicia sesión para reseñar' : (puedeResenar ? 'Dejar reseña' : 'Debes comprar el producto para dejar una reseña')"
+                >
+                  <i class="bi bi-star"></i> Dejar reseña
+                </button>
+                <span v-if="authStore.isAuthenticated && !puedeResenar && !verificandoCompra && !isAdmin" class="small d-flex align-items-center" style="color: var(--kei-beige-medio);"><i class="bi bi-info-circle me-1"></i>No puedes reseñar hasta comprar este producto</span>
+              </div>
+
+              <!-- Form reseña con card + alert -->
+              <div v-if="mostrarFormResena" class="card mt-2" style="background-color: var(--kei-fondo);">
+                <div class="card-body">
+                  <h3 class="h6 fw-bold" style="color: var(--kei-casi-negro);">Dejar una reseña</h3>
+                  <label class="form-label">Calificación:</label>
+                  <select v-model="calificacionResena" class="form-select form-select-sm d-inline-block w-auto ms-2">
+                    <option value="5">5 <i class="bi bi-star-fill"></i></option>
+                    <option value="4">4 <i class="bi bi-star-fill"></i></option>
+                    <option value="3">3 <i class="bi bi-star-fill"></i></option>
+                    <option value="2">2 <i class="bi bi-star-fill"></i></option>
+                    <option value="1">1 <i class="bi bi-star-fill"></i></option>
+                  </select>
+                  <div class="d-flex gap-1 mt-2 mb-2">
+                    <i v-for="n in 5" :key="n" :class="n <= calificacionResena ? 'bi bi-star-fill' : 'bi bi-star'" style="color: var(--kei-beige);"></i>
+                  </div>
+                  <textarea v-model="comentarioResena" placeholder="Comentario (opcional)" class="form-control" rows="3"></textarea>
+                  <div class="d-flex gap-2 mt-3">
+                    <button @click="enviarResena" class="btn btn-primary btn-sm">Enviar reseña</button>
+                    <button @click="cancelarResena" class="btn btn-outline-secondary btn-sm">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Selector cantidad -->
+              <div v-if="product.stock > 0" class="d-flex align-items-center gap-3 pt-3 border-top" style="border-color: var(--kei-gris-claro) !important;">
+                <label for="quantity" class="form-label mb-0 fw-medium" style="color: var(--kei-casi-negro);">Cantidad:</label>
+                <div class="input-group" style="max-width: 160px;">
+                  <button class="btn btn-outline-secondary" @click="decreaseQty" :disabled="quantity === 1" aria-label="Disminuir">−</button>
+                  <input
+                    id="quantity"
+                    type="number"
+                    v-model.number="quantity"
+                    :min="1"
+                    :max="product.stock"
+                    @change="clampQuantity"
+                    class="form-control text-center"
+                  />
+                  <button class="btn btn-outline-secondary" @click="increaseQty" :disabled="quantity >= product.stock" aria-label="Aumentar">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="product-info-detail">
-        <p class="product-brand-detail">{{ product.marca_nombre }}</p>
-        <h1 class="product-name-detail">{{ product.nombre }}</h1>
-        
-        <div class="product-price-detail">{{ formatPrice(product.precio) }}</div>
-        
-        <div class="product-stock" :class="stockClass">
-          <span v-if="product.stock > 10">🟢 En stock ({{ product.stock }} unidades)</span>
-          <span v-else-if="product.stock > 0">🟡 Pocas unidades ({{ product.stock }} restantes)</span>
-          <span v-else class="out-of-stock">🔴 Agotado</span>
-        </div>
-
-        <div class="product-description-detail">
-          <h3>Descripción</h3>
-          <p>{{ product.descripcion }}</p>
-        </div>
-
-        <div class="product-details-grid" v-if="product.ingredientes_clave || product.tipo_piel">
-          <div class="detail-item" v-if="product.ingredientes_clave">
-            <strong>Ingredientes clave:</strong>
-            <span>{{ product.ingredientes_clave }}</span>
+      <!-- Reseñas: promedio + listado -->
+      <div class="card shadow-sm mt-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="h5 fw-bold mb-0 font-display" style="color: var(--kei-casi-negro);"><i class="bi bi-star me-2" style="color: var(--kei-beige);"></i>Opiniones de clientes</h3>
+            <span v-if="resenasTotal > 0" class="badge rounded-pill" style="background: var(--kei-gris-oscuro);">{{ resenasTotal }} {{ resenasTotal === 1 ? 'opinión' : 'opiniones' }}</span>
           </div>
-          <div class="detail-item" v-if="product.tipo_piel">
-            <strong>Tipo de piel:</strong>
-            <span>{{ product.tipo_piel }}</span>
-          </div>
-          <div class="detail-item">
-            <strong>Categoría:</strong>
-            <span>{{ product.categoria_nombre }}</span>
-          </div>
-          <div class="detail-item">
-            <strong>Marca:</strong>
-            <span>{{ product.marca_nombre }}</span>
-          </div>
-        </div>
 
-        <div class="product-actions">
-          <button 
-            class="btn btn-primary btn-add-cart"
-            @click="addToCart"
-            :disabled="product.stock === 0 || addingToCart"
-          >
-            <span v-if="!addingToCart">Añadir al carrito</span>
-            <span v-else class="loading">⟳</span>
-          </button>
-          <button 
-            class="btn btn-outline btn-wishlist" 
-            @click="toggleWishlist"
-            :class="{ 'active': product.es_favorito }"
-            :aria-label="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
-            :title="product.es_favorito ? 'Quitar de favoritos' : 'Añadir a favoritos'"
-          >
-            <span v-if="product.es_favorito">♥</span>
-            <span v-else>♡</span>
-          </button>
-        </div>
+          <div v-if="resenasCargando" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <p class="small mt-2" style="color: var(--kei-gris-medio);">Cargando opiniones...</p>
+          </div>
 
-        <div class="quantity-selector" v-if="product.stock > 0">
-          <label for="quantity">Cantidad:</label>
-          <div class="quantity-controls">
-            <button @click="decreaseQty" :disabled="quantity === 1" aria-label="Disminuir">−</button>
-            <input 
-              id="quantity" 
-              type="number" 
-              v-model.number="quantity" 
-              :min="1" 
-              :max="product.stock"
-              @change="clampQuantity"
-            />
-            <button @click="increaseQty" :disabled="quantity >= product.stock" aria-label="Aumentar">+</button>
+          <div v-else-if="resenasTotal > 0" class="mb-4 p-3 rounded" style="background: var(--kei-fondo); border: 1px solid var(--kei-gris-claro);">
+            <div class="d-flex align-items-center gap-3">
+              <div class="display-6 fw-bold" style="color: var(--kei-casi-negro);">{{ resenaPromedio }}</div>
+              <div>
+                <div class="d-flex gap-1">
+                  <i v-for="n in 5" :key="n" :class="n <= Math.round(resenaPromedio) ? 'bi bi-star-fill' : 'bi bi-star'" style="color: var(--kei-beige);"></i>
+                </div>
+                <small style="color: var(--kei-gris-medio);">Promedio de {{ resenasTotal }} calificaciones</small>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!resenasCargando && resenas.length === 0" class="text-center py-4">
+            <i class="bi bi-chat-square-text fs-2 d-block mb-2" style="color: var(--kei-beige-medio);"></i>
+            <p class="mb-0" style="color: var(--kei-gris-medio);">Aún no hay opiniones. ¡Sé el primero en opinar!</p>
+          </div>
+
+          <div v-for="r in resenas" :key="r.id" class="border-bottom py-3" style="border-color: var(--kei-gris-claro) !important;">
+            <div class="d-flex justify-content-between align-items-start">
+              <strong style="color: var(--kei-casi-negro);">{{ r.usuario_nombre || 'Cliente' }}</strong>
+              <small style="color: var(--kei-beige-medio);">{{ formatFecha(r.fecha) }}</small>
+            </div>
+            <div class="d-flex gap-1 my-1">
+              <i v-for="n in 5" :key="n" :class="n <= r.calificacion ? 'bi bi-star-fill' : 'bi bi-star'" style="color: var(--kei-beige); font-size: 0.9rem;"></i>
+            </div>
+            <p v-if="r.comentario" class="mb-0" style="color: var(--kei-gris-medio);">{{ r.comentario }}</p>
+            <p v-else class="mb-0 small fst-italic" style="color: var(--kei-beige-medio);">Sin comentario</p>
           </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="loading-state" v-else-if="loading">
-    <div class="spinner"></div>
-    <p>Cargando producto...</p>
-  </div>
-
-  <div class="error-state" v-else>
-    <h2>Producto no encontrado</h2>
-    <p>{{ errorMessage || 'El producto que buscas no existe o ha sido eliminado.' }}</p>
-    <router-link to="/catalogo" class="btn btn-primary">Volver al catálogo</router-link>
   </div>
 </template>
 
@@ -115,7 +277,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
 import { useFavoritosStore } from '../stores/favoritosStore'
 import { useAuthStore } from '../stores/authStore'
-import { getProductById } from '../services/api'
+import { getProductById, createResena, getResenas, getOrders, getAlertaProducto, crearAlertaProducto, eliminarAlertaProducto } from '../services/api'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -131,6 +293,19 @@ const loading = ref(true)
 const errorMessage = ref('')
 const addingToCart = ref(false)
 const quantity = ref(1)
+const mostrarFormResena = ref(false)
+const calificacionResena = ref(5)
+const comentarioResena = ref('')
+const resenas = ref([])
+const resenaPromedio = ref(null)
+const resenasTotal = ref(0)
+const resenasCargando = ref(false)
+const puedeResenar = ref(false)
+const verificandoCompra = ref(false)
+const imagenActiva = ref('')
+const mostrarModal = ref(false)
+const alertaActiva = ref(false)
+const cargandoAlerta = ref(false)
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -155,10 +330,23 @@ async function loadProduct() {
     errorMessage.value = ''
     product.value = await getProductById(route.params.id)
     quantity.value = 1
-    // Sincronizar estado de favorito
+    // Imagen activa: principal o primera de galería
+    if (product.value) {
+      if (product.value.imagenes && product.value.imagenes.length > 0) {
+        const principal = product.value.imagenes.find(i => i.es_principal) || product.value.imagenes[0]
+        imagenActiva.value = principal.imagen_url
+      } else {
+        imagenActiva.value = product.value.imagen_url || ''
+      }
+    }
+    // Sincronizar estado de favorito - inicializar correctamente
     if (product.value && authStore.isAuthenticated) {
       await favoritosStore.fetchFavoritos()
+      product.value.es_favorito = favoritosStore.esFavorito(product.value.id)
+    } else if (product.value) {
+      product.value.es_favorito = false
     }
+    await Promise.all([loadResenas(), verificarCompra(), cargarAlerta()])
   } catch (error) {
     console.error('Error loading product:', error)
     if (error.response?.status === 404) {
@@ -172,9 +360,106 @@ async function loadProduct() {
   }
 }
 
+async function verificarCompra() {
+  if (!authStore.isAuthenticated || !product.value) {
+    puedeResenar.value = false
+    return
+  }
+  // Admin no necesita comprar para reseñar? Pero requisito dice solo clientes que compraron. Admin tampoco puede si no compró.
+  verificandoCompra.value = true
+  try {
+    // Verificar si ya existe reseña del usuario (también bloquea)
+    const yaReseno = resenas.value.some(r => r.usuario_id === authStore.user?.id)
+    if (yaReseno) {
+      puedeResenar.value = false
+      return
+    }
+    const data = await getOrders()
+    const pedidos = data.data || data || []
+    const haComprado = pedidos.some(p => (p.detalles || []).some(d => d.producto_id === product.value.id || d.producto?.id === product.value.id))
+    puedeResenar.value = haComprado
+  } catch (e) {
+    puedeResenar.value = false
+  } finally {
+    verificandoCompra.value = false
+  }
+}
+
+async function cargarAlerta() {
+  if (!authStore.isAuthenticated || !product.value || product.value.stock > 0 || isAdmin.value) {
+    alertaActiva.value = false
+    return
+  }
+  try {
+    cargandoAlerta.value = true
+    const res = await getAlertaProducto(product.value.id)
+    alertaActiva.value = !!res.data?.activa
+  } catch {
+    alertaActiva.value = false
+  } finally {
+    cargandoAlerta.value = false
+  }
+}
+async function activarAlerta() {
+  if (!authStore.isAuthenticated) { toast.info('Iniciá sesión para recibir aviso'); return }
+  try {
+    cargandoAlerta.value = true
+    await crearAlertaProducto(product.value.id)
+    alertaActiva.value = true
+    toast.success('Te avisaremos cuando haya stock')
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Error al activar aviso')
+  } finally { cargandoAlerta.value = false }
+}
+async function desactivarAlerta() {
+  try {
+    cargandoAlerta.value = true
+    await eliminarAlertaProducto(product.value.id)
+    alertaActiva.value = false
+    toast.info('Aviso desactivado')
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Error al desactivar')
+  } finally { cargandoAlerta.value = false }
+}
+
+async function loadResenas() {
+  if (!product.value) return
+  resenasCargando.value = true
+  try {
+    const data = await getResenas({ producto: product.value.id })
+    resenas.value = data.data || []
+    resenaPromedio.value = data.promedio
+    resenasTotal.value = data.total || 0
+  } catch (e) {
+    console.error('Error cargando reseñas', e)
+  } finally {
+    resenasCargando.value = false
+  }
+}
+
+function formatFecha(fecha) {
+  if (!fecha) return ''
+  return new Date(fecha).toLocaleDateString('es-GT', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+function indiceImagenActual() {
+  if (!product.value || !product.value.imagenes) return -1
+  return product.value.imagenes.findIndex(i => i.imagen_url === imagenActiva.value)
+}
+function imagenSiguiente() {
+  if (!product.value || !product.value.imagenes || product.value.imagenes.length===0) return
+  const idx = indiceImagenActual()
+  const next = (idx + 1) % product.value.imagenes.length
+  imagenActiva.value = product.value.imagenes[next].imagen_url
+}
+function imagenAnterior() {
+  if (!product.value || !product.value.imagenes || product.value.imagenes.length===0) return
+  const idx = indiceImagenActual()
+  const prev = (idx - 1 + product.value.imagenes.length) % product.value.imagenes.length
+  imagenActiva.value = product.value.imagenes[prev].imagen_url
+}
 function addToCart() {
   if (!product.value || product.value.stock === 0) return
-  
   addingToCart.value = true
   try {
     const productToAdd = { ...product.value }
@@ -202,6 +487,52 @@ function decreaseQty() {
   }
 }
 
+const isAdmin = computed(() => authStore.isAdmin)
+
+function mostrarResena() {
+  if (!authStore.isAuthenticated) {
+    toast.info('Iniciá sesión para dejar una reseña')
+    return
+  }
+  if (isAdmin.value) {
+    toast.info('Los administradores no dejan reseñas')
+    return
+  }
+  if (!puedeResenar.value) {
+    toast.warning('Debes comprar este producto para dejar una reseña')
+    return
+  }
+  mostrarFormResena.value = true
+  calificacionResena.value = 5
+  comentarioResena.value = ''
+}
+
+function cancelarResena() {
+  mostrarFormResena.value = false
+  calificacionResena.value = 5
+  comentarioResena.value = ''
+}
+
+async function enviarResena() {
+  if (calificacionResena.value < 1 || calificacionResena.value > 5) {
+    toast.error('Calificación debe ser entre 1 y 5')
+    return
+  }
+  try {
+    await createResena({
+      producto_id: product.value.id,
+      calificacion: calificacionResena.value,
+      comentario: comentarioResena.value || null
+    })
+    toast.success('Reseña enviada exitosamente')
+    cancelarResena()
+    await loadResenas()
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || 'Error al enviar reseña'
+    toast.error(errorMessage.value)
+  }
+}
+
 function clampQuantity() {
   if (quantity.value < 1) quantity.value = 1
   if (quantity.value > product.value.stock) quantity.value = product.value.stock
@@ -209,16 +540,20 @@ function clampQuantity() {
 
 async function toggleWishlist() {
   if (!product.value) return
-  
   if (!authStore.isAuthenticated) {
     toast.info('Iniciá sesión para guardar favoritos')
     return
   }
-  
-  await favoritosStore.toggle(product.value.id)
-  // Forzar actualización reactiva
-  if (product.value) {
+  const estadoPrevio = !!product.value.es_favorito
+  // Optimista
+  product.value.es_favorito = !estadoPrevio
+  const result = await favoritosStore.toggle(product.value.id)
+  if (!result.success) {
+    product.value.es_favorito = estadoPrevio
+    toast.error(result.error || 'Error al actualizar favoritos')
+  } else {
     product.value.es_favorito = favoritosStore.esFavorito(product.value.id)
+    toast.success(product.value.es_favorito ? 'Añadido a favoritos' : 'Quitado de favoritos')
   }
 }
 
@@ -232,345 +567,15 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.product-detail-view {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.breadcrumb a {
-  color: #e91e63;
-  text-decoration: none;
-}
-
-.breadcrumb a:hover {
-  text-decoration: underline;
-}
-
-.separator {
-  color: #999;
-}
-
-.product-detail {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  padding: 2rem;
-}
-
-.product-gallery {
-  position: relative;
-}
-
-.main-image {
-  aspect-ratio: 1;
-  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
-  border-radius: 0.75rem;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.detail-img {
-  width: 100%;
-  height: 100%;
+.object-fit-cover {
   object-fit: cover;
 }
-
-.detail-placeholder {
-  font-size: 6rem;
-  font-weight: 600;
-  color: #e91e63;
-}
-
-.product-info-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.product-brand-detail {
-  font-size: 0.9rem;
-  color: #e91e63;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.product-name-detail {
-  font-size: 2rem;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.product-price-detail {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #2c3e50;
-}
-
-.product-stock {
-  font-size: 0.95rem;
-  font-weight: 500;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  display: inline-block;
-}
-
-.product-stock.in-stock {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.product-stock.low-stock {
-  background: #fff8e1;
-  color: #f57f17;
-}
-
-.product-stock.out-of-stock {
-  background: #fdeaea;
-  color: #c62828;
-}
-
-.product-description-detail {
-  margin-top: 0.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.product-description-detail h3 {
-  font-size: 1.1rem;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.product-description-detail p {
-  color: #555;
-  line-height: 1.7;
-}
-
-.product-details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  padding: 1rem 0;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
-  margin: 1rem 0;
-}
-
-.detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.detail-item strong {
-  font-size: 0.85rem;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.detail-item span {
-  color: #333;
-  font-size: 0.95rem;
-}
-
-.product-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+.breadcrumb a {
+  color: var(--kei-gris-oscuro);
   text-decoration: none;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
 }
-
-.btn-primary {
-  background: #e91e63;
-  color: white;
-  flex: 1;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #c2185b;
-}
-
-.btn-primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.btn-outline {
-  background: transparent;
-  color: #e91e63;
-  border: 1px solid #e91e63;
-  width: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-outline:hover {
-  background: #e91e63;
-  color: white;
-}
-
-.btn-outline.active {
-  background: #e91e63;
-  color: white;
-  border-color: #e91e63;
-}
-
-.btn-outline.active:hover {
-  background: #c2185b;
-  border-color: #c2185b;
-}
-
-.btn-add-cart .loading {
-  animation: spin 1s linear infinite;
-}
-
-.quantity-selector {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.quantity-selector label {
-  font-weight: 500;
-  color: #333;
-}
-
-.quantity-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.quantity-controls button {
-  width: 40px;
-  height: 40px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-size: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.quantity-controls button:hover:not(:disabled) {
-  background: #f5f5f5;
-  border-color: #e91e63;
-}
-
-.quantity-controls button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.quantity-controls input {
-  width: 70px;
-  height: 40px;
-  border: 1px solid #ddd;
-  border-radius: 0.5rem;
-  text-align: center;
-  font-size: 1rem;
-}
-
-.quantity-controls input:focus {
-  outline: none;
-  border-color: #e91e63;
-  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.15);
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.loading-state,
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  text-align: center;
-  gap: 1rem;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #e91e63;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.error-state h2 {
-  color: #2c3e50;
-}
-
-.error-state p {
-  color: #666;
-  max-width: 400px;
-}
-
-@media (max-width: 768px) {
-  .product-detail {
-    grid-template-columns: 1fr;
-    padding: 1.5rem;
-  }
-  
-  .product-name-detail {
-    font-size: 1.5rem;
-  }
-  
-  .product-price-detail {
-    font-size: 2rem;
-  }
-  
-  .product-details-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .product-actions {
-    flex-direction: column;
-  }
-  
-  .btn-outline {
-    width: 100%;
-  }
+.breadcrumb a:hover {
+  color: var(--kei-casi-negro);
+  text-decoration: underline;
 }
 </style>
