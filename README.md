@@ -273,3 +273,55 @@ suite de tests ni workflows de CI (no existe `.github/`). La verificación es
 | Cambio de `VITE_*` sin efecto | El override de `/config-api` tiene prioridad; restablecerlo |
 | 404 al recargar ruta en Nginx | `try_files ... /index.html` (ya en `nginx.conf`) |
 | Carrito vacío tras login | El `guest_token` es por navegador (`localStorage`) |
+
+## Reconstruir imágenes Docker
+
+Si modificaste dependencias (`package.json`), el `Dockerfile`, el
+`nginx.conf` o el `docker-compose.yml` (si aplica), tenés que reconstruir la
+imagen. La diferencia clave: reconstruir **todo** es más lento pero garantiza
+que no queden capas viejas en caché; reconstruir **solo el frontend** es más
+rápido y no toca el backend ni la BD.
+
+> ⚠️ Si usás el modo actual (frontend servido por el backend vía
+> `STATIC_DIR`), después de reconstruir hay que correr `npm run build` de
+> nuevo para regenerar `dist/` y levantar el `api` del backend.
+
+### Reconstruir el frontend
+
+```bash
+cd KeiBeauty-frontend
+docker build -t keibeauty-frontend .
+docker run -d -p 80:80 keibeauty-frontend
+```
+
+### Con docker-compose (si aplica)
+
+```bash
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+```
+
+> ⚠️ `docker compose down -v` (con `-v`) **borra los volúmenes**, es decir,
+> puede **borrar la base de datos** si la BD vive en un volumen del mismo
+> compose. Sin `-v` los datos se conservan. Verificá qué volúmenes existen con
+> `docker volume ls` antes de usar `-v`.
+
+### Verificar
+
+```bash
+docker ps
+docker logs <container_id>
+```
+
+Abrir `http://localhost` (Nginx en el puerto 80) y comprobar que redirige a
+`/catalogo`. Si ves pantalla en blanco, revisá `VITE_API_URL` (o el override
+de `/config-api`) y que el backend responda en `http://localhost:5000/health`.
+
+### Cómo verificar que se reconstruyó bien
+
+```bash
+docker ps                                   # contenedor Up sin reinicios
+docker logs <container_id> | tail -20       # Nginx sin errores
+docker images | grep keibeauty-frontend     # fecha de creación reciente
+```
