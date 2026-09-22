@@ -196,17 +196,14 @@ Variables en `src/assets/estilos/paleta.css` (única fuente de color):
 --kei-oliva-suave: #EAF0E2; --kei-rojo: #C0392B;
 ```
 
-`btn-primary` → oliva; `btn-secondary` → gris oscuro; navbar blanca con borde
-oliva; footer casi negro. Tipografías: Playfair Display (titulares) + Inter
-(cuerpo). Iconos: Bootstrap Icons; la UI no usa emojis. Tras cambios visuales:
-`npm run build` + `grep -rP "[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]" src/`
-(solo coincide el binario del logo).
 
 ## GitFlow
 
-`main` · `develop` · `feature/*` · `hotfix/*`. Rama desde `develop`, commits en
-español, merge `--no-ff`, push de rama y `develop`, sin borrar ramas. Prohibido:
-rebase, force push, `main`, borrar tags. Windows: `git config core.autocrlf true`.
+Ramas: 
+- `main` (producción) · 
+- `develop` (integración) · 
+- `feature/*` (introduccion de funcionalidad)·
+- `hotfix/*`. (arreglo rapido de un error).
 
 ## Despliegue
 
@@ -255,13 +252,8 @@ solo el paso de `/config-api`.
 
 Autenticar ngrok una sola vez: `ngrok config add-authtoken <tu-authtoken>`.
 
-## Testing y CI
 
-`package.json` define `dev`, `build` y `preview`; el repositorio no incluye
-suite de tests ni workflows de CI (no existe `.github/`). La verificación es
-`npm run build` sin errores más pruebas manuales del flujo en navegador.
-
-## Troubleshooting
+## Solucion a posibles errores
 
 | Problema | Solución |
 |---|---|
@@ -282,7 +274,7 @@ imagen. La diferencia clave: reconstruir **todo** es más lento pero garantiza
 que no queden capas viejas en caché; reconstruir **solo el frontend** es más
 rápido y no toca el backend ni la BD.
 
-> ⚠️ Si usás el modo actual (frontend servido por el backend vía
+> Si usas el modo actual (frontend servido por el backend vía
 > `STATIC_DIR`), después de reconstruir hay que correr `npm run build` de
 > nuevo para regenerar `dist/` y levantar el `api` del backend.
 
@@ -302,7 +294,7 @@ docker compose build --no-cache
 docker compose up -d
 ```
 
-> ⚠️ `docker compose down -v` (con `-v`) **borra los volúmenes**, es decir,
+> `docker compose down -v` (con `-v`) **borra los volúmenes**, es decir,
 > puede **borrar la base de datos** si la BD vive en un volumen del mismo
 > compose. Sin `-v` los datos se conservan. Verificá qué volúmenes existen con
 > `docker volume ls` antes de usar `-v`.
