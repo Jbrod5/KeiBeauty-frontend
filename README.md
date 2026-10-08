@@ -317,3 +317,4 @@ docker ps                                   # contenedor Up sin reinicios
 docker logs <container_id> | tail -20       # Nginx sin errores
 docker images | grep keibeauty-frontend     # fecha de creación reciente
 ```
+--
