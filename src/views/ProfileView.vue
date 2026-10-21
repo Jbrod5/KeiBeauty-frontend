@@ -85,6 +85,139 @@
             </div>
           </div>
 
+          <!-- Mis direcciones -->
+          <div class="mb-4 pb-3 border-bottom" style="border-color: var(--kei-gris-claro) !important;">
+            <h3 class="h6 fw-bold d-inline-block pb-2 mb-3" style="color: var(--kei-casi-negro); border-bottom: 2px solid var(--kei-beige-medio);">
+              <i class="bi bi-geo-alt me-2" style="color: var(--kei-beige);"></i>Mis direcciones
+            </h3>
+
+            <div v-if="cargandoDirecciones" class="text-center py-3">
+              <div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando direcciones...</span></div>
+            </div>
+
+            <div v-else-if="direcciones.length === 0" class="card" style="background-color: var(--kei-fondo) !important;">
+              <div class="card-body py-3 text-center">
+                <small style="color: var(--kei-gris-medio);">Todavía no tienes direcciones guardadas. Agrega una para usarla más rápido en tus pedidos.</small>
+              </div>
+            </div>
+
+            <div v-else class="row g-3 mb-3">
+              <div v-for="dir in direcciones" :key="dir.id" class="col-12 col-md-6">
+                <div class="card h-100" :style="dir.es_principal ? 'border: 2px solid var(--kei-oliva) !important;' : ''">
+                  <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                      <div class="fw-medium" style="color: var(--kei-casi-negro);">
+                        <i class="bi bi-pin-map me-1" style="color: var(--kei-beige);"></i>{{ dir.alias || 'Dirección' }}
+                      </div>
+                      <span v-if="dir.es_principal" class="badge rounded-pill" style="background: var(--kei-oliva); font-size: 0.65rem;">Principal</span>
+                    </div>
+                    <p class="small mb-3" style="color: var(--kei-gris-medio);">{{ dir.direccion }}</p>
+                    <div class="d-flex flex-wrap gap-2">
+                      <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" @click="editarDireccion(dir)">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                      </button>
+                      <button v-if="!dir.es_principal" type="button" class="btn btn-outline-primary btn-sm rounded-pill" @click="marcarDireccionPrincipal(dir)">
+                        <i class="bi bi-star me-1"></i>Principal
+                      </button>
+                      <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" @click="eliminarDireccion(dir)">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form @submit.prevent="guardarDireccion" class="card" style="background-color: var(--kei-fondo) !important;">
+              <div class="card-body py-3">
+                <h6 class="fw-semibold mb-3" style="color: var(--kei-casi-negro);">
+                  <i class="bi bi-plus-circle me-1" style="color: var(--kei-oliva);"></i>{{ editandoDireccionId ? 'Editar dirección' : 'Agregar dirección' }}
+                </h6>
+                <div class="row g-2 mb-2">
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1" for="aliasDireccion">Alias</label>
+                    <input id="aliasDireccion" v-model="formDireccion.alias" maxlength="50" class="form-control" placeholder="Casa, Oficina..." />
+                  </div>
+                  <div class="col-12 col-md-8">
+                    <label class="form-label small mb-1" for="direccionNueva">Dirección completa *</label>
+                    <textarea id="direccionNueva" v-model="formDireccion.direccion" rows="2" required minlength="10" class="form-control" placeholder="Calle, zona, ciudad"></textarea>
+                  </div>
+                </div>
+                <div class="d-flex gap-2">
+                  <button type="submit" :disabled="guardandoDireccion" class="btn btn-primary btn-sm rounded-pill">
+                    <span v-if="guardandoDireccion" class="spinner-border spinner-border-sm me-1"></span>
+                    <i class="bi bi-check-lg me-1"></i>{{ editandoDireccionId ? 'Guardar cambios' : 'Agregar dirección' }}
+                  </button>
+                  <button v-if="editandoDireccionId" type="button" class="btn btn-outline-secondary btn-sm rounded-pill" @click="cancelarEdicionDireccion">Cancelar</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Mis teléfonos -->
+          <div class="mb-4 pb-3 border-bottom" style="border-color: var(--kei-gris-claro) !important;">
+            <h3 class="h6 fw-bold d-inline-block pb-2 mb-3" style="color: var(--kei-casi-negro); border-bottom: 2px solid var(--kei-beige-medio);">
+              <i class="bi bi-telephone me-2" style="color: var(--kei-beige);"></i>Mis teléfonos
+            </h3>
+
+            <div v-if="cargandoTelefonos" class="text-center py-3">
+              <div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando teléfonos...</span></div>
+            </div>
+
+            <div v-else-if="telefonos.length === 0" class="card" style="background-color: var(--kei-fondo) !important;">
+              <div class="card-body py-3 text-center">
+                <small style="color: var(--kei-gris-medio);">Todavía no tienes teléfonos guardados. Agrega uno para usarlo en tus pedidos.</small>
+              </div>
+            </div>
+
+            <div v-else class="row g-3 mb-3">
+              <div v-for="tel in telefonos" :key="tel.id" class="col-12 col-md-6">
+                <div class="card h-100" :style="tel.es_principal ? 'border: 2px solid var(--kei-oliva) !important;' : ''">
+                  <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                      <div class="fw-medium" style="color: var(--kei-casi-negro);">
+                        <i class="bi bi-phone me-1" style="color: var(--kei-beige);"></i>{{ tel.telefono }}
+                      </div>
+                      <span v-if="tel.es_principal" class="badge rounded-pill" style="background: var(--kei-oliva); font-size: 0.65rem;">Principal</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                      <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" @click="editarTelefono(tel)">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                      </button>
+                      <button v-if="!tel.es_principal" type="button" class="btn btn-outline-primary btn-sm rounded-pill" @click="marcarTelefonoPrincipal(tel)">
+                        <i class="bi bi-star me-1"></i>Principal
+                      </button>
+                      <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" @click="eliminarTelefono(tel)">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form @submit.prevent="guardarTelefono" class="card" style="background-color: var(--kei-fondo) !important;">
+              <div class="card-body py-3">
+                <h6 class="fw-semibold mb-3" style="color: var(--kei-casi-negro);">
+                  <i class="bi bi-plus-circle me-1" style="color: var(--kei-oliva);"></i>{{ editandoTelefonoId ? 'Editar teléfono' : 'Agregar teléfono' }}
+                </h6>
+                <div class="row g-2 mb-2">
+                  <div class="col-12 col-md-6">
+                    <label class="form-label small mb-1" for="telefonoNuevo">Teléfono *</label>
+                    <input id="telefonoNuevo" v-model="formTelefono.telefono" type="tel" required class="form-control" placeholder="50239718418" />
+                  </div>
+                </div>
+                <div class="d-flex gap-2">
+                  <button type="submit" :disabled="guardandoTelefono" class="btn btn-primary btn-sm rounded-pill">
+                    <span v-if="guardandoTelefono" class="spinner-border spinner-border-sm me-1"></span>
+                    <i class="bi bi-check-lg me-1"></i>{{ editandoTelefonoId ? 'Guardar cambios' : 'Agregar teléfono' }}
+                  </button>
+                  <button v-if="editandoTelefonoId" type="button" class="btn btn-outline-secondary btn-sm rounded-pill" @click="cancelarEdicionTelefono">Cancelar</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
           <!-- Seguridad -->
           <div class="mb-4 pb-3 border-bottom" style="border-color: var(--kei-gris-claro) !important;">
             <h3 class="h6 fw-bold d-inline-block pb-2 mb-3" style="color: var(--kei-casi-negro); border-bottom: 2px solid var(--kei-beige-medio);">
@@ -164,12 +297,34 @@
 import { ref, onMounted, computed } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useAuthStore } from '../stores/authStore'
+import {
+  getDirecciones,
+  crearDireccion,
+  actualizarDireccion,
+  eliminarDireccion as eliminarDireccionApi,
+  getTelefonos,
+  crearTelefono,
+  actualizarTelefono,
+  eliminarTelefono as eliminarTelefonoApi
+} from '../services/api'
 
 const authStore = useAuthStore()
 const toast = useToast()
 
 const loading = ref(true)
 const guardando2FA = ref(false)
+
+// Direcciones y teléfonos guardados en la cuenta
+const direcciones = ref([])
+const telefonos = ref([])
+const cargandoDirecciones = ref(true)
+const cargandoTelefonos = ref(true)
+const guardandoDireccion = ref(false)
+const guardandoTelefono = ref(false)
+const editandoDireccionId = ref(null)
+const editandoTelefonoId = ref(null)
+const formDireccion = ref({ alias: '', direccion: '' })
+const formTelefono = ref({ telefono: '' })
 
 const userName = computed(() => authStore.userName)
 const userEmail = computed(() => authStore.user?.email || '')
@@ -233,8 +388,155 @@ async function loadProfile() {
   }
 }
 
-onMounted(() => {
-  loadProfile()
+// --- Direcciones ---
+async function cargarDirecciones() {
+  cargandoDirecciones.value = true
+  try {
+    const r = await getDirecciones()
+    direcciones.value = r.data || []
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'No se pudieron cargar las direcciones')
+  } finally {
+    cargandoDirecciones.value = false
+  }
+}
+
+function editarDireccion(dir) {
+  editandoDireccionId.value = dir.id
+  formDireccion.value = { alias: dir.alias || '', direccion: dir.direccion || '' }
+}
+
+function cancelarEdicionDireccion() {
+  editandoDireccionId.value = null
+  formDireccion.value = { alias: '', direccion: '' }
+}
+
+async function guardarDireccion() {
+  guardandoDireccion.value = true
+  try {
+    const payload = {
+      alias: formDireccion.value.alias?.trim() || null,
+      direccion: formDireccion.value.direccion.trim()
+    }
+    if (editandoDireccionId.value) {
+      await actualizarDireccion(editandoDireccionId.value, payload)
+      toast.success('Dirección actualizada')
+    } else {
+      await crearDireccion(payload)
+      toast.success('Dirección guardada')
+    }
+    cancelarEdicionDireccion()
+    await cargarDirecciones()
+    await refrescarPerfil()
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'No se pudo guardar la dirección')
+  } finally {
+    guardandoDireccion.value = false
+  }
+}
+
+async function marcarDireccionPrincipal(dir) {
+  try {
+    await actualizarDireccion(dir.id, { es_principal: true })
+    toast.success('Dirección principal actualizada')
+    await cargarDirecciones()
+    await refrescarPerfil()
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'No se pudo actualizar la dirección principal')
+  }
+}
+
+async function eliminarDireccion(dir) {
+  if (!confirm('¿Eliminar esta dirección?')) return
+  try {
+    await eliminarDireccionApi(dir.id)
+    toast.success('Dirección eliminada')
+    await cargarDirecciones()
+    await refrescarPerfil()
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'No se pudo eliminar la dirección')
+  }
+}
+
+// --- Teléfonos ---
+async function cargarTelefonos() {
+  cargandoTelefonos.value = true
+  try {
+    const r = await getTelefonos()
+    telefonos.value = r.data || []
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'No se pudieron cargar los teléfonos')
+  } finally {
+    cargandoTelefonos.value = false
+  }
+}
+
+function editarTelefono(tel) {
+  editandoTelefonoId.value = tel.id
+  formTelefono.value = { telefono: tel.telefono || '' }
+}
+
+function cancelarEdicionTelefono() {
+  editandoTelefonoId.value = null
+  formTelefono.value = { telefono: '' }
+}
+
+async function guardarTelefono() {
+  guardandoTelefono.value = true
+  try {
+    const payload = { telefono: formTelefono.value.telefono.trim() }
+    if (editandoTelefonoId.value) {
+      await actualizarTelefono(editandoTelefonoId.value, payload)
+      toast.success('Teléfono actualizado')
+    } else {
+      await crearTelefono(payload)
+      toast.success('Teléfono guardado')
+    }
+    cancelarEdicionTelefono()
+    await cargarTelefonos()
+    await refrescarPerfil()
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'No se pudo guardar el teléfono')
+  } finally {
+    guardandoTelefono.value = false
+  }
+}
+
+async function marcarTelefonoPrincipal(tel) {
+  try {
+    await actualizarTelefono(tel.id, { es_principal: true })
+    toast.success('Teléfono principal actualizado')
+    await cargarTelefonos()
+    await refrescarPerfil()
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'No se pudo actualizar el teléfono principal')
+  }
+}
+
+async function eliminarTelefono(tel) {
+  if (!confirm('¿Eliminar este teléfono?')) return
+  try {
+    await eliminarTelefonoApi(tel.id)
+    toast.success('Teléfono eliminado')
+    await cargarTelefonos()
+    await refrescarPerfil()
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'No se pudo eliminar el teléfono')
+  }
+}
+
+// Refresca los datos del usuario en el store (dirección/teléfono principal)
+async function refrescarPerfil() {
+  try {
+    await authStore.fetchProfile()
+  } catch (err) {
+    console.error('Error refrescando perfil:', err)
+  }
+}
+
+onMounted(async () => {
+  await loadProfile()
+  await Promise.all([cargarDirecciones(), cargarTelefonos()])
 })
 </script>
 
