@@ -27,7 +27,10 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 10000
+  // 20s: contra RDS + bcrypt la respuesta puede tardar mas de 10s en el
+  // primer registro (si expira antes, el servidor crea el usuario y el
+  // cliente cree que fallo).
+  timeout: 20000
 })
 
 api.interceptors.request.use(
