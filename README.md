@@ -155,6 +155,19 @@ código expira a los 15 minutos y se puede reenviar cada 60 segundos.
 (`{tipo, mensaje}`) que `App.vue` muestra como toast. Si la sesión expiró por
 token vencido, el aviso es informativo en vez de "sesión cerrada".
 
+### Direcciones y teléfonos guardados
+
+Una cuenta puede tener varias direcciones de envío y varios teléfonos. El
+cliente los gestiona en `ProfileView` (secciones "Mis direcciones" y "Mis
+teléfonos": agregar, editar, eliminar y marcar principal) y los elige en el
+`CheckoutView` con un selector. Si escribe una dirección o teléfono nuevo
+puede marcar "Guardar en mi cuenta"; el backend guarda el snapshot en el
+pedido (`direccion_envio`, `telefono_contacto`, `telefono_2`).
+
+Solo puede haber una principal de cada tipo: al cambiarla se actualizan
+`usuarios.direccion_envio` y `usuarios.telefono`, y `GET /auth/perfil` devuelve
+las listas `direcciones` y `telefonos`.
+
 ### Catálogo, carrito, pedidos y admin
 
 | Función | Endpoint | Envía | Recibe | Usada desde |
@@ -166,13 +179,15 @@ token vencido, el aviso es informativo en vez de "sesión cerrada".
 | `uploadProductImage/getProductoImagenes/subirImagenesGaleria/marcarImagenPrincipal/eliminarImagenGaleria` | `/products/<id>/imagen…` | `FormData` (admin) | `{data}` | edición admin, detalle |
 | `ajustarInventario(id,t,c)` | `POST /products/<id>/inventario` | `{tipo, cantidad, costo_unitario?}` (admin) | `{data}` | `AdminProductsView` |
 | `getCart/addToCart/updateCartItem/removeCartItem/clearCart` | `/carrito…` | `{producto_id, cantidad}` / `{cantidad}` | `{data: <carrito>}` | `cartStore`, `CartView` |
-| `createOrder(d)` | `POST /pedidos` | `{direccion_envio}` (+ contacto/ítems si invitado) | `{data: <pedido>}` (`201`) | `CheckoutView` |
+| `createOrder(d)` | `POST /pedidos` | cliente: `{direccion_id}` o `{direccion_envio, guardar_direccion?}`, `{telefono_id}` o `{telefono, guardar_telefono?}`, `{telefono_2?}`; invitado: `{direccion_envio, email_contacto, telefono_contacto, items?}` | `{data: <pedido>}` (`201`) | `CheckoutView` |
 | `getOrders/getOrderById/updateOrderStatus/uploadGuia` | `/pedidos…` | `{estado}` / `FormData{archivo}` | `{data}` | historial, detalle (admin: estado + guía), AdminOrdersView |
 | `getFavoritos/agregarFavorito/quitarFavorito` | `/favoritos…` | JWT | `{data}` | `favoritosStore` |
 | `getResenas/createResena/updateResena/deleteResena` | `/resenas…` | `{producto_id, calificacion 1-5, comentario?}` | `{data, promedio, total}` | detalle, admin |
 | `createCategory/updateCategory/deleteCategory` | `/categorias…` | `{nombre, descripcion?}` (admin) | `{data}` | `AdminCategoriesView` |
 | `createMarca/updateMarca/deleteMarca` | `/marcas…` | JSON o `FormData` (admin) | `{data}` | `AdminMarcasView` |
 | `getAlertaProducto/crearAlertaProducto/eliminarAlertaProducto` | `/notificaciones/producto/<id>/alerta` | JWT | `{data}` | detalle ("Avísame") |
+| `getDirecciones/crearDireccion/actualizarDireccion/eliminarDireccion` | `/usuario/direcciones…` | JWT · `{alias?, direccion, es_principal?}` | `{data: [<direccion>]}` | `ProfileView`, `CheckoutView` |
+| `getTelefonos/crearTelefono/actualizarTelefono/eliminarTelefono` | `/usuario/telefonos…` | JWT · `{telefono, es_principal?}` | `{data: [<telefono>]}` | `ProfileView`, `CheckoutView` |
 | `getReportes*` (6) + `descargarExcel` | `/reportes/*?desde&hasta&limit(&excel=1)` | query (admin) | `{data}` o `.xlsx` | `AdminReportesView` |
 
 Notificaciones in-app (`GET /notificaciones`, `PUT .../leida`, `PUT /leer-todas`)

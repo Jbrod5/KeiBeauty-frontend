@@ -414,4 +414,45 @@ export async function eliminarAlertaProducto(productoId) {
   return response.data
 }
 
+// --- Direcciones de envío y teléfonos guardados en la cuenta ---
+export async function getDirecciones() {
+  const response = await api.get('/usuario/direcciones')
+  return response.data
+}
+
+export async function crearDireccion(data) {
+  const response = await api.post('/usuario/direcciones', data)
+  return response.data
+}
+
+export async function actualizarDireccion(id, data) {
+  const response = await api.put(`/usuario/direcciones/${id}`, data)
+  return response.data
+}
+
+export async function eliminarDireccion(id) {
+  const response = await api.delete(`/usuario/direcciones/${id}`)
+  return response.data
+}
+
+export async function getTelefonos() {
+  const response = await api.get('/usuario/telefonos')
+  return response.data
+}
+
+export async function crearTelefono(data) {
+  const response = await api.post('/usuario/telefonos', data)
+  return response.data
+}
+
+export async function actualizarTelefono(id, data) {
+  const response = await api.put(`/usuario/telefonos/${id}`, data)
+  return response.data
+}
+
+export async function eliminarTelefono(id) {
+  const response = await api.delete(`/usuario/telefonos/${id}`)
+  return response.data
+}
+
 export default api
