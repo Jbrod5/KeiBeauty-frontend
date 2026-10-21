@@ -52,23 +52,51 @@
           <small style="color: var(--kei-gris-medio);">Una sola principal <i class="bi bi-star-fill" style="color:#FFD700;"></i></small>
         </div>
         <div class="card-body">
-          <div v-if="galeria.length===0" class="text-center py-3">
+          <div v-if="cargandoGaleria" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando galería...</span></div>
+            <p class="small mt-2 mb-0" style="color: var(--kei-gris-medio);">Cargando imágenes...</p>
+          </div>
+
+          <div v-else-if="galeria.length===0 && !imagenLegacy" class="text-center py-3">
             <i class="bi bi-image fs-2 d-block mb-2" style="color: var(--kei-beige-medio);"></i>
             <p style="color: var(--kei-gris-medio);">Sin imágenes. Sube la primera como principal.</p>
           </div>
-          <div v-else class="row g-3 mb-4">
-            <div v-for="img in galeria" :key="img.id" class="col-6 col-md-4 col-lg-3">
-              <div class="card overflow-hidden" :style="img.es_principal ? 'border:2px solid #FFD700 !important;' : 'border:1px solid var(--kei-gris-claro);'">
-                <div class="position-relative" style="aspect-ratio:1; background:#fff;">
-                  <img :src="img.imagen_url" :alt="'img '+img.id" class="w-100 h-100" style="object-fit:cover;" />
-                  <button type="button" @click="hacerPrincipal(img.id)" class="btn btn-sm rounded-circle position-absolute top-0 end-0 m-1 d-flex align-items-center justify-content-center" :style="img.es_principal ? 'background:#FFD700; color:#000; border:none; width:32px;height:32px;' : 'background:rgba(255,255,255,0.9); color:#999; border:1px solid #ddd; width:32px;height:32px;'" :title="img.es_principal ? 'Principal' : 'Marcar como principal'">
-                    <i :class="img.es_principal ? 'bi bi-star-fill' : 'bi bi-star'"></i>
-                  </button>
-                  <span v-if="img.es_principal" class="badge position-absolute bottom-0 start-0 m-1" style="background:#FFD700; color:#000; font-size:0.6rem;"><i class="bi bi-star-fill me-1"></i>Principal</span>
+
+          <div v-else>
+            <div v-if="errorGaleria" class="alert alert-warning d-flex align-items-center gap-2 py-2">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <div class="small">{{ errorGaleria }} Se muestra la información que devolvió el producto.</div>
+            </div>
+
+            <!-- Imagen principal heredada (productos creados antes de la galería) -->
+            <div v-if="imagenLegacy" class="row g-3 mb-4">
+              <div class="col-6 col-md-4 col-lg-3">
+                <div class="card overflow-hidden" style="border:2px solid #FFD700 !important;">
+                  <div class="position-relative" style="aspect-ratio:1; background:#fff;">
+                    <img :src="imagenLegacy" alt="Imagen principal" class="w-100 h-100" style="object-fit:cover;" />
+                    <span class="badge position-absolute bottom-0 start-0 m-1" style="background:#FFD700; color:#000; font-size:0.6rem;"><i class="bi bi-star-fill me-1"></i>Principal</span>
+                  </div>
+                  <div class="p-2">
+                    <small class="d-block" style="color: var(--kei-gris-medio);">Imagen principal del producto</small>
+                  </div>
                 </div>
-                <div class="p-2 d-flex justify-content-between align-items-center">
-                  <small style="color: var(--kei-gris-medio);">#{{ img.id }}</small>
-                  <button type="button" @click="eliminarImg(img.id)" class="btn btn-outline-danger btn-sm rounded-pill" style="padding:2px 8px;"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+
+            <div v-if="galeria.length>0" class="row g-3 mb-4">
+              <div v-for="img in galeria" :key="img.id" class="col-6 col-md-4 col-lg-3">
+                <div class="card overflow-hidden" :style="img.es_principal ? 'border:2px solid #FFD700 !important;' : 'border:1px solid var(--kei-gris-claro);'">
+                  <div class="position-relative" style="aspect-ratio:1; background:#fff;">
+                    <img :src="img.imagen_url" :alt="'img '+img.id" class="w-100 h-100" style="object-fit:cover;" />
+                    <button type="button" @click="hacerPrincipal(img.id)" class="btn btn-sm rounded-circle position-absolute top-0 end-0 m-1 d-flex align-items-center justify-content-center" :style="img.es_principal ? 'background:#FFD700; color:#000; border:none; width:32px;height:32px;' : 'background:rgba(255,255,255,0.9); color:#999; border:1px solid #ddd; width:32px;height:32px;'" :title="img.es_principal ? 'Principal' : 'Marcar como principal'">
+                      <i :class="img.es_principal ? 'bi bi-star-fill' : 'bi bi-star'"></i>
+                    </button>
+                    <span v-if="img.es_principal" class="badge position-absolute bottom-0 start-0 m-1" style="background:#FFD700; color:#000; font-size:0.6rem;"><i class="bi bi-star-fill me-1"></i>Principal</span>
+                  </div>
+                  <div class="p-2 d-flex justify-content-between align-items-center">
+                    <small style="color: var(--kei-gris-medio);">#{{ img.id }}</small>
+                    <button type="button" @click="eliminarImg(img.id)" class="btn btn-outline-danger btn-sm rounded-pill" style="padding:2px 8px;"><i class="bi bi-trash"></i></button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -95,7 +123,7 @@
           </div>
           <div class="d-flex gap-2">
             <button type="button" @click="subirNuevos" :disabled="nuevos.length===0 || subiendo" class="btn btn-primary rounded-pill"><span v-if="subiendo" class="spinner-border spinner-border-sm me-2"></span><i class="bi bi-cloud-arrow-up me-1"></i>Subir {{ nuevos.length }} imágenes</button>
-            <button type="button" @click="nuevos=[]" :disabled="nuevos.length===0" class="btn btn-outline-secondary rounded-pill">Limpiar selección</button>
+            <button type="button" @click="limpiarNuevos" :disabled="nuevos.length===0" class="btn btn-outline-secondary rounded-pill">Limpiar selección</button>
           </div>
         </div>
       </section>
@@ -103,7 +131,7 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { getProductById, getCategories, getMarcas, updateProduct, getProductoImagenes, subirImagenesGaleria, marcarImagenPrincipal, eliminarImagenGaleria } from '../services/api'
@@ -113,9 +141,24 @@ const marcas=ref([]); const categorias=ref([]); const error=ref(''); const exito
 const original=ref(null)
 const form=ref({ nombre:'', precio:'', stock:'', marca_id:'', categoria_id:'', descripcion:'', ingredientes_clave:'', tipo_piel:'', tamano:'' })
 const galeria=ref([]); const nuevos=ref([]); const subiendo=ref(false)
+const imagenesProducto=ref([]); const cargandoGaleria=ref(true); const errorGaleria=ref('')
+// Imagen principal heredada (productos creados antes de que existiera la galería)
+const imagenLegacy = computed(() => (!galeria.value.length && original.value?.imagen_url) ? original.value.imagen_url : '')
 
 async function cargarGaleria(){
-  try{ const r = await getProductoImagenes(id); galeria.value = r.data || [] }catch(e){ console.error(e) }
+  cargandoGaleria.value = true
+  errorGaleria.value = ''
+  try{
+    const r = await getProductoImagenes(id)
+    galeria.value = r.data || []
+  }catch(e){
+    // No se traga el error: se avisa y se conserva lo que trajo el producto
+    errorGaleria.value = e.response?.data?.message || 'No se pudo cargar la galería de imágenes'
+  }finally{
+    // Si el endpoint falló, se usan las imágenes que ya venían en el producto
+    if(!galeria.value.length && imagenesProducto.value.length) galeria.value = [...imagenesProducto.value]
+    cargandoGaleria.value = false
+  }
 }
 function onNuevos(e){
   const files = Array.from(e.target.files||[])
@@ -127,7 +170,17 @@ function onNuevos(e){
   e.target.value=''
 }
 function marcarNuevoPrincipal(idx){ nuevos.value.forEach((item,i)=> item.es_principal = i===idx) }
-function quitarNuevo(idx){ const era = nuevos.value[idx].es_principal; nuevos.value.splice(idx,1); if(era && nuevos.value.length>0) nuevos.value[0].es_principal=true }
+function quitarNuevo(idx){
+  const era = nuevos.value[idx].es_principal
+  // Liberar el object URL para no filtrar memoria
+  URL.revokeObjectURL(nuevos.value[idx].url)
+  nuevos.value.splice(idx,1)
+  if(era && nuevos.value.length>0) nuevos.value[0].es_principal=true
+}
+function limpiarNuevos(){
+  nuevos.value.forEach(item=> URL.revokeObjectURL(item.url))
+  nuevos.value=[]
+}
 
 async function hacerPrincipal(imagenId){
   try{ await marcarImagenPrincipal(id, imagenId); await cargarGaleria(); exito.value='Imagen principal actualizada'; setTimeout(()=> exito.value='', 2000) }catch(err){ error.value = err.response?.data?.message || 'Error al marcar principal' }
@@ -149,7 +202,7 @@ async function subirNuevos(){
     } else if(principalIdx===0 && galeria.value.length===0){
       // Si no había galería y primer nuevo es principal, backend ya lo marcó, pero asegurar
     }
-    nuevos.value=[]
+    limpiarNuevos()
     await cargarGaleria()
     exito.value = 'Imágenes subidas exitosamente'
   }catch(err){ error.value = err.response?.data?.message || 'Error al subir' } finally { subiendo.value=false }
@@ -165,6 +218,10 @@ onMounted(async ()=>{
     const [prod, c, m] = await Promise.all([getProductById(id), getCategories(), getMarcas()])
     original.value = prod; form.value = { nombre: prod.nombre, precio: prod.precio, stock: prod.stock, marca_id: prod.marca_id, categoria_id: prod.categoria_id, descripcion: prod.descripcion||'', ingredientes_clave: prod.ingredientes_clave||'', tipo_piel: prod.tipo_piel||'', tamano: prod.tamano||'' }
     categorias.value = c.data||[]; marcas.value = m.data||[]
+    // El detalle del producto ya trae su galería: sirve de respaldo si el
+    // endpoint de imágenes falla, para no mostrar "Sin imágenes" a ciegas.
+    imagenesProducto.value = prod.imagenes||[]
+    galeria.value = [...imagenesProducto.value]
     await cargarGaleria()
   }catch(e){ error.value = e.response?.data?.message || 'No se pudo cargar producto' } finally { cargando.value=false }
 })
