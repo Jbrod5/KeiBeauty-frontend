@@ -85,6 +85,49 @@
             </div>
           </div>
 
+          <!-- Seguridad -->
+          <div class="mb-4 pb-3 border-bottom" style="border-color: var(--kei-gris-claro) !important;">
+            <h3 class="h6 fw-bold d-inline-block pb-2 mb-3" style="color: var(--kei-casi-negro); border-bottom: 2px solid var(--kei-beige-medio);">
+              <i class="bi bi-shield-lock me-2" style="color: var(--kei-beige);"></i>Seguridad
+            </h3>
+
+            <div class="card" style="background-color: var(--kei-fondo) !important;">
+              <div class="card-body py-3">
+                <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                  <div class="flex-grow-1 me-3">
+                    <div class="fw-medium d-flex align-items-center gap-2" style="color: var(--kei-casi-negro);">
+                      <i class="bi bi-key"></i>
+                      Verificación en dos pasos (2FA)
+                      <span class="badge rounded-pill" :class="twoFactorEnabled ? 'bg-success' : 'bg-secondary'" style="font-size: 0.7rem;">
+                        {{ twoFactorEnabled ? 'Activado' : 'Desactivado' }}
+                      </span>
+                    </div>
+                    <small style="color: var(--kei-gris-medio);">
+                      Al iniciar sesión te enviamos un código de 6 dígitos a tu correo para verificar que eres tú.
+                    </small>
+                  </div>
+                  <div class="form-check form-switch mb-0">
+                    <input
+                      id="switch2fa"
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      :checked="twoFactorEnabled"
+                      :disabled="guardando2FA"
+                      @change="toggle2FA"
+                      aria-label="Activar o desactivar la verificación en dos pasos"
+                      style="width: 3rem; height: 1.6rem;"
+                    />
+                  </div>
+                </div>
+                <div v-if="guardando2FA" class="d-flex align-items-center gap-2 mt-2">
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  <small style="color: var(--kei-gris-medio);">Actualizando...</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Acciones Rápidas -->
           <div>
             <h3 class="h6 fw-bold d-inline-block pb-2 mb-3" style="color: var(--kei-casi-negro); border-bottom: 2px solid var(--kei-beige-medio);">
@@ -119,13 +162,14 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
 import { useAuthStore } from '../stores/authStore'
 
-const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const loading = ref(true)
+const guardando2FA = ref(false)
 
 const userName = computed(() => authStore.userName)
 const userEmail = computed(() => authStore.user?.email || '')
@@ -134,6 +178,7 @@ const userInitial = computed(() => authStore.user?.nombre?.charAt(0)?.toUpperCas
 const telefono = computed(() => authStore.user?.telefono || '')
 const direccion_envio = computed(() => authStore.user?.direccion_envio || '')
 const fecha_registro = computed(() => authStore.user?.fecha_registro || '')
+const twoFactorEnabled = computed(() => authStore.user?.two_factor_enabled === true)
 
 function formatDate(dateString) {
   if (!dateString) return ''
@@ -145,9 +190,34 @@ function formatDate(dateString) {
   })
 }
 
-function logout() {
-  authStore.logout()
-  router.push('/')
+async function toggle2FA() {
+  const activar = !twoFactorEnabled.value
+  const mensaje = activar
+    ? '¿Activar la verificación en dos pasos? Te pediremos un código cada vez que inicies sesión.'
+    : '¿Desactivar la verificación en dos pasos? Tu cuenta quedará menos protegida.'
+  if (!confirm(mensaje)) {
+    // Si el usuario cancela hay que devolver el switch a su estado anterior
+    const input = document.getElementById('switch2fa')
+    if (input) input.checked = twoFactorEnabled.value
+    return
+  }
+
+  guardando2FA.value = true
+  const result = activar
+    ? await authStore.activar2FA()
+    : await authStore.desactivar2FA()
+  guardando2FA.value = false
+
+  if (result.success) {
+    toast.success(
+      activar ? 'Verificación en dos pasos activada' : 'Verificación en dos pasos desactivada'
+    )
+  } else {
+    toast.error(result.error || 'No se pudo actualizar la verificación en dos pasos')
+    // Revertir el switch visual
+    const input = document.getElementById('switch2fa')
+    if (input) input.checked = twoFactorEnabled.value
+  }
 }
 
 async function loadProfile() {

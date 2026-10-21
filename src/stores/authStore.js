@@ -1,8 +1,29 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { login as apiLogin, register as apiRegister, getProfile, refreshToken, forgotPassword as apiForgotPassword, resetPassword as apiResetPassword, verify2FA as apiVerify2FA, resend2FA as apiResend2FA, cancelarLogin as apiCancelLogin, activar2FA as apiActivar2FA, desactivar2FA as apiDesactivar2FA } from '../services/api'
+import { login as apiLogin, register as apiRegister, getProfile, refreshToken, forgotPassword as apiForgotPassword, resetPassword as apiResetPassword, verify2FA as apiVerify2FA, resend2FA as apiResend2FA, cancelarLogin as apiCancelLogin, activar2FA as apiActivar2FA, desactivar2FA as apiDesactivar2FA, verificarCodigoRecuperacion as apiVerificarCodigoRecuperacion, reenviarCodigoRecuperacion as apiReenviarCodigoRecuperacion } from '../services/api'
 import { useCartStore } from './cartStore'
 import { useFavoritosStore } from './favoritosStore'
+
+// Sin respuesta del servidor: fallo de red o timeout. No se puede saber si
+// la peticion llego a aplicarse en el servidor, asi que el mensaje debe
+// dejar claro que se puede reintentar.
+const ERROR_RED = 'No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.'
+
+/**
+ * Traduce un error de axios a un mensaje util.
+ * @returns {{mensaje: string, campo: string|null}}
+ */
+function analizarErrorAuth(err, porDefecto) {
+  if (!err || !err.response) {
+    return { mensaje: ERROR_RED, campo: null }
+  }
+  const data = err.response.data || {}
+  // 409 / EMAIL_DUPLICADO: el campo a marcar es el email
+  if (err.response.status === 409 || data.codigo === 'EMAIL_DUPLICADO') {
+    return { mensaje: data.error || 'El email ya está registrado.', campo: 'email' }
+  }
+  return { mensaje: data.error || data.message || porDefecto, campo: null }
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -12,6 +33,9 @@ export const useAuthStore = defineStore('auth', () => {
   const tempEmail = ref(localStorage.getItem('temp_email') || null)
   const loading = ref(false)
   const error = ref(null)
+  // Aviso de cierre de sesion. Es un objeto nuevo en cada cierre para que
+  // el watcher de App.vue se dispare tambien en cierres consecutivos.
+  const logoutNotice = ref(null)
 
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
   const isAdmin = computed(() => user.value?.rol === 'admin')
@@ -79,15 +103,15 @@ export const useAuthStore = defineStore('auth', () => {
       setUser(usuario)
       // Cargar carrito del usuario desde backend
       const cartStore = useCartStore()
-      await cartStore.fetchCart()
+      try { await cartStore.fetchCart() } catch {}
       // Cargar favoritos del usuario
       const favoritosStore = useFavoritosStore()
-      await favoritosStore.fetchFavoritos()
+      try { await favoritosStore.fetchFavoritos() } catch {}
       return { success: true }
     } catch (err) {
-      const message = err.response?.data?.error || 'Error al iniciar sesión'
-      error.value = message
-      return { success: false, error: message }
+      const { mensaje } = analizarErrorAuth(err, 'Error al iniciar sesión')
+      error.value = mensaje
+      return { success: false, error: mensaje }
     } finally {
       loading.value = false
     }
@@ -102,18 +126,18 @@ export const useAuthStore = defineStore('auth', () => {
       setTokens(access_token, refresh_token)
       setUser(usuario)
 
-      // Cargar carrito del usuario desde backend
-
+      // Cargar carrito y favoritos del usuario. Nunca deben romper el
+      // registro: si fallan, la cuenta ya esta creada y el usuario esta
+      // autenticado, asi que se ignoran los errores silenciosamente.
       const cartStore = useCartStore()
-      await cartStore.fetchCart()
-      // Cargar favoritos del usuario
+      try { await cartStore.fetchCart() } catch {}
       const favoritosStore = useFavoritosStore()
-      await favoritosStore.fetchFavoritos()
+      try { await favoritosStore.fetchFavoritos() } catch {}
       return { success: true }
     } catch (err) {
-      const message = err.response?.data?.error || 'Error al registrarse'
-      error.value = message
-      return { success: false, error: message }
+      const { mensaje, campo } = analizarErrorAuth(err, 'Error al registrarse')
+      error.value = mensaje
+      return { success: false, error: mensaje, campo }
     } finally {
       loading.value = false
     }
@@ -144,6 +168,38 @@ export const useAuthStore = defineStore('auth', () => {
       const message = err.response?.data?.error || 'Error al restablecer contraseña'
       error.value = message
       return { success: false, error: message }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Paso 2 del flujo de recuperacion: valida el codigo de 6 digitos y
+  // devuelve el token con el que se defines la nueva contrasena.
+  async function verificarCodigoRecuperacion(email, codigo) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiVerificarCodigoRecuperacion(email, codigo)
+      return { success: true, token: response.data?.token, data: response.data }
+    } catch (err) {
+      const { mensaje } = analizarErrorAuth(err, 'Error al verificar el código')
+      error.value = mensaje
+      return { success: false, error: mensaje }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function reenviarCodigoRecuperacion(email) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiReenviarCodigoRecuperacion(email)
+      return { success: true, message: response.message }
+    } catch (err) {
+      const { mensaje } = analizarErrorAuth(err, 'Error al reenviar el código')
+      error.value = mensaje
+      return { success: false, error: mensaje }
     } finally {
       loading.value = false
     }
@@ -205,6 +261,8 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await apiActivar2FA()
       const usuario = response.data.data?.usuario || null
       if (usuario) {
+        setUser({ ...user.value, ...usuario })
+      } else {
         setUser({ ...user.value, two_factor_enabled: true })
       }
       return { success: true, message: response.message }
@@ -224,6 +282,8 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await apiDesactivar2FA()
       const usuario = response.data.data?.usuario || null
       if (usuario) {
+        setUser({ ...user.value, ...usuario })
+      } else {
         setUser({ ...user.value, two_factor_enabled: false })
       }
       return { success: true, message: response.message }
@@ -277,12 +337,17 @@ export const useAuthStore = defineStore('auth', () => {
       return true
     } catch {
       // Solo hacer logout si el refresh falla por token inválido/expirado, no por estar en flujo 2FA
-      if (!isIn2FAFlow.value) logout()
+      if (!isIn2FAFlow.value) logout('Tu sesión expiró. Vuelve a iniciar sesión.')
       return false
     }
   }
 
-  function logout() {
+  /**
+   * Cierra la sesion.
+   * @param {string|null} motivo Texto a mostrar en el aviso. Si es null se
+   *   muestra el aviso de cierre normal.
+   */
+  function logout(motivo = null) {
     clearTokens()
     clearUser()
     clearTempAuth()
@@ -294,6 +359,10 @@ export const useAuthStore = defineStore('auth', () => {
     // Limpiar favoritos
     const favoritosStore = useFavoritosStore()
     favoritosStore.clearFavoritos()
+
+    logoutNotice.value = motivo
+      ? { tipo: 'info', mensaje: motivo }
+      : { tipo: 'success', mensaje: 'Sesión cerrada exitosamente' }
   }
 
   async function initAuth() {
@@ -324,6 +393,7 @@ export const useAuthStore = defineStore('auth', () => {
     tempEmail,
     loading,
     error,
+    logoutNotice,
     isAuthenticated,
     isAdmin,
     userName,
@@ -338,6 +408,8 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     forgotPassword,
     resetPassword,
+    verificarCodigoRecuperacion,
+    reenviarCodigoRecuperacion,
     verify2FA,
     resend2FA,
     cancelLogin,

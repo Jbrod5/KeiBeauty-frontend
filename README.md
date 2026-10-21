@@ -139,11 +139,21 @@ en endpoints 2FA) y `X-Guest-Token` para carrito invitado.
 | `getProfile()` | `GET /auth/perfil` | JWT | `{usuario}` | `authStore.initAuth` |
 | `refreshToken(t)` | `POST /auth/refresh` | JWT-refresh | `{access_token}` | `authStore` |
 | `forgotPassword(e)` | `POST /auth/olvide-contrasena` | `{email}` | `{data: null, message}` | `ForgotPasswordView` |
-| `resetPassword(t,p,c)` | `POST /auth/reestablecer-contrasena` | `{token, password, confirm_password}` | `{data: null, message}` | `ResetPasswordView` |
+| `verificarCodigoRecuperacion(e,c)` | `POST /auth/verificar-codigo-recuperacion` | `{email, codigo}` | `{data: {token, email, nombre}, message}` | `ForgotPasswordView` |
+| `reenviarCodigoRecuperacion(e)` | `POST /auth/reenviar-codigo-recuperacion` | `{email}` | `{data: null, message}` | `ForgotPasswordView` |
+| `resetPassword(t,p,c)` | `POST /auth/reestablecer-contrasena` | `{token, password, confirm_password}` | `{data: null, message}` | `ForgotPasswordView` (paso 3), `ResetPasswordView` (enlaces antiguos) |
 | `verify2FA(e,c,t)` | `POST /auth/verificar-2fa` | `{codigo}` (temp JWT) | tokens + usuario | `authStore`, `TwoFactorView` |
 | `resend2FA(e,t)` | `POST /auth/reenviar-codigo-2fa` | temp JWT | `{data: null, message}` | `authStore` |
 | `cancelarLogin(t)` | `POST /auth/cancelar-login` | temp JWT | `{message}` | `authStore` |
-| `activar2FA()/desactivar2FA()` | `POST /auth/activar-2fa`, `/desactivar-2fa` | JWT | `{data: {two_factor_enabled}}` | `ProfileView` |
+| `activar2FA()/desactivar2FA()` | `POST /auth/activar-2fa`, `/desactivar-2fa` | JWT | `{data: {two_factor_enabled, usuario}}` | `ProfileView` |
+
+**Recuperación de contraseña:** `/olvide-contrasena` es un asistente de 3 pasos
+(email → código de 6 dígitos → nueva contraseña) en `ForgotPasswordView`. El
+código expira a los 15 minutos y se puede reenviar cada 60 segundos.
+
+**Cierre de sesión:** `authStore.logout()` deja un aviso en `logoutNotice`
+(`{tipo, mensaje}`) que `App.vue` muestra como toast. Si la sesión expiró por
+token vencido, el aviso es informativo en vez de "sesión cerrada".
 
 ### Catálogo, carrito, pedidos y admin
 
@@ -199,11 +209,27 @@ Variables en `src/assets/estilos/paleta.css` (única fuente de color):
 
 ## GitFlow
 
-Ramas: 
-- `main` (producción) · 
-- `develop` (integración) · 
-- `feature/*` (introduccion de funcionalidad)·
-- `hotfix/*`. (arreglo rapido de un error).
+Ramas:
+- `main` (producción) — se despliega automáticamente a AWS con cada push.
+- `develop` (integración) — aquí se mergesan todas las ramas `feature/*`.
+- `feature/*` (introducción de funcionalidad).
+- `hotfix/*` (arreglo rápido de un error).
+
+**Flujo de trabajo:**
+
+```text
+feature/mi-tarea  ──merge --no-ff──▶  develop  ──merge --no-ff──▶  main
+                                                       │
+                                                       └──▶ GitHub Actions
+                                                            despliega a AWS
+```
+
+- Nadie trabaja directamente sobre `main` ni sobre `develop`.
+- Cada tarea vive en su rama `feature/*` creada desde `develop`.
+- Al integrar en `develop` se usa `git merge --no-ff` para que quede el
+  registro de la rama.
+- `main` se actualiza cuando el trabajo está listo para producción; ese push
+  dispara el pipeline de despliegue.
 
 ## Despliegue
 
@@ -214,9 +240,40 @@ Ramas:
 - El backend solo expone JSON en local (`http://localhost:5000`,
   `/health` para verificar).
 
-### Despliegue del frontend a través del backend (modo actual)
+### AWS (modo actual)
 
-Por ahora la tienda se sirve desde la API, en una sola URL:
+El frontend se desplega como sitio estático en **S3 + CloudFront**:
+
+| Componente | Servicio | Notas |
+|---|---|---|
+| Archivos estáticos | **S3** | Bucket con el contenido de `dist/`. `index.html` nunca se cachea. |
+| CDN + HTTPS | **CloudFront** | Certificado por defecto, sin coste adicional. |
+| API | **EC2 + RDS** (otro repo) | El frontend llama a la API por `VITE_API_URL`. |
+
+El despliegue lo hace **GitHub Actions** (`.github/workflows/deploy.yml`) en
+cada push a `main`:
+
+1. `npm ci` → `npm run build` (con `VITE_API_URL` desde los secretos).
+2. `aws s3 sync dist/ s3://<bucket> --delete` — los assets con hash en el
+   nombre se cachean un año (`immutable`); `index.html` se sube aparte con
+   `no-cache` para que siempre tome los hashes nuevos.
+3. `aws cloudfront create-invalidation --paths "/*"` para purgar la caché.
+
+**Secretos requeridos** (Settings → Secrets and variables → Actions):
+
+| Secret | Descripción |
+|---|---|
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Credenciales de AWS |
+| `S3_BUCKET` | Nombre del bucket |
+| `CLOUDFRONT_DISTRIBUTION_ID` | Id de la distribución |
+| `VITE_API_URL` | URL pública de la API (ej. `https://api.ejemplo.com/api`) |
+
+> `dist/` **no** se versiona: está en `.gitignore` y el pipeline genera el
+> build en cada despliegue.
+
+### Despliegue del frontend a través del backend (modo anterior)
+
+La tienda también se puede servir desde la API, en una sola URL:
 
 - **Ruta:** `/` y cualquier ruta SPA (`/catalogo`, `/sobre-nosotros`,
   `/config-api`, ...) devuelven el build; `/health` y `/api/*` siguen JSON.
