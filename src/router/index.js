@@ -148,6 +148,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/admin/configuracion',
+    name: 'admin-configuracion',
+    component: () => import('../views/AdminConfiguracionView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'login',
     component: LoginView,
