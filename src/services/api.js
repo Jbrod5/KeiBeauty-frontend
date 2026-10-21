@@ -27,7 +27,10 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 10000
+  // 20s: contra RDS + bcrypt la respuesta puede tardar mas de 10s en el
+  // primer registro (si expira antes, el servidor crea el usuario y el
+  // cliente cree que fallo).
+  timeout: 20000
 })
 
 api.interceptors.request.use(
@@ -178,6 +181,16 @@ export async function forgotPassword(email) {
 
 export async function resetPassword(token, password, confirmPassword) {
   const response = await api.post('/auth/reestablecer-contrasena', { token, password, confirm_password: confirmPassword })
+  return response.data
+}
+
+export async function verificarCodigoRecuperacion(email, codigo) {
+  const response = await api.post('/auth/verificar-codigo-recuperacion', { email, codigo })
+  return response.data
+}
+
+export async function reenviarCodigoRecuperacion(email) {
+  const response = await api.post('/auth/reenviar-codigo-recuperacion', { email })
   return response.data
 }
 

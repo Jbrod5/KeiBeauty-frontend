@@ -206,7 +206,12 @@ async function handleRegister() {
   if (result.success) {
     router.push('/')
   } else {
-    authError.value = result.error
+    // El email duplicado se marca en su campo; el resto va como alerta general
+    if (result.campo === 'email') {
+      errors.value.email = result.error
+    } else {
+      authError.value = result.error
+    }
   }
   loading.value = false
 }
