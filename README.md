@@ -114,6 +114,7 @@ KeiBeauty-frontend/
 | `/admin/pedidos/:id` | `OrderDetailView.vue` | Sí | Sí* | Detalle con cambio de estado y subida de guía |
 | `/admin/resenas` | `AdminResenasView.vue` | Sí | Sí* | Gestión de reseñas |
 | `/admin/reportes` | `AdminReportesView.vue` | Sí | Sí* | Reportes + Excel |
+| `/admin/configuracion` | `AdminConfiguracionView.vue` | Sí | Sí* | Costo de envío y envío gratis |
 
 \* El guard exige autenticación; el rol `admin` lo verifica cada vista al
 montarse. Rutas `guest` redirigen a `/catalogo` con sesión. Con flujo 2FA
@@ -155,6 +156,18 @@ código expira a los 15 minutos y se puede reenviar cada 60 segundos.
 (`{tipo, mensaje}`) que `App.vue` muestra como toast. Si la sesión expiró por
 token vencido, el aviso es informativo en vez de "sesión cerrada".
 
+### Costo de envío y envío gratis
+
+El envío es un costo fijo (`costo_envio`) que se descuenta del total del
+pedido, salvo que el subtotal alcance `minimo_envio_gratis`, en cuyo caso el
+envío es gratis. Ambos valores se editan en `/admin/configuracion`
+(`AdminConfiguracionView.vue`).
+
+`CheckoutView` consulta `GET /configuracion/envio` (público) para mostrar el
+desglose Subtotal / Envío / Total antes de confirmar, y avisa cuánto falta para
+lograr el envío gratis. `OrderDetailView` muestra `subtotal_productos`,
+`costo_envio` y `monto_total` del pedido.
+
 ### Direcciones y teléfonos guardados
 
 Una cuenta puede tener varias direcciones de envío y varios teléfonos. El
@@ -189,6 +202,8 @@ las listas `direcciones` y `telefonos`.
 | `getDirecciones/crearDireccion/actualizarDireccion/eliminarDireccion` | `/usuario/direcciones…` | JWT · `{alias?, direccion, es_principal?}` | `{data: [<direccion>]}` | `ProfileView`, `CheckoutView` |
 | `getTelefonos/crearTelefono/actualizarTelefono/eliminarTelefono` | `/usuario/telefonos…` | JWT · `{telefono, es_principal?}` | `{data: [<telefono>]}` | `ProfileView`, `CheckoutView` |
 | `getReportes*` (6) + `descargarExcel` | `/reportes/*?desde&hasta&limit(&excel=1)` | query (admin) | `{data}` o `.xlsx` | `AdminReportesView` |
+| `getConfiguracion/actualizarConfiguracion` | `/configuracion` | JWT-Admin · `{clave, valor}` | `{data}` | `AdminConfiguracionView` |
+| `getConfiguracionEnvio` | `GET /configuracion/envio` | — (público) | `{data: {costo_envio, minimo_envio_gratis}}` | `CheckoutView` |
 
 Notificaciones in-app (`GET /notificaciones`, `PUT .../leida`, `PUT /leer-todas`)
 se consumen directo con `api` desde `notificacionStore.js` (campana en `App.vue`,

@@ -280,11 +280,20 @@
             </div>
             <div class="d-flex justify-content-between py-2" style="color: var(--kei-gris-medio);">
               <span>Envío</span>
-              <span class="badge bg-secondary">Gratis</span>
+              <span class="fw-medium" style="color: var(--kei-casi-negro);">
+                <span v-if="envioGratis" class="badge" style="background: var(--kei-oliva);">Gratis</span>
+                <span v-else>{{ formatPrice(costoEnvio) }}</span>
+              </span>
+            </div>
+            <div v-if="envioGratis" class="alert py-2 px-3 mb-2 small" style="background: var(--kei-oliva-suave); border-color: var(--kei-oliva-claro); color: var(--kei-oliva-oscuro);">
+              <i class="bi bi-truck me-1"></i>¡Tu pedido tiene envío gratis!
+            </div>
+            <div v-else-if="faltanParaEnvioGratis > 0" class="alert py-2 px-3 mb-2 small" style="background: var(--kei-fondo); border-color: var(--kei-gris-claro); color: var(--kei-gris-medio);">
+              <i class="bi bi-info-circle me-1"></i>Te faltan {{ formatPrice(faltanParaEnvioGratis) }} para obtener envío gratis.
             </div>
             <div class="d-flex justify-content-between py-3 mt-2 border-top fw-bold fs-5" style="border-color: var(--kei-gris-claro) !important; color: var(--kei-casi-negro);">
               <span>Total</span>
-              <span>{{ formatPrice(cartStore.totalPrice) }}</span>
+              <span>{{ formatPrice(totalPedido) }}</span>
             </div>
 
             <div class="text-center mt-3 pt-3 border-top" style="border-color: var(--kei-gris-claro) !important;">
@@ -304,7 +313,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
 import { useAuthStore } from '../stores/authStore'
-import { createOrder, getDirecciones, getTelefonos } from '../services/api'
+import { createOrder, getDirecciones, getTelefonos, getConfiguracionEnvio } from '../services/api'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -327,6 +336,19 @@ const telefonos = ref([])
 // Id seleccionado ('' = todavia no elegido, '__otra__' = usar otra direccion)
 const seleccionDireccion = ref('')
 const seleccionTelefono = ref('')
+
+// Política de envío (costo fijo + mínimo para envío gratis)
+const envio = ref({ costo_envio: 0, minimo_envio_gratis: 0 })
+const envioGratis = computed(() =>
+  envio.value.minimo_envio_gratis > 0 && cartStore.totalPrice >= envio.value.minimo_envio_gratis
+)
+const costoEnvio = computed(() => (envioGratis.value ? 0 : envio.value.costo_envio))
+const totalPedido = computed(() => cartStore.totalPrice + costoEnvio.value)
+const faltanParaEnvioGratis = computed(() =>
+  envio.value.minimo_envio_gratis > 0 && !envioGratis.value
+    ? envio.value.minimo_envio_gratis - cartStore.totalPrice
+    : 0
+)
 
 const usarDireccionNueva = computed(() =>
   direcciones.value.length === 0 || seleccionDireccion.value === '__otra__'
@@ -541,8 +563,18 @@ async function handleSubmit() {
   }
 }
 
+async function cargarEnvio() {
+  try {
+    const r = await getConfiguracionEnvio()
+    envio.value = r.data || { costo_envio: 0, minimo_envio_gratis: 0 }
+  } catch (e) {
+    console.error('Error cargando la configuración de envío:', e)
+  }
+}
+
 async function loadData() {
   await loadCart()
+  await cargarEnvio()
 
   if (isAuthenticated.value) {
     await Promise.all([cargarDirecciones(), cargarTelefonos()])

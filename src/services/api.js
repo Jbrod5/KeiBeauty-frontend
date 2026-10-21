@@ -455,4 +455,20 @@ export async function eliminarTelefono(id) {
   return response.data
 }
 
+// --- Configuración de la tienda ---
+export async function getConfiguracion() {
+  const response = await api.get('/configuracion')
+  return response.data
+}
+
+export async function actualizarConfiguracion(clave, valor) {
+  const response = await api.put('/configuracion', { clave, valor })
+  return response.data
+}
+
+export async function getConfiguracionEnvio() {
+  const response = await api.get('/configuracion/envio')
+  return response.data
+}
+
 export default api
