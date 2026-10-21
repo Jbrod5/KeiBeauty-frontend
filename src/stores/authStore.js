@@ -33,6 +33,9 @@ export const useAuthStore = defineStore('auth', () => {
   const tempEmail = ref(localStorage.getItem('temp_email') || null)
   const loading = ref(false)
   const error = ref(null)
+  // Aviso de cierre de sesion. Es un objeto nuevo en cada cierre para que
+  // el watcher de App.vue se dispare tambien en cierres consecutivos.
+  const logoutNotice = ref(null)
 
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
   const isAdmin = computed(() => user.value?.rol === 'admin')
@@ -258,6 +261,8 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await apiActivar2FA()
       const usuario = response.data.data?.usuario || null
       if (usuario) {
+        setUser({ ...user.value, ...usuario })
+      } else {
         setUser({ ...user.value, two_factor_enabled: true })
       }
       return { success: true, message: response.message }
@@ -277,6 +282,8 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await apiDesactivar2FA()
       const usuario = response.data.data?.usuario || null
       if (usuario) {
+        setUser({ ...user.value, ...usuario })
+      } else {
         setUser({ ...user.value, two_factor_enabled: false })
       }
       return { success: true, message: response.message }
@@ -330,12 +337,17 @@ export const useAuthStore = defineStore('auth', () => {
       return true
     } catch {
       // Solo hacer logout si el refresh falla por token inválido/expirado, no por estar en flujo 2FA
-      if (!isIn2FAFlow.value) logout()
+      if (!isIn2FAFlow.value) logout('Tu sesión expiró. Vuelve a iniciar sesión.')
       return false
     }
   }
 
-  function logout() {
+  /**
+   * Cierra la sesion.
+   * @param {string|null} motivo Texto a mostrar en el aviso. Si es null se
+   *   muestra el aviso de cierre normal.
+   */
+  function logout(motivo = null) {
     clearTokens()
     clearUser()
     clearTempAuth()
@@ -347,6 +359,10 @@ export const useAuthStore = defineStore('auth', () => {
     // Limpiar favoritos
     const favoritosStore = useFavoritosStore()
     favoritosStore.clearFavoritos()
+
+    logoutNotice.value = motivo
+      ? { tipo: 'info', mensaje: motivo }
+      : { tipo: 'success', mensaje: 'Sesión cerrada exitosamente' }
   }
 
   async function initAuth() {
@@ -377,6 +393,7 @@ export const useAuthStore = defineStore('auth', () => {
     tempEmail,
     loading,
     error,
+    logoutNotice,
     isAuthenticated,
     isAdmin,
     userName,

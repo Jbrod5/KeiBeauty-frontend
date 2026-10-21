@@ -108,6 +108,7 @@
 <script setup>
 import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
 import { useCartStore } from './stores/cartStore'
 import { useAuthStore } from './stores/authStore'
 import { useNotificacionStore } from './stores/notificacionStore'
@@ -117,6 +118,7 @@ const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 const notifStore = useNotificacionStore()
+const toast = useToast()
 
 // En móvil el menú del navbar es desplegable: contraerlo automáticamente
 // después de cada navegación para no tapar el contenido.
@@ -142,6 +144,16 @@ function logout() {
   authStore.logout()
   router.push('/')
 }
+
+// Aviso visual del cierre de sesion (manual o por token expirado).
+watch(() => authStore.logoutNotice, (aviso) => {
+  if (!aviso) return
+  if (aviso.tipo === 'success') {
+    toast.success(aviso.mensaje)
+  } else {
+    toast.info(aviso.mensaje)
+  }
+})
 function iconoNotif(tipo){
   if(tipo==='pedido_estado') return 'bi bi-box-seam'
   if(tipo==='pedido_guia') return 'bi bi-truck'
