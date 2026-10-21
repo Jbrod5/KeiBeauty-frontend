@@ -184,6 +184,16 @@ export async function resetPassword(token, password, confirmPassword) {
   return response.data
 }
 
+export async function verificarCodigoRecuperacion(email, codigo) {
+  const response = await api.post('/auth/verificar-codigo-recuperacion', { email, codigo })
+  return response.data
+}
+
+export async function reenviarCodigoRecuperacion(email) {
+  const response = await api.post('/auth/reenviar-codigo-recuperacion', { email })
+  return response.data
+}
+
 export async function verify2FA(email, codigo, tempToken) {
   const response = await api.post('/auth/verificar-2fa', { codigo }, {
     headers: tempToken ? { Authorization: `Bearer ${tempToken}` } : {}
