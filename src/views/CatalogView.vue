@@ -6,68 +6,77 @@
       <p style="color: var(--kei-gris-medio);">Descubre nuestra selección de K-Beauty auténtico</p>
     </header>
 
-    <!-- Filtros: categoría, marca y orden por precio -->
-    <div class="row g-3 mb-3 align-items-center">
-      <div class="col-6 col-lg-4">
-        <label for="filtroCategoria" class="visually-hidden">Filtrar por categoría</label>
-        <select id="filtroCategoria" v-model="selectedCategory" class="form-select rounded-pill">
-          <option value="">Todas las categorías</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-            {{ cat.nombre }}
-          </option>
-        </select>
-      </div>
-      <div class="col-6 col-lg-4">
-        <label for="filtroMarca" class="visually-hidden">Filtrar por marca</label>
-        <select id="filtroMarca" v-model="selectedMarca" class="form-select rounded-pill">
-          <option value="">Todas las marcas</option>
-          <option v-for="m in marcas" :key="m.id" :value="m.id">
-            {{ m.nombre }}
-          </option>
-        </select>
-      </div>
-      <div class="col-12 col-lg-4">
-        <label for="filtroOrden" class="visually-hidden">Ordenar por precio</label>
-        <select id="filtroOrden" v-model="ordenPrecio" class="form-select rounded-pill">
-          <option value="">Ordenar: destacados</option>
-          <option value="asc">Precio: menor a mayor</option>
-          <option value="desc">Precio: mayor a menor</option>
-        </select>
-      </div>
-    </div>
+    <div class="row g-4">
+      <!-- Filtros (columna izquierda) -->
+      <aside class="col-12 col-lg-3">
+        <div class="card shadow-sm position-sticky" style="top: 100px;">
+          <div class="card-body p-4">
+            <h5 class="card-title pb-3 mb-3 border-bottom fw-semibold" style="color: var(--kei-casi-negro); border-color: var(--kei-gris-claro) !important;">Filtrar productos</h5>
 
-    <!-- Filtros activos -->
-    <div v-if="selectedCategory || selectedMarca || ordenPrecio" class="d-flex flex-wrap gap-2 align-items-center mb-4 p-3 rounded" style="background-color: var(--kei-fondo); border: 1px solid var(--kei-gris-claro);">
-      <span v-if="selectedCategory" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-gris-oscuro); color: var(--kei-fondo);">
-        <i class="bi bi-tags"></i> {{ getCategoryName(selectedCategory) }}
-        <button @click="selectedCategory = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro categoría"></button>
-      </span>
-      <span v-if="selectedMarca" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-beige); color: #fff;">
-        <i class="bi bi-award"></i> {{ getMarcaName(selectedMarca) }}
-        <button @click="selectedMarca = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro marca"></button>
-      </span>
-      <span v-if="ordenPrecio" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-oliva); color: #fff;">
-        <i class="bi bi-arrow-down-up"></i> {{ ordenPrecio === 'asc' ? 'Menor a mayor' : 'Mayor a menor' }}
-        <button @click="ordenPrecio = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar orden por precio"></button>
-      </span>
-      <button class="btn btn-link btn-sm text-decoration-none p-0 ms-2" style="color: var(--kei-beige);" @click="clearFilters">Limpiar todo</button>
-    </div>
+            <label for="filtroCategoria" class="form-label small fw-medium mb-1" style="color: var(--kei-gris-medio);">Categoría</label>
+            <select id="filtroCategoria" v-model="selectedCategory" class="form-select mb-3">
+              <option value="">Todas las categorías</option>
+              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                {{ cat.nombre }}
+              </option>
+            </select>
 
-    <!-- Spinner loading Bootstrap -->
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
-      <p class="mt-2" style="color: var(--kei-gris-medio);">Cargando productos...</p>
-    </div>
+            <label for="filtroMarca" class="form-label small fw-medium mb-1" style="color: var(--kei-gris-medio);">Marca</label>
+            <select id="filtroMarca" v-model="selectedMarca" class="form-select mb-3">
+              <option value="">Todas las marcas</option>
+              <option v-for="m in marcas" :key="m.id" :value="m.id">
+                {{ m.nombre }}
+              </option>
+            </select>
 
-    <!-- Grid productos -->
-    <div v-else class="row g-4">
-      <div
-        v-for="product in productosOrdenados"
-        :key="product.id"
-        class="col-12 col-sm-6 col-lg-4 col-xl-3"
-      >
+            <label for="filtroOrden" class="form-label small fw-medium mb-1" style="color: var(--kei-gris-medio);">Ordenar por precio</label>
+            <select id="filtroOrden" v-model="ordenPrecio" class="form-select mb-3">
+              <option value="">Ordenar: destacados</option>
+              <option value="asc">Precio: menor a mayor</option>
+              <option value="desc">Precio: mayor a menor</option>
+            </select>
+
+            <button type="button" class="btn btn-outline-secondary w-100 rounded-pill" @click="clearFilters">
+              <i class="bi bi-x-circle me-1"></i>Limpiar filtros
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Resultados (columna derecha) -->
+      <div class="col-12 col-lg-9">
+        <!-- Filtros activos -->
+        <div v-if="selectedCategory || selectedMarca || ordenPrecio" class="d-flex flex-wrap gap-2 align-items-center mb-4 p-3 rounded" style="background-color: var(--kei-fondo); border: 1px solid var(--kei-gris-claro);">
+          <span v-if="selectedCategory" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-gris-oscuro); color: var(--kei-fondo);">
+            <i class="bi bi-tags"></i> {{ getCategoryName(selectedCategory) }}
+            <button @click="selectedCategory = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro categoría"></button>
+          </span>
+          <span v-if="selectedMarca" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-beige); color: #fff;">
+            <i class="bi bi-award"></i> {{ getMarcaName(selectedMarca) }}
+            <button @click="selectedMarca = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar filtro marca"></button>
+          </span>
+          <span v-if="ordenPrecio" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-oliva); color: #fff;">
+            <i class="bi bi-arrow-down-up"></i> {{ ordenPrecio === 'asc' ? 'Menor a mayor' : 'Mayor a menor' }}
+            <button @click="ordenPrecio = ''" class="btn-close btn-close-white" style="font-size: 0.6rem;" aria-label="Eliminar orden por precio"></button>
+          </span>
+          <button class="btn btn-link btn-sm text-decoration-none p-0 ms-2" style="color: var(--kei-beige);" @click="clearFilters">Limpiar todo</button>
+        </div>
+
+        <!-- Spinner loading Bootstrap -->
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="mt-2" style="color: var(--kei-gris-medio);">Cargando productos...</p>
+        </div>
+
+        <!-- Grid productos -->
+        <div v-else class="row g-4">
+          <div
+            v-for="product in productosOrdenados"
+            :key="product.id"
+            class="col-12 col-sm-6 col-xl-4"
+          >
         <router-link
           :to="`/producto/${product.id}`"
           class="text-decoration-none h-100 d-block"
@@ -134,14 +143,16 @@
           </div>
         </router-link>
       </div>
-    </div>
+          </div>
 
-    <!-- Empty state -->
-    <div v-if="products.length === 0 && !loading" class="text-center p-5 mt-4 card shadow-sm">
-      <div class="card-body">
-        <i class="bi bi-search fs-1 mb-3 d-block" style="color: var(--kei-beige-medio);"></i>
-        <p class="fs-5 mb-3" style="color: var(--kei-gris-medio);">No encontramos productos con esos filtros</p>
-        <button class="btn btn-outline-primary rounded-pill" @click="clearFilters">Limpiar filtros</button>
+        <!-- Empty state -->
+        <div v-if="products.length === 0 && !loading" class="text-center p-5 mt-4 card shadow-sm">
+          <div class="card-body">
+            <i class="bi bi-search fs-1 mb-3 d-block" style="color: var(--kei-beige-medio);"></i>
+            <p class="fs-5 mb-3" style="color: var(--kei-gris-medio);">No encontramos productos con esos filtros</p>
+            <button class="btn btn-outline-primary rounded-pill" @click="clearFilters">Limpiar filtros</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -173,6 +184,7 @@ const selectedMarca = ref('')
 const ordenPrecio = ref('')
 const categories = ref([])
 const marcas = ref([])
+
 // Orden por precio en cliente (el backend no expone ordenamiento)
 const productosOrdenados = computed(() => {
   if (ordenPrecio.value !== 'asc' && ordenPrecio.value !== 'desc') return products.value
