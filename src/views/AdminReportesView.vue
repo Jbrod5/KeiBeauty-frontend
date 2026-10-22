@@ -16,6 +16,38 @@
       </div>
     </section>
 
+    <!-- Graficos -->
+    <section class="card shadow-sm mb-4">
+      <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <strong style="color: var(--kei-casi-negro);"><i class="bi bi-graph-up me-1" style="color: var(--kei-oliva);"></i>Gráficos</strong>
+        <small style="color: var(--kei-gris-medio);">Reflejan el rango de fechas seleccionado</small>
+      </div>
+      <div class="card-body">
+        <div class="row g-4">
+          <div class="col-12 col-xl-6">
+            <div class="h6 fw-semibold mb-2" style="color: var(--kei-casi-negro);">Ventas por mes</div>
+            <div style="height: 260px;"><Bar v-if="datosVentasPorMes.labels.length" :data="datosVentasPorMes" :options="opcionesBarras" /><p v-else class="text-center pt-5" style="color: var(--kei-gris-medio);">Sin datos</p></div>
+          </div>
+          <div class="col-12 col-xl-6">
+            <div class="h6 fw-semibold mb-2" style="color: var(--kei-casi-negro);">Ganancias por mes</div>
+            <div style="height: 260px;"><Line v-if="datosGanancias.labels.length" :data="datosGanancias" :options="opcionesLinea" /><p v-else class="text-center pt-5" style="color: var(--kei-gris-medio);">Sin datos</p></div>
+          </div>
+          <div class="col-12 col-xl-6">
+            <div class="h6 fw-semibold mb-2" style="color: var(--kei-casi-negro);">Productos más vendidos</div>
+            <div style="height: 300px;"><Bar v-if="datosTopProductos.labels.length" :data="datosTopProductos" :options="opcionesBarrasHorizontales" /><p v-else class="text-center pt-5" style="color: var(--kei-gris-medio);">Sin datos</p></div>
+          </div>
+          <div class="col-12 col-xl-6">
+            <div class="h6 fw-semibold mb-2" style="color: var(--kei-casi-negro);">Clientes con más compras</div>
+            <div style="height: 300px;"><Bar v-if="datosClientesTop.labels.length" :data="datosClientesTop" :options="opcionesBarras" /><p v-else class="text-center pt-5" style="color: var(--kei-gris-medio);">Sin datos</p></div>
+          </div>
+          <div class="col-12">
+            <div class="h6 fw-semibold mb-2" style="color: var(--kei-casi-negro);">Ventas con descuento</div>
+            <div style="height: 300px;"><Bar v-if="datosVentasDescuento.labels.length" :data="datosVentasDescuento" :options="opcionesBarras" /><p v-else class="text-center pt-5" style="color: var(--kei-gris-medio);">Sin datos</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div v-if="cargando" class="text-center py-5"><div class="spinner-border"></div><p style="color: var(--kei-gris-medio);">Cargando reportes...</p></div>
     <div v-else>
       <!-- Ventas Totales -->
@@ -167,10 +199,30 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Bar, Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js'
 import { useAuthStore } from '../stores/authStore'
 import { getReportesVentasTotales, getReportesVentasPorMes, getReportesVentasPorPeriodo, getReportesGanancias, getReportesProductosMasVendidos, getReportesClientesTop, getReportesVentasConDescuento, descargarExcel } from '../services/api'
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend)
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+const COLOR_OLIVA = 'rgba(140, 176, 122, 0.75)'
+const COLOR_OLIVA_SOLIDO = '#8CB07A'
+const COLOR_GRIS = 'rgba(77, 77, 89, 0.75)'
+const COLOR_ROJO = 'rgba(199, 123, 123, 0.8)'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -183,6 +235,81 @@ const ganancias = ref({ ingresos:0, costos:0, ganancia:0, margen_porcentaje:0 })
 const topProductos = ref([])
 const topClientes = ref([])
 const ventasDescuento = ref({ productos: [], totales: {}, comparacion: null })
+
+const opcionesBarras = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { position: 'bottom' } },
+  scales: { y: { beginAtZero: true } }
+}
+const opcionesBarrasHorizontales = {
+  indexAxis: 'y',
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { position: 'bottom' } },
+  scales: { x: { beginAtZero: true } }
+}
+const opcionesLinea = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { position: 'bottom' } },
+  scales: { y: { beginAtZero: true } }
+}
+
+const etiquetaMes = (m) => `${MESES[(Number(m) || 1) - 1] || ''}`
+
+const datosVentasPorMes = computed(() => ({
+  labels: ventasPorMes.value.map(r => `${etiquetaMes(r.mes)} ${r.anio}`),
+  datasets: [{
+    label: 'Ventas (Q)',
+    data: ventasPorMes.value.map(r => r.total),
+    backgroundColor: COLOR_OLIVA,
+    borderColor: COLOR_OLIVA_SOLIDO,
+    borderWidth: 1,
+    borderRadius: 4
+  }]
+}))
+
+const datosGanancias = computed(() => {
+  const serie = ganancias.value.por_mes || []
+  return {
+    labels: serie.map(m => `${etiquetaMes(m.mes)} ${m.anio}`),
+    datasets: [
+      { label: 'Ingresos (Q)', data: serie.map(m => m.ingresos), backgroundColor: COLOR_OLIVA, borderColor: COLOR_OLIVA_SOLIDO, tension: 0.25, fill: false },
+      { label: 'Costos (Q)', data: serie.map(m => m.costos), backgroundColor: COLOR_ROJO, borderColor: COLOR_ROJO, tension: 0.25, fill: false }
+    ]
+  }
+})
+
+const datosTopProductos = computed(() => ({
+  labels: topProductos.value.map(p => p.nombre),
+  datasets: [{
+    label: 'Unidades vendidas',
+    data: topProductos.value.map(p => p.total_vendidos),
+    backgroundColor: COLOR_GRIS,
+    borderRadius: 4
+  }]
+}))
+
+const datosClientesTop = computed(() => ({
+  labels: topClientes.value.map(c => c.nombre),
+  datasets: [{
+    label: 'Total gastado (Q)',
+    data: topClientes.value.map(c => c.total_gastado),
+    backgroundColor: COLOR_OLIVA,
+    borderRadius: 4
+  }]
+}))
+
+const datosVentasDescuento = computed(() => ({
+  labels: (ventasDescuento.value.productos || []).map(p => p.nombre),
+  datasets: [{
+    label: 'Ingresos con descuento (Q)',
+    data: (ventasDescuento.value.productos || []).map(p => p.ingresos_con_descuento),
+    backgroundColor: COLOR_ROJO,
+    borderRadius: 4
+  }]
+}))
 
 function formatPrice(p){ return new Intl.NumberFormat('es-GT',{style:'currency',currency:'GTQ'}).format(p||0) }
 function estadoBadge(e){

@@ -22,6 +22,7 @@ Proyecto de Seminario de Sistemas 1 — USAC-CUNOC. Fase 2.
 | Bootstrap | ^5.3.8 | Framework CSS |
 | Bootstrap Icons | ^1.13.1 | Iconos vectoriales (sin emojis en la UI) |
 | vue-toastification | ^2.0.0-rc.5 | Toasts en español |
+| Chart.js + vue-chartjs | ^4.5.1 / ^5.3.4 | Gráficos del panel de reportes |
 | Docker + Nginx | — | Producción multi-etapa (`nginx.conf` con fallback SPA) |
 
 ## Requisitos previos
@@ -155,6 +156,24 @@ código expira a los 15 minutos y se puede reenviar cada 60 segundos.
 **Cierre de sesión:** `authStore.logout()` deja un aviso en `logoutNotice`
 (`{tipo, mensaje}`) que `App.vue` muestra como toast. Si la sesión expiró por
 token vencido, el aviso es informativo en vez de "sesión cerrada".
+
+### Gráficos y exportaciones a Excel
+
+El panel de reportes (`/admin/reportes`) incluye una sección **Gráficos** con
+cinco visualizaciones que respetan el rango de fechas del filtro global:
+
+1. Ventas por mes (barras) — `/api/reportes/ventas-por-mes`
+2. Ganancias por mes (línea, ingresos vs. costos) — `/api/reportes/ganancias`
+   (usa la serie `por_mes` que devuelve el endpoint)
+3. Productos más vendidos (barras horizontales) — `/api/reportes/productos-mas-vendidos`
+4. Clientes con más compras (barras) — `/api/reportes/clientes-top`
+5. Ventas con descuento (barras) — `/api/reportes/ventas-con-descuento`
+
+Las librerías `chart.js` y `vue-chartjs` están en `package.json` y
+`package-lock.json` (sin CDN: el build es autónomo).
+
+Las descargas a Excel incluyen siempre el periodo cubierto en un subtítulo y
+el nombre del archivo lleva las fechas del filtro.
 
 ### Descuentos por producto
 
