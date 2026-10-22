@@ -139,13 +139,22 @@
               <span>Subtotal ({{ cartStore.totalItems }} items)</span>
               <span class="fw-medium" style="color: var(--kei-casi-negro);">{{ formatPrice(cartStore.totalPrice) }}</span>
             </div>
-            <div class="d-flex justify-content-between py-2" style="color: var(--kei-gris-medio);">
+            <div v-if="cartStore.items.length > 0" class="d-flex justify-content-between py-2" style="color: var(--kei-gris-medio);">
               <span>Envío</span>
-              <span class="badge bg-secondary">Gratis</span>
+              <span class="fw-medium" style="color: var(--kei-casi-negro);">
+                <span v-if="envioGratis" class="badge" style="background: var(--kei-oliva);">Gratis</span>
+                <span v-else>{{ formatPrice(costoEnvio) }}</span>
+              </span>
+            </div>
+            <div v-if="envioGratis" class="alert py-2 px-3 mb-2 small" style="background: var(--kei-oliva-suave); border-color: var(--kei-oliva-claro); color: var(--kei-oliva-oscuro);">
+              <i class="bi bi-truck me-1"></i>¡Tu pedido tiene envío gratis!
+            </div>
+            <div v-else-if="faltanParaEnvioGratis > 0" class="alert py-2 px-3 mb-2 small" style="background: var(--kei-fondo); border-color: var(--kei-gris-claro); color: var(--kei-gris-medio);">
+              <i class="bi bi-info-circle me-1"></i>Te faltan {{ formatPrice(faltanParaEnvioGratis) }} para obtener envío gratis.
             </div>
             <div class="d-flex justify-content-between py-3 mt-2 border-top fw-bold fs-5" style="border-color: var(--kei-gris-claro) !important; color: var(--kei-casi-negro);">
               <span>Total</span>
-              <span>{{ formatPrice(cartStore.totalPrice) }}</span>
+              <span>{{ formatPrice(totalPedido) }}</span>
             </div>
             <button class="btn btn-primary w-100 mt-3" @click="goToCheckout">
               Proceder al Pago
@@ -159,12 +168,18 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
+import { useEnvio } from '../composables/useEnvio'
 
 const router = useRouter()
 const cartStore = useCartStore()
+
+// Política de envío: el mismo desglose que se muestra en el checkout.
+// El subtotal se pasa como ref para que el composable reaccione a los cambios.
+const subtotal = computed(() => cartStore.totalPrice)
+const { envioGratis, costoEnvio, total: totalPedido, faltanParaEnvioGratis, cargarEnvio } = useEnvio(subtotal)
 
 const priceFormatter = new Intl.NumberFormat('es-GT', {
   style: 'currency',
@@ -176,8 +191,8 @@ function formatPrice(price) {
   return priceFormatter.format(price || 0)
 }
 
-onMounted(() => {
-  cartStore.fetchCart()
+onMounted(async () => {
+  await Promise.all([cartStore.fetchCart(), cargarEnvio()])
 })
 
 function goToCheckout() {
