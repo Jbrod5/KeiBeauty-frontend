@@ -264,6 +264,13 @@ watch(isAuthenticated, (val) => {
 
 <style scoped>
 .navbar { background: #fff !important; border-bottom: 2px solid var(--kei-oliva-claro); }
+  /* Altura estable del navbar en movil */
+  @media (max-width: 991.98px) {
+    .navbar { min-height: 64px; }
+    .navbar-inner { align-items: center; min-height: 64px; }
+    .buscador-navbar .input-group { height: 38px; }
+    .buscador-navbar .form-control { height: 100%; }
+  }
 .nav-link.router-link-active { color: var(--kei-oliva) !important; font-weight: 600; }
 
 /* Logo de la empresa en el navbar */
