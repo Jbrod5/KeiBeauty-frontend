@@ -18,6 +18,7 @@ export const useCartStore = defineStore('cart', () => {
     items.value.reduce((sum, item) => sum + item.cantidad, 0)
   )
 
+  // El precio del item ya viene con el descuento vigente aplicado por el backend.
   const totalPrice = computed(() =>
     items.value.reduce((sum, item) => sum + item.precio * item.cantidad, 0)
   )
@@ -39,7 +40,8 @@ export const useCartStore = defineStore('cart', () => {
         producto_id: d.producto_id,
         nombre: d.producto.nombre,
         marca_nombre: d.producto.marca_nombre,
-        precio: d.producto.precio,
+        precio: d.precio ?? d.producto.precio_descuento ?? d.producto.precio,
+        precio_unitario: d.precio_unitario ?? d.producto.precio,
         imagen_url: d.producto.imagen_url,
         cantidad: d.cantidad,
         subtotal: d.subtotal
@@ -60,10 +62,11 @@ export const useCartStore = defineStore('cart', () => {
         producto_id: product.id,
         nombre: product.nombre,
         marca_nombre: product.marca_nombre,
-        precio: product.precio,
+        precio: product.precio_descuento ?? product.precio,
+        precio_unitario: product.precio,
         imagen_url: product.imagen_url,
         cantidad: 1,
-        subtotal: product.precio
+        subtotal: product.precio_descuento ?? product.precio
       })
     }
   }

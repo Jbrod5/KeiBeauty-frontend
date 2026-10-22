@@ -471,4 +471,36 @@ export async function getConfiguracionEnvio() {
   return response.data
 }
 
+// --- Descuentos por producto ---
+export async function getDescuentosProducto(productoId) {
+  const response = await api.get(`/products/${productoId}/descuentos`)
+  return response.data
+}
+
+export async function crearDescuento(productoId, data) {
+  const response = await api.post(`/products/${productoId}/descuentos`, data)
+  return response.data
+}
+
+export async function actualizarDescuento(productoId, descuentoId, data) {
+  const response = await api.put(`/products/${productoId}/descuentos/${descuentoId}`, data)
+  return response.data
+}
+
+export async function cambiarEstadoDescuento(productoId, descuentoId, activo) {
+  const response = await api.patch(`/products/${productoId}/descuentos/${descuentoId}/estado`, { activo })
+  return response.data
+}
+
+export async function eliminarDescuento(productoId, descuentoId) {
+  const response = await api.delete(`/products/${productoId}/descuentos/${descuentoId}`)
+  return response.data
+}
+
+export async function getReportesVentasConDescuento(params = {}) {
+  const qs = new URLSearchParams(params).toString()
+  const response = await api.get(`/reportes/ventas-con-descuento?${qs}`)
+  return response.data
+}
+
 export default api

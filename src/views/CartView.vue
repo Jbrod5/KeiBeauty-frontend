@@ -77,14 +77,16 @@
                   <h6 class="mb-1 fw-semibold" style="color: var(--kei-casi-negro);">{{ item.nombre }}</h6>
                 </router-link>
                 <small style="color: var(--kei-beige);">{{ item.marca_nombre }}</small>
-                <div class="d-md-none mt-1">
+                <div class="d-md-none mt-1 d-flex align-items-baseline gap-2">
+                  <span v-if="tieneDescuento(item)" class="small text-decoration-line-through" style="color: var(--kei-gris-medio);">{{ formatPrice(item.precio_unitario) }}</span>
                   <span class="fw-semibold small" style="color: var(--kei-casi-negro);">{{ formatPrice(item.precio) }}</span>
                 </div>
               </div>
 
               <!-- Precio desktop -->
-              <div class="d-none d-md-block fw-semibold text-nowrap" style="color: var(--kei-casi-negro);">
-                {{ formatPrice(item.precio) }}
+              <div class="d-none d-md-block text-nowrap">
+                <span v-if="tieneDescuento(item)" class="small text-decoration-line-through d-block" style="color: var(--kei-gris-medio);">{{ formatPrice(item.precio_unitario) }}</span>
+                <span class="fw-semibold" style="color: var(--kei-casi-negro);">{{ formatPrice(item.precio) }}</span>
               </div>
 
               <!-- Cantidad -->
@@ -180,6 +182,11 @@ onMounted(() => {
 
 function goToCheckout() {
   router.push('/checkout')
+}
+
+// Indica si el item tiene un descuento vigente aplicado.
+function tieneDescuento(item){
+  return item.precio_unitario != null && item.precio != null && Number(item.precio_unitario) > Number(item.precio)
 }
 </script>
 

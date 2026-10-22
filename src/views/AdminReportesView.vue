@@ -104,6 +104,47 @@
         </div>
       </section>
 
+      <!-- Ventas con descuento -->
+      <section class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong style="color: var(--kei-casi-negro);"><i class="bi bi-percent me-1" style="color: var(--kei-oliva);"></i>Ventas con Descuento</strong>
+          <button @click="exportar('ventas-con-descuento')" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+        </div>
+        <div class="card-body">
+          <div class="row text-center mb-3">
+            <div class="col-6 col-md-3"><div class="p-3 rounded" style="background: var(--kei-oliva-suave);"><div class="h5 mb-0" style="color: var(--kei-oliva-oscuro);">{{ ventasDescuento.totales.unidades || 0 }}</div><small style="color: var(--kei-gris-medio);">Unidades</small></div></div>
+            <div class="col-6 col-md-3"><div class="p-3 rounded" style="background: var(--kei-oliva-suave);"><div class="h5 mb-0" style="color: var(--kei-oliva-oscuro);">{{ ventasDescuento.totales.unidades_con_descuento || 0 }}</div><small style="color: var(--kei-gris-medio);">Con descuento</small></div></div>
+            <div class="col-6 col-md-3"><div class="p-3 rounded" style="background: var(--kei-oliva-suave);"><div class="h5 mb-0" style="color: var(--kei-oliva-oscuro);">{{ formatPrice(ventasDescuento.totales.ingresos_con_descuento || 0) }}</div><small style="color: var(--kei-gris-medio);">Ingresos</small></div></div>
+            <div class="col-6 col-md-3"><div class="p-3 rounded" style="background: var(--kei-fondo);"><div class="h5 mb-0" style="color: var(--kei-casi-negro);">{{ formatPrice(ventasDescuento.totales.ahorro_total || 0) }}</div><small style="color: var(--kei-gris-medio);">Ahorro dado</small></div></div>
+          </div>
+
+          <div v-if="ventasDescuento.comparacion" class="alert alert-info py-2 px-3 small">
+            <i class="bi bi-graph-up-arrow me-1"></i>
+            Frente al periodo anterior ({{ ventasDescuento.comparacion.desde }} al {{ ventasDescuento.comparacion.hasta }})
+            <strong>{{ ventasDescuento.comparacion.variacion_ingresos_porcentaje == null ? 'sin datos previos' : formatPrice(ventasDescuento.comparacion.variacion_ingresos_porcentaje) + '%' }}</strong>
+            en ingresos
+            ({{ formatPrice(ventasDescuento.comparacion.ingresos || 0) }} → {{ formatPrice(ventasDescuento.totales.ingresos_con_descuento || 0) }}).
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead><tr><th>Producto</th><th>Unidades</th><th>Con descuento</th><th>Ingresos (Q)</th><th>Ahorro (Q)</th><th>Desc. medio</th></tr></thead>
+              <tbody>
+                <tr v-for="p in ventasDescuento.productos || []" :key="p.producto_id">
+                  <td>{{ p.nombre }}</td>
+                  <td>{{ p.unidades }}</td>
+                  <td>{{ p.unidades_con_descuento }}</td>
+                  <td>{{ formatPrice(p.ingresos_con_descuento) }}</td>
+                  <td>{{ formatPrice(p.ahorro_total) }}</td>
+                  <td>{{ p.descuento_promedio }}%</td>
+                </tr>
+                <tr v-if="(ventasDescuento.productos || []).length===0"><td colspan="6" class="text-center py-3" style="color: var(--kei-gris-medio);">Sin datos</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- Clientes top -->
       <section class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -129,7 +170,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
-import { getReportesVentasTotales, getReportesVentasPorMes, getReportesVentasPorPeriodo, getReportesGanancias, getReportesProductosMasVendidos, getReportesClientesTop, descargarExcel } from '../services/api'
+import { getReportesVentasTotales, getReportesVentasPorMes, getReportesVentasPorPeriodo, getReportesGanancias, getReportesProductosMasVendidos, getReportesClientesTop, getReportesVentasConDescuento, descargarExcel } from '../services/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -141,6 +182,7 @@ const ventasPeriodo = ref({})
 const ganancias = ref({ ingresos:0, costos:0, ganancia:0, margen_porcentaje:0 })
 const topProductos = ref([])
 const topClientes = ref([])
+const ventasDescuento = ref({ productos: [], totales: {}, comparacion: null })
 
 function formatPrice(p){ return new Intl.NumberFormat('es-GT',{style:'currency',currency:'GTQ'}).format(p||0) }
 function estadoBadge(e){
@@ -154,18 +196,20 @@ async function cargarTodo(){
     const params = {}
     if(filtros.value.desde) params.desde = filtros.value.desde
     if(filtros.value.hasta) params.hasta = filtros.value.hasta
-    const [vt, vpm, gan, prod, cli] = await Promise.all([
+    const [vt, vpm, gan, prod, cli, desc] = await Promise.all([
       getReportesVentasTotales(params),
-      getReportesVentasPorMes(),
+      getReportesVentasPorMes(params),
       getReportesGanancias(params),
       getReportesProductosMasVendidos(params),
-      getReportesClientesTop(params)
+      getReportesClientesTop(params),
+      getReportesVentasConDescuento(params)
     ])
     ventasTotales.value = vt.data || vt
     ventasPorMes.value = vpm.data || []
     ganancias.value = gan.data || gan
     topProductos.value = prod.data || []
     topClientes.value = cli.data || []
+    ventasDescuento.value = desc.data || { productos: [], totales: {}, comparacion: null }
     if(filtros.value.desde && filtros.value.hasta){
       const vp = await getReportesVentasPorPeriodo({ desde: filtros.value.desde, hasta: filtros.value.hasta })
       ventasPeriodo.value = vp.data || {}
@@ -184,7 +228,8 @@ async function exportar(tipo){
     'ventas-por-periodo': '/reportes/ventas-por-periodo',
     'ganancias': '/reportes/ganancias',
     'productos-mas-vendidos': '/reportes/productos-mas-vendidos',
-    'clientes-top': '/reportes/clientes-top'
+    'clientes-top': '/reportes/clientes-top',
+    'ventas-con-descuento': '/reportes/ventas-con-descuento'
   }
   const url = mapa[tipo]
   if(tipo==='ventas-por-periodo' && (!filtros.value.desde || !filtros.value.hasta)){
