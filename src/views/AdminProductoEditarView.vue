@@ -127,6 +127,96 @@
           </div>
         </div>
       </section>
+
+      <!-- Descuentos -->
+      <section class="card shadow-sm mt-4">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <strong style="color: var(--kei-casi-negro);"><i class="bi bi-percent me-2" style="color: var(--kei-oliva);"></i>Descuentos</strong>
+          <small style="color: var(--kei-gris-medio);">Descuento por porcentaje dentro de un rango de fechas</small>
+        </div>
+        <div class="card-body">
+          <div v-if="cargandoDescuentos" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando descuentos...</span></div>
+          </div>
+
+          <template v-else>
+            <div v-if="descuentos.length===0" class="text-center py-3">
+              <i class="bi bi-percent fs-2 d-block mb-2" style="color: var(--kei-beige-medio);"></i>
+              <p style="color: var(--kei-gris-medio);">Sin descuentos. Crea el primero para este producto.</p>
+            </div>
+
+            <div v-else class="table-responsive mb-4">
+              <table class="table table-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Descuento</th>
+                    <th>Desde</th>
+                    <th>Hasta</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="d in descuentos" :key="d.id">
+                    <td class="fw-bold" style="color: var(--kei-oliva-oscuro);">-{{ d.porcentaje }}%</td>
+                    <td class="small">{{ formatearFecha(d.fecha_inicio) }}</td>
+                    <td class="small">{{ formatearFecha(d.fecha_fin) }}</td>
+                    <td class="text-center">
+                      <span v-if="d.vigente" class="badge" style="background: var(--kei-oliva);">Vigente</span>
+                      <span v-else-if="d.activo" class="badge bg-secondary">Fuera de rango</span>
+                      <span v-else class="badge bg-light text-dark border">Inactivo</span>
+                    </td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill me-1" @click="editarDescuento(d)">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-primary btn-sm rounded-pill me-1" @click="alternarDescuento(d)" :title="d.activo ? 'Desactivar' : 'Activar'">
+                        <i :class="d.activo ? 'bi bi-pause-circle' : 'bi bi-play-circle'"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" @click="eliminarDescuento(d)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <form @submit.prevent="guardarDescuento" class="card" style="background: var(--kei-fondo);">
+              <div class="card-body">
+                <h6 class="fw-semibold mb-3" style="color: var(--kei-casi-negro);">
+                  <i class="bi bi-plus-circle me-1" style="color: var(--kei-oliva);"></i>{{ editandoDescuentoId ? 'Editar descuento' : 'Nuevo descuento' }}
+                </h6>
+                <div class="row g-3">
+                  <div class="col-12 col-md-3">
+                    <label class="form-label small mb-1" for="descuentoPorcentaje">Porcentaje *</label>
+                    <div class="input-group">
+                      <input id="descuentoPorcentaje" v-model="formDescuento.porcentaje" type="number" min="0.01" max="100" step="0.01" required class="form-control" :class="{ 'is-invalid': errorDescuento }" />
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1" for="descuentoInicio">Fecha de inicio *</label>
+                    <input id="descuentoInicio" v-model="formDescuento.fecha_inicio" type="date" required class="form-control" />
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1" for="descuentoFin">Fecha de fin *</label>
+                    <input id="descuentoFin" v-model="formDescuento.fecha_fin" type="date" required class="form-control" />
+                  </div>
+                </div>
+                <div v-if="errorDescuento" class="alert alert-danger py-2 px-3 mt-3 mb-0 small">{{ errorDescuento }}</div>
+                <div class="d-flex gap-2 mt-3">
+                  <button type="submit" :disabled="guardandoDescuento" class="btn btn-primary rounded-pill">
+                    <span v-if="guardandoDescuento" class="spinner-border spinner-border-sm me-2"></span>
+                    <i class="bi bi-check-lg me-1"></i>{{ editandoDescuentoId ? 'Guardar cambios' : 'Crear descuento' }}
+                  </button>
+                  <button v-if="editandoDescuentoId" type="button" class="btn btn-outline-secondary rounded-pill" @click="cancelarEdicionDescuento">Cancelar</button>
+                </div>
+              </div>
+            </form>
+          </template>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -134,7 +224,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
-import { getProductById, getCategories, getMarcas, updateProduct, getProductoImagenes, subirImagenesGaleria, marcarImagenPrincipal, eliminarImagenGaleria } from '../services/api'
+import { getProductById, getCategories, getMarcas, updateProduct, getProductoImagenes, subirImagenesGaleria, marcarImagenPrincipal, eliminarImagenGaleria, getDescuentosProducto, crearDescuento, actualizarDescuento, cambiarEstadoDescuento, eliminarDescuento as eliminarDescuentoApi } from '../services/api'
 const route = useRoute(); const router = useRouter(); const authStore = useAuthStore()
 const id = route.params.id
 const marcas=ref([]); const categorias=ref([]); const error=ref(''); const exito=ref(''); const cargando=ref(true); const guardando=ref(false)
@@ -144,6 +234,78 @@ const galeria=ref([]); const nuevos=ref([]); const subiendo=ref(false)
 const imagenesProducto=ref([]); const cargandoGaleria=ref(true); const errorGaleria=ref('')
 // Imagen principal heredada (productos creados antes de que existiera la galería)
 const imagenLegacy = computed(() => (!galeria.value.length && original.value?.imagen_url) ? original.value.imagen_url : '')
+// Descuentos del producto
+const descuentos=ref([]); const cargandoDescuentos=ref(true); const guardandoDescuento=ref(false)
+const editandoDescuentoId=ref(null); const errorDescuento=ref('')
+const formDescuento=ref({ porcentaje:'', fecha_inicio:'', fecha_fin:'' })
+
+function formatearFecha(valor){
+  if(!valor) return '—'
+  return new Date(valor).toLocaleDateString('es-GT',{year:'numeric',month:'2-digit',day:'2-digit'})
+}
+
+async function cargarDescuentos(){
+  cargandoDescuentos.value = true
+  try{
+    const r = await getDescuentosProducto(id)
+    descuentos.value = r.data || []
+  }catch(e){
+    errorDescuento.value = e.response?.data?.message || 'No se pudieron cargar los descuentos'
+  }finally{
+    cargandoDescuentos.value = false
+  }
+}
+function editarDescuento(d){
+  editandoDescuentoId.value = d.id
+  errorDescuento.value = ''
+  formDescuento.value = {
+    porcentaje: d.porcentaje,
+    fecha_inicio: (d.fecha_inicio || '').slice(0,10),
+    fecha_fin: (d.fecha_fin || '').slice(0,10)
+  }
+}
+function cancelarEdicionDescuento(){
+  editandoDescuentoId.value = null
+  errorDescuento.value = ''
+  formDescuento.value = { porcentaje:'', fecha_inicio:'', fecha_fin:'' }
+}
+async function guardarDescuento(){
+  errorDescuento.value = ''; guardandoDescuento.value = true
+  try{
+    const payload = {
+      porcentaje: Number(formDescuento.value.porcentaje),
+      fecha_inicio: formDescuento.value.fecha_inicio,
+      fecha_fin: formDescuento.value.fecha_fin
+    }
+    if(editandoDescuentoId.value){
+      await actualizarDescuento(id, editandoDescuentoId.value, payload)
+      exito.value='Descuento actualizado'; setTimeout(()=> exito.value='', 2000)
+    }else{
+      await crearDescuento(id, payload)
+      exito.value='Descuento creado'; setTimeout(()=> exito.value='', 2000)
+    }
+    cancelarEdicionDescuento()
+    await cargarDescuentos()
+    await refrescarProducto()
+  }catch(err){
+    errorDescuento.value = err.response?.data?.message || 'No se pudo guardar el descuento'
+  }finally{ guardandoDescuento.value = false }
+}
+async function alternarDescuento(d){
+  try{
+    await cambiarEstadoDescuento(id, d.id, !d.activo)
+    await cargarDescuentos()
+    await refrescarProducto()
+  }catch(err){ error.value = err.response?.data?.message || 'Error al cambiar el estado del descuento' }
+}
+async function eliminarDescuento(d){
+  if(!confirm('¿Eliminar este descuento?')) return
+  try{
+    await eliminarDescuentoApi(id, d.id)
+    await cargarDescuentos()
+    await refrescarProducto()
+  }catch(err){ error.value = err.response?.data?.message || 'Error al eliminar el descuento' }
+}
 
 async function cargarGaleria(){
   cargandoGaleria.value = true
@@ -212,17 +374,25 @@ async function guardar(){
   error.value=''; exito.value=''; guardando.value=true
   try{ await updateProduct(id, form.value); exito.value='Producto actualizado'; setTimeout(()=> router.push('/admin/productos'), 800) }catch(err){ error.value = err.response?.data?.message || 'Error al actualizar' } finally { guardando.value=false }
 }
+// Refresca solo los datos del producto (precios y descuentos) sin tocar el
+// formulario de edicion, para no perder cambios sin guardar.
+async function refrescarProducto(){
+  const prod = await getProductById(id)
+  original.value = prod
+  imagenesProducto.value = prod.imagenes||[]
+  return prod
+}
+
 onMounted(async ()=>{
   if(!authStore.isAdmin){ router.push('/'); return }
   try{
     const [prod, c, m] = await Promise.all([getProductById(id), getCategories(), getMarcas()])
     original.value = prod; form.value = { nombre: prod.nombre, precio: prod.precio, stock: prod.stock, marca_id: prod.marca_id, categoria_id: prod.categoria_id, descripcion: prod.descripcion||'', ingredientes_clave: prod.ingredientes_clave||'', tipo_piel: prod.tipo_piel||'', tamano: prod.tamano||'' }
     categorias.value = c.data||[]; marcas.value = m.data||[]
-    // El detalle del producto ya trae su galería: sirve de respaldo si el
-    // endpoint de imágenes falla, para no mostrar "Sin imágenes" a ciegas.
     imagenesProducto.value = prod.imagenes||[]
     galeria.value = [...imagenesProducto.value]
     await cargarGaleria()
+    await cargarDescuentos()
   }catch(e){ error.value = e.response?.data?.message || 'No se pudo cargar producto' } finally { cargando.value=false }
 })
 </script>

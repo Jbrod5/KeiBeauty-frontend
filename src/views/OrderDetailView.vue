@@ -78,6 +78,10 @@
                 <div class="small text-uppercase fw-medium mb-1" style="color: var(--kei-beige-medio); letter-spacing: 0.05em; font-size: 0.75rem;">Teléfono</div>
                 <div style="color: var(--kei-casi-negro);">{{ order.telefono_contacto }}</div>
               </div>
+              <div v-if="order.telefono_2" class="col-12 col-md-6">
+                <div class="small text-uppercase fw-medium mb-1" style="color: var(--kei-beige-medio); letter-spacing: 0.05em; font-size: 0.75rem;">Teléfono de referencia</div>
+                <div style="color: var(--kei-casi-negro);">{{ order.telefono_2 }}</div>
+              </div>
             </div>
           </div>
         </section>
@@ -140,9 +144,23 @@
         </section>
 
         <section class="card shadow-sm">
-          <div class="card-body d-flex justify-content-between align-items-center">
-            <span class="fw-medium" style="color: var(--kei-gris-medio);">Total</span>
-            <span class="fs-4 fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(order.monto_total) }}</span>
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center py-1">
+              <span class="fw-medium" style="color: var(--kei-gris-medio);">Subtotal de productos</span>
+              <span class="fw-medium" style="color: var(--kei-casi-negro);">{{ formatPrice(order.subtotal_productos ?? order.monto_total) }}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-1">
+              <span class="fw-medium" style="color: var(--kei-gris-medio);">Envío</span>
+              <span class="fw-medium" style="color: var(--kei-casi-negro);">
+                <span v-if="Number(order.costo_envio) === 0" class="badge" style="background: var(--kei-oliva);">Gratis</span>
+                <span v-else>{{ formatPrice(order.costo_envio) }}</span>
+              </span>
+            </div>
+            <hr style="border-color: var(--kei-gris-claro);" />
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold" style="color: var(--kei-casi-negro);">Total</span>
+              <span class="fs-4 fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(order.monto_total) }}</span>
+            </div>
           </div>
         </section>
 

@@ -16,6 +16,38 @@
       </div>
     </section>
 
+    <!-- Graficos -->
+    <section class="card shadow-sm mb-4">
+      <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <strong style="color: var(--kei-casi-negro);"><i class="bi bi-graph-up me-1" style="color: var(--kei-oliva);"></i>Gráficos</strong>
+        <small style="color: var(--kei-gris-medio);">Reflejan el rango de fechas seleccionado</small>
+      </div>
+      <div class="card-body">
+        <div class="row g-4">
+          <div class="col-12 col-xl-6">
+            <div class="h6 fw-semibold mb-2" style="color: var(--kei-casi-negro);">Ventas por mes</div>
+            <div style="height: 260px;"><Bar v-if="datosVentasPorMes.labels.length" :data="datosVentasPorMes" :options="opcionesBarras" /><p v-else class="text-center pt-5" style="color: var(--kei-gris-medio);">Sin datos</p></div>
+          </div>
+          <div class="col-12 col-xl-6">
+            <div class="h6 fw-semibold mb-2" style="color: var(--kei-casi-negro);">Ganancias por mes</div>
+            <div style="height: 260px;"><Line v-if="datosGanancias.labels.length" :data="datosGanancias" :options="opcionesLinea" /><p v-else class="text-center pt-5" style="color: var(--kei-gris-medio);">Sin datos</p></div>
+          </div>
+          <div class="col-12 col-xl-6">
+            <div class="h6 fw-semibold mb-2" style="color: var(--kei-casi-negro);">Productos más vendidos</div>
+            <div style="height: 300px;"><Bar v-if="datosTopProductos.labels.length" :data="datosTopProductos" :options="opcionesBarrasHorizontales" /><p v-else class="text-center pt-5" style="color: var(--kei-gris-medio);">Sin datos</p></div>
+          </div>
+          <div class="col-12 col-xl-6">
+            <div class="h6 fw-semibold mb-2" style="color: var(--kei-casi-negro);">Clientes con más compras</div>
+            <div style="height: 300px;"><Bar v-if="datosClientesTop.labels.length" :data="datosClientesTop" :options="opcionesBarras" /><p v-else class="text-center pt-5" style="color: var(--kei-gris-medio);">Sin datos</p></div>
+          </div>
+          <div class="col-12">
+            <div class="h6 fw-semibold mb-2" style="color: var(--kei-casi-negro);">Ventas con descuento</div>
+            <div style="height: 300px;"><Bar v-if="datosVentasDescuento.labels.length" :data="datosVentasDescuento" :options="opcionesBarras" /><p v-else class="text-center pt-5" style="color: var(--kei-gris-medio);">Sin datos</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div v-if="cargando" class="text-center py-5"><div class="spinner-border"></div><p style="color: var(--kei-gris-medio);">Cargando reportes...</p></div>
     <div v-else>
       <!-- Ventas Totales -->
@@ -104,6 +136,47 @@
         </div>
       </section>
 
+      <!-- Ventas con descuento -->
+      <section class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong style="color: var(--kei-casi-negro);"><i class="bi bi-percent me-1" style="color: var(--kei-oliva);"></i>Ventas con Descuento</strong>
+          <button @click="exportar('ventas-con-descuento')" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+        </div>
+        <div class="card-body">
+          <div class="row text-center mb-3">
+            <div class="col-6 col-md-3"><div class="p-3 rounded" style="background: var(--kei-oliva-suave);"><div class="h5 mb-0" style="color: var(--kei-oliva-oscuro);">{{ ventasDescuento.totales.unidades || 0 }}</div><small style="color: var(--kei-gris-medio);">Unidades</small></div></div>
+            <div class="col-6 col-md-3"><div class="p-3 rounded" style="background: var(--kei-oliva-suave);"><div class="h5 mb-0" style="color: var(--kei-oliva-oscuro);">{{ ventasDescuento.totales.unidades_con_descuento || 0 }}</div><small style="color: var(--kei-gris-medio);">Con descuento</small></div></div>
+            <div class="col-6 col-md-3"><div class="p-3 rounded" style="background: var(--kei-oliva-suave);"><div class="h5 mb-0" style="color: var(--kei-oliva-oscuro);">{{ formatPrice(ventasDescuento.totales.ingresos_con_descuento || 0) }}</div><small style="color: var(--kei-gris-medio);">Ingresos</small></div></div>
+            <div class="col-6 col-md-3"><div class="p-3 rounded" style="background: var(--kei-fondo);"><div class="h5 mb-0" style="color: var(--kei-casi-negro);">{{ formatPrice(ventasDescuento.totales.ahorro_total || 0) }}</div><small style="color: var(--kei-gris-medio);">Ahorro dado</small></div></div>
+          </div>
+
+          <div v-if="ventasDescuento.comparacion" class="alert alert-info py-2 px-3 small">
+            <i class="bi bi-graph-up-arrow me-1"></i>
+            Frente al periodo anterior ({{ ventasDescuento.comparacion.desde }} al {{ ventasDescuento.comparacion.hasta }})
+            <strong>{{ ventasDescuento.comparacion.variacion_ingresos_porcentaje == null ? 'sin datos previos' : formatPrice(ventasDescuento.comparacion.variacion_ingresos_porcentaje) + '%' }}</strong>
+            en ingresos
+            ({{ formatPrice(ventasDescuento.comparacion.ingresos || 0) }} → {{ formatPrice(ventasDescuento.totales.ingresos_con_descuento || 0) }}).
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead><tr><th>Producto</th><th>Unidades</th><th>Con descuento</th><th>Ingresos (Q)</th><th>Ahorro (Q)</th><th>Desc. medio</th></tr></thead>
+              <tbody>
+                <tr v-for="p in ventasDescuento.productos || []" :key="p.producto_id">
+                  <td>{{ p.nombre }}</td>
+                  <td>{{ p.unidades }}</td>
+                  <td>{{ p.unidades_con_descuento }}</td>
+                  <td>{{ formatPrice(p.ingresos_con_descuento) }}</td>
+                  <td>{{ formatPrice(p.ahorro_total) }}</td>
+                  <td>{{ p.descuento_promedio }}%</td>
+                </tr>
+                <tr v-if="(ventasDescuento.productos || []).length===0"><td colspan="6" class="text-center py-3" style="color: var(--kei-gris-medio);">Sin datos</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- Clientes top -->
       <section class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -126,10 +199,30 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Bar, Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js'
 import { useAuthStore } from '../stores/authStore'
-import { getReportesVentasTotales, getReportesVentasPorMes, getReportesVentasPorPeriodo, getReportesGanancias, getReportesProductosMasVendidos, getReportesClientesTop, descargarExcel } from '../services/api'
+import { getReportesVentasTotales, getReportesVentasPorMes, getReportesVentasPorPeriodo, getReportesGanancias, getReportesProductosMasVendidos, getReportesClientesTop, getReportesVentasConDescuento, descargarExcel } from '../services/api'
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend)
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+const COLOR_OLIVA = 'rgba(140, 176, 122, 0.75)'
+const COLOR_OLIVA_SOLIDO = '#8CB07A'
+const COLOR_GRIS = 'rgba(77, 77, 89, 0.75)'
+const COLOR_ROJO = 'rgba(199, 123, 123, 0.8)'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -141,6 +234,82 @@ const ventasPeriodo = ref({})
 const ganancias = ref({ ingresos:0, costos:0, ganancia:0, margen_porcentaje:0 })
 const topProductos = ref([])
 const topClientes = ref([])
+const ventasDescuento = ref({ productos: [], totales: {}, comparacion: null })
+
+const opcionesBarras = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { position: 'bottom' } },
+  scales: { y: { beginAtZero: true } }
+}
+const opcionesBarrasHorizontales = {
+  indexAxis: 'y',
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { position: 'bottom' } },
+  scales: { x: { beginAtZero: true } }
+}
+const opcionesLinea = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { position: 'bottom' } },
+  scales: { y: { beginAtZero: true } }
+}
+
+const etiquetaMes = (m) => `${MESES[(Number(m) || 1) - 1] || ''}`
+
+const datosVentasPorMes = computed(() => ({
+  labels: ventasPorMes.value.map(r => `${etiquetaMes(r.mes)} ${r.anio}`),
+  datasets: [{
+    label: 'Ventas (Q)',
+    data: ventasPorMes.value.map(r => r.total),
+    backgroundColor: COLOR_OLIVA,
+    borderColor: COLOR_OLIVA_SOLIDO,
+    borderWidth: 1,
+    borderRadius: 4
+  }]
+}))
+
+const datosGanancias = computed(() => {
+  const serie = ganancias.value.por_mes || []
+  return {
+    labels: serie.map(m => `${etiquetaMes(m.mes)} ${m.anio}`),
+    datasets: [
+      { label: 'Ingresos (Q)', data: serie.map(m => m.ingresos), backgroundColor: COLOR_OLIVA, borderColor: COLOR_OLIVA_SOLIDO, tension: 0.25, fill: false },
+      { label: 'Costos (Q)', data: serie.map(m => m.costos), backgroundColor: COLOR_ROJO, borderColor: COLOR_ROJO, tension: 0.25, fill: false }
+    ]
+  }
+})
+
+const datosTopProductos = computed(() => ({
+  labels: topProductos.value.map(p => p.nombre),
+  datasets: [{
+    label: 'Unidades vendidas',
+    data: topProductos.value.map(p => p.total_vendidos),
+    backgroundColor: COLOR_GRIS,
+    borderRadius: 4
+  }]
+}))
+
+const datosClientesTop = computed(() => ({
+  labels: topClientes.value.map(c => c.nombre),
+  datasets: [{
+    label: 'Total gastado (Q)',
+    data: topClientes.value.map(c => c.total_gastado),
+    backgroundColor: COLOR_OLIVA,
+    borderRadius: 4
+  }]
+}))
+
+const datosVentasDescuento = computed(() => ({
+  labels: (ventasDescuento.value.productos || []).map(p => p.nombre),
+  datasets: [{
+    label: 'Ingresos con descuento (Q)',
+    data: (ventasDescuento.value.productos || []).map(p => p.ingresos_con_descuento),
+    backgroundColor: COLOR_ROJO,
+    borderRadius: 4
+  }]
+}))
 
 function formatPrice(p){ return new Intl.NumberFormat('es-GT',{style:'currency',currency:'GTQ'}).format(p||0) }
 function estadoBadge(e){
@@ -154,18 +323,20 @@ async function cargarTodo(){
     const params = {}
     if(filtros.value.desde) params.desde = filtros.value.desde
     if(filtros.value.hasta) params.hasta = filtros.value.hasta
-    const [vt, vpm, gan, prod, cli] = await Promise.all([
+    const [vt, vpm, gan, prod, cli, desc] = await Promise.all([
       getReportesVentasTotales(params),
-      getReportesVentasPorMes(),
+      getReportesVentasPorMes(params),
       getReportesGanancias(params),
       getReportesProductosMasVendidos(params),
-      getReportesClientesTop(params)
+      getReportesClientesTop(params),
+      getReportesVentasConDescuento(params)
     ])
     ventasTotales.value = vt.data || vt
     ventasPorMes.value = vpm.data || []
     ganancias.value = gan.data || gan
     topProductos.value = prod.data || []
     topClientes.value = cli.data || []
+    ventasDescuento.value = desc.data || { productos: [], totales: {}, comparacion: null }
     if(filtros.value.desde && filtros.value.hasta){
       const vp = await getReportesVentasPorPeriodo({ desde: filtros.value.desde, hasta: filtros.value.hasta })
       ventasPeriodo.value = vp.data || {}
@@ -184,7 +355,8 @@ async function exportar(tipo){
     'ventas-por-periodo': '/reportes/ventas-por-periodo',
     'ganancias': '/reportes/ganancias',
     'productos-mas-vendidos': '/reportes/productos-mas-vendidos',
-    'clientes-top': '/reportes/clientes-top'
+    'clientes-top': '/reportes/clientes-top',
+    'ventas-con-descuento': '/reportes/ventas-con-descuento'
   }
   const url = mapa[tipo]
   if(tipo==='ventas-por-periodo' && (!filtros.value.desde || !filtros.value.hasta)){

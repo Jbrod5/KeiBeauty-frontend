@@ -50,6 +50,7 @@ const cards = [
   { titulo: 'Reseñas', descripcion: 'Moderar reseñas de clientes', icono: 'bi bi-star-half', ruta: '/admin/resenas' },
   { titulo: 'Inventario', descripcion: 'Ajustes de stock desde Productos', icono: 'bi bi-boxes', ruta: '/admin/productos' },
   { titulo: 'Reportes', descripcion: 'Ventas, ganancias y top productos/clientes', icono: 'bi bi-bar-chart-line', ruta: '/admin/reportes' },
+  { titulo: 'Configuración', descripcion: 'Costo de envío y envío gratis', icono: 'bi bi-sliders', ruta: '/admin/configuracion' },
 ]
 </script>
 

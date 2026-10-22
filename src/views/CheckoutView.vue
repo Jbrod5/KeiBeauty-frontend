@@ -87,20 +87,26 @@
 
               <!-- Auth fields -->
               <div v-else>
-                <div class="form-check mb-3">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    id="usarOtrosDatos"
-                    v-model="form.usar_otros_datos"
-                    @change="toggleUsarOtrosDatos"
-                  />
-                  <label class="form-check-label" for="usarOtrosDatos" style="color: var(--kei-gris-medio);">
-                    Usar otros datos para este pedido
-                  </label>
+                <!-- Dirección de envío -->
+                <div v-if="direcciones.length > 0" class="mb-3">
+                  <label for="selectDireccion" class="form-label">Dirección de envío <span class="text-danger">*</span></label>
+                  <select
+                    id="selectDireccion"
+                    v-model="seleccionDireccion"
+                    @change="alCambiarDireccion"
+                    class="form-select"
+                    :class="{ 'is-invalid': errors.direccion_envio }"
+                    :aria-invalid="errors.direccion_envio ? 'true' : 'false'"
+                  >
+                    <option v-for="d in direcciones" :key="d.id" :value="String(d.id)">
+                      {{ etiquetaDireccion(d) }}
+                    </option>
+                    <option value="__otra__">Usar otra dirección para este pedido</option>
+                  </select>
+                  <div v-if="errors.direccion_envio" class="invalid-feedback d-block">{{ errors.direccion_envio }}</div>
                 </div>
 
-                <div class="mb-3">
+                <div v-if="usarDireccionNueva" class="mb-3">
                   <label for="direccion" class="form-label">Dirección completa <span class="text-danger">*</span></label>
                   <textarea
                     id="direccion"
@@ -110,9 +116,19 @@
                     autocomplete="street-address"
                     :class="['form-control', errors.direccion_envio ? 'is-invalid' : '']"
                     :aria-invalid="errors.direccion_envio ? 'true' : 'false'"
-                    :disabled="!form.usar_otros_datos && isAuthenticated"
                   ></textarea>
                   <div v-if="errors.direccion_envio" class="invalid-feedback d-block">{{ errors.direccion_envio }}</div>
+                  <div class="form-check mt-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="guardarDireccion"
+                      v-model="form.guardar_direccion"
+                    />
+                    <label class="form-check-label" for="guardarDireccion" style="color: var(--kei-gris-medio);">
+                      Guardar esta dirección en mi cuenta
+                    </label>
+                  </div>
                 </div>
 
                 <div class="mb-3">
@@ -126,21 +142,70 @@
                     placeholder="12345678"
                     :class="['form-control', errors.telefono ? 'is-invalid' : '']"
                     :aria-invalid="errors.telefono ? 'true' : 'false'"
-                    :disabled="!form.usar_otros_datos && isAuthenticated"
+                    :disabled="false"
                   />
                   <div v-if="errors.telefono" class="invalid-feedback d-block">{{ errors.telefono }}</div>
                 </div>
 
-                <div v-if="form.usar_otros_datos" class="form-check mb-3">
+                <!-- Telefono principal -->
+                <div v-if="telefonos.length > 0" class="mb-3">
+                  <label for="selectTelefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
+                  <select
+                    id="selectTelefono"
+                    v-model="seleccionTelefono"
+                    @change="alCambiarTelefono"
+                    class="form-select"
+                    :class="{ 'is-invalid': errors.telefono }"
+                    :aria-invalid="errors.telefono ? 'true' : 'false'"
+                  >
+                    <option v-for="t in telefonos" :key="t.id" :value="String(t.id)">
+                      {{ t.telefono }}{{ t.es_principal ? ' (principal)' : '' }}
+                    </option>
+                    <option value="__otro__">Usar otro teléfono para este pedido</option>
+                  </select>
+                  <div v-if="errors.telefono" class="invalid-feedback d-block">{{ errors.telefono }}</div>
+                </div>
+
+                <div v-if="usarTelefonoNuevo" class="mb-3">
+                  <label for="telefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
                   <input
-                    class="form-check-input"
-                    type="checkbox"
-                    id="guardarDatos"
-                    v-model="form.guardar_datos"
+                    id="telefono"
+                    v-model="form.telefono"
+                    type="tel"
+                    required
+                    autocomplete="tel"
+                    placeholder="12345678"
+                    :class="['form-control', errors.telefono ? 'is-invalid' : '']"
+                    :aria-invalid="errors.telefono ? 'true' : 'false'"
                   />
-                  <label class="form-check-label" for="guardarDatos" style="color: var(--kei-gris-medio);">
-                    Actualizar mis datos de perfil con esta información
-                  </label>
+                  <div v-if="errors.telefono" class="invalid-feedback d-block">{{ errors.telefono }}</div>
+                  <div class="form-check mt-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="guardarTelefono"
+                      v-model="form.guardar_telefono"
+                    />
+                    <label class="form-check-label" for="guardarTelefono" style="color: var(--kei-gris-medio);">
+                      Guardar este teléfono en mi cuenta
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Segundo telefono de referencia (opcional) -->
+                <div class="mb-3">
+                  <label for="telefono2" class="form-label">Teléfono de referencia (opcional)</label>
+                  <input
+                    id="telefono2"
+                    v-model="form.telefono_2"
+                    type="tel"
+                    autocomplete="tel"
+                    placeholder="Otro número donde también te podamos localizar"
+                    :class="['form-control', errors.telefono_2 ? 'is-invalid' : '']"
+                    :aria-invalid="errors.telefono_2 ? 'true' : 'false'"
+                  />
+                  <div v-if="errors.telefono_2" class="invalid-feedback d-block">{{ errors.telefono_2 }}</div>
+                  <small style="color: var(--kei-gris-medio);">Un segundo número donde también te podamos localizar al entregar el pedido.</small>
                 </div>
               </div>
 
@@ -215,11 +280,20 @@
             </div>
             <div class="d-flex justify-content-between py-2" style="color: var(--kei-gris-medio);">
               <span>Envío</span>
-              <span class="badge bg-secondary">Gratis</span>
+              <span class="fw-medium" style="color: var(--kei-casi-negro);">
+                <span v-if="envioGratis" class="badge" style="background: var(--kei-oliva);">Gratis</span>
+                <span v-else>{{ formatPrice(costoEnvio) }}</span>
+              </span>
+            </div>
+            <div v-if="envioGratis" class="alert py-2 px-3 mb-2 small" style="background: var(--kei-oliva-suave); border-color: var(--kei-oliva-claro); color: var(--kei-oliva-oscuro);">
+              <i class="bi bi-truck me-1"></i>¡Tu pedido tiene envío gratis!
+            </div>
+            <div v-else-if="faltanParaEnvioGratis > 0" class="alert py-2 px-3 mb-2 small" style="background: var(--kei-fondo); border-color: var(--kei-gris-claro); color: var(--kei-gris-medio);">
+              <i class="bi bi-info-circle me-1"></i>Te faltan {{ formatPrice(faltanParaEnvioGratis) }} para obtener envío gratis.
             </div>
             <div class="d-flex justify-content-between py-3 mt-2 border-top fw-bold fs-5" style="border-color: var(--kei-gris-claro) !important; color: var(--kei-casi-negro);">
               <span>Total</span>
-              <span>{{ formatPrice(cartStore.totalPrice) }}</span>
+              <span>{{ formatPrice(totalPedido) }}</span>
             </div>
 
             <div class="text-center mt-3 pt-3 border-top" style="border-color: var(--kei-gris-claro) !important;">
@@ -239,7 +313,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
 import { useAuthStore } from '../stores/authStore'
-import { createOrder } from '../services/api'
+import { createOrder, getDirecciones, getTelefonos, getConfiguracionEnvio } from '../services/api'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -251,9 +325,42 @@ const form = ref({
   direccion_envio: '',
   email: '',
   telefono: '',
-  guardar_datos: false,
-  usar_otros_datos: false
+  telefono_2: '',
+  guardar_direccion: false,
+  guardar_telefono: false
 })
+
+// Direcciones y teléfonos guardados en la cuenta del cliente
+const direcciones = ref([])
+const telefonos = ref([])
+// Id seleccionado ('' = todavia no elegido, '__otra__' = usar otra direccion)
+const seleccionDireccion = ref('')
+const seleccionTelefono = ref('')
+
+// Política de envío (costo fijo + mínimo para envío gratis)
+const envio = ref({ costo_envio: 0, minimo_envio_gratis: 0 })
+const envioGratis = computed(() =>
+  envio.value.minimo_envio_gratis > 0 && cartStore.totalPrice >= envio.value.minimo_envio_gratis
+)
+const costoEnvio = computed(() => (envioGratis.value ? 0 : envio.value.costo_envio))
+const totalPedido = computed(() => cartStore.totalPrice + costoEnvio.value)
+const faltanParaEnvioGratis = computed(() =>
+  envio.value.minimo_envio_gratis > 0 && !envioGratis.value
+    ? envio.value.minimo_envio_gratis - cartStore.totalPrice
+    : 0
+)
+
+const usarDireccionNueva = computed(() =>
+  direcciones.value.length === 0 || seleccionDireccion.value === '__otra__'
+)
+const usarTelefonoNuevo = computed(() =>
+  telefonos.value.length === 0 || seleccionTelefono.value === '__otro__'
+)
+
+function etiquetaDireccion(d) {
+  const alias = d.alias ? d.alias + ': ' : ''
+  return alias + d.direccion + (d.es_principal ? ' (principal)' : '')
+}
 
 const errors = ref({})
 const submitError = ref('')
@@ -274,15 +381,18 @@ function validateForm() {
   errors.value = {}
   let isValid = true
 
-  if (!form.value.direccion_envio.trim()) {
-    errors.value.direccion_envio = 'La dirección de envío es obligatoria'
-    isValid = false
-  } else if (form.value.direccion_envio.trim().length < 10) {
-    errors.value.direccion_envio = 'La dirección debe tener al menos 10 caracteres'
-    isValid = false
-  }
+  const soloDigitos = (valor) => String(valor).replace(/\D/g, '')
 
   if (!isAuthenticated.value) {
+    // Invitado: direccion, email y telefono se escriben en el formulario.
+    if (!form.value.direccion_envio.trim()) {
+      errors.value.direccion_envio = 'La dirección de envío es obligatoria'
+      isValid = false
+    } else if (form.value.direccion_envio.trim().length < 10) {
+      errors.value.direccion_envio = 'La dirección debe tener al menos 10 caracteres'
+      isValid = false
+    }
+
     if (!form.value.email.trim()) {
       errors.value.email = 'El email es obligatorio'
       isValid = false
@@ -294,34 +404,111 @@ function validateForm() {
     if (!form.value.telefono.trim()) {
       errors.value.telefono = 'El teléfono es obligatorio'
       isValid = false
-    } else if (form.value.telefono.replace(/\D/g, '').length < 8) {
+    } else if (soloDigitos(form.value.telefono).length < 8) {
       errors.value.telefono = 'El teléfono debe tener al menos 8 dígitos'
       isValid = false
     }
   } else {
-    if (!form.value.telefono.trim()) {
-      errors.value.telefono = 'El teléfono es obligatorio'
-      isValid = false
-    } else if (form.value.telefono.replace(/\D/g, '').length < 8) {
-      errors.value.telefono = 'El teléfono debe tener al menos 8 dígitos'
+    // Cliente con cuenta: puede elegir una direccion guardada o escribir otra.
+    if (usarDireccionNueva.value) {
+      if (!form.value.direccion_envio.trim()) {
+        errors.value.direccion_envio = 'La dirección de envío es obligatoria'
+        isValid = false
+      } else if (form.value.direccion_envio.trim().length < 10) {
+        errors.value.direccion_envio = 'La dirección debe tener al menos 10 caracteres'
+        isValid = false
+      }
+    } else if (!seleccionDireccion.value) {
+      errors.value.direccion_envio = 'Selecciona una dirección de envío'
       isValid = false
     }
+
+    if (usarTelefonoNuevo.value) {
+      if (!form.value.telefono.trim()) {
+        errors.value.telefono = 'El teléfono es obligatorio'
+        isValid = false
+      } else if (soloDigitos(form.value.telefono).length < 8) {
+        errors.value.telefono = 'El teléfono debe tener al menos 8 dígitos'
+        isValid = false
+      }
+    } else if (!seleccionTelefono.value) {
+      errors.value.telefono = 'Selecciona un teléfono de contacto'
+      isValid = false
+    }
+  }
+
+  // Segundo telefono de referencia: opcional, pero si se escribe debe ser valido.
+  if (form.value.telefono_2.trim() && soloDigitos(form.value.telefono_2).length < 8) {
+    errors.value.telefono_2 = 'El teléfono de referencia debe tener al menos 8 dígitos'
+    isValid = false
   }
 
   return isValid
 }
 
-function toggleUsarOtrosDatos() {
-  if (form.value.usar_otros_datos) {
-    form.value.direccion_envio = ''
-    form.value.telefono = ''
+async function cargarDirecciones() {
+  try {
+    const r = await getDirecciones()
+    direcciones.value = r.data || []
+  } catch (e) {
+    console.error('Error cargando direcciones:', e)
+    direcciones.value = []
+  }
+  if (direcciones.value.length > 0) {
+    const principal = direcciones.value.find(d => d.es_principal) || direcciones.value[0]
+    seleccionDireccion.value = String(principal.id)
+    form.value.direccion_envio = principal.direccion
   } else {
+    seleccionDireccion.value = '__otra__'
     if (authStore.user?.direccion_envio) {
       form.value.direccion_envio = authStore.user.direccion_envio
     }
+  }
+}
+
+async function cargarTelefonos() {
+  try {
+    const r = await getTelefonos()
+    telefonos.value = r.data || []
+  } catch (e) {
+    console.error('Error cargando teléfonos:', e)
+    telefonos.value = []
+  }
+  if (telefonos.value.length > 0) {
+    const principal = telefonos.value.find(t => t.es_principal) || telefonos.value[0]
+    seleccionTelefono.value = String(principal.id)
+    form.value.telefono = principal.telefono
+  } else {
+    seleccionTelefono.value = '__otro__'
     if (authStore.user?.telefono) {
       form.value.telefono = authStore.user.telefono
     }
+  }
+}
+
+// Al cambiar la seleccion se refleja el valor en el formulario (por si el
+// cliente decide guardarlo en su cuenta).
+function alCambiarDireccion() {
+  if (usarDireccionNueva.value) {
+    form.value.direccion_envio = ''
+    return
+  }
+  const elegida = direcciones.value.find(d => String(d.id) === seleccionDireccion.value)
+  if (elegida) {
+    form.value.direccion_envio = elegida.direccion
+    form.value.guardar_direccion = false
+  }
+}
+
+function alCambiarTelefono() {
+  if (usarTelefonoNuevo.value) {
+    form.value.telefono = ''
+    return
+  }
+  const elegido = telefonos.value.find(t => String(t.id) === seleccionTelefono.value)
+  if (elegido) {
+    form.value.telefono = elegido.telefono
+    form.value.guardar_telefono = false
   }
 }
 
@@ -336,22 +523,33 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    const payload = {
-      direccion_envio: form.value.direccion_envio
-    }
+    const payload = {}
 
     if (!isAuthenticated.value) {
+      payload.direccion_envio = form.value.direccion_envio.trim()
       payload.email_contacto = form.value.email
-      payload.telefono_contacto = form.value.telefono
+      payload.telefono_contacto = form.value.telefono.trim()
     } else {
-      payload.telefono = form.value.telefono
+      if (usarDireccionNueva.value) {
+        payload.direccion_envio = form.value.direccion_envio.trim()
+        payload.guardar_direccion = form.value.guardar_direccion
+      } else {
+        payload.direccion_id = Number(seleccionDireccion.value)
+      }
+
+      if (usarTelefonoNuevo.value) {
+        payload.telefono = form.value.telefono.trim()
+        payload.guardar_telefono = form.value.guardar_telefono
+      } else {
+        payload.telefono_id = Number(seleccionTelefono.value)
+      }
+    }
+
+    if (form.value.telefono_2.trim()) {
+      payload.telefono_2 = form.value.telefono_2.trim()
     }
 
     await createOrder(payload)
-
-    if (isAuthenticated.value && form.value.guardar_datos) {
-      // TODO: Actualizar perfil del usuario
-    }
 
     cartStore.clearCart()
     if (!isAuthenticated.value) {
@@ -365,17 +563,21 @@ async function handleSubmit() {
   }
 }
 
+async function cargarEnvio() {
+  try {
+    const r = await getConfiguracionEnvio()
+    envio.value = r.data || { costo_envio: 0, minimo_envio_gratis: 0 }
+  } catch (e) {
+    console.error('Error cargando la configuración de envío:', e)
+  }
+}
+
 async function loadData() {
   await loadCart()
-  
+  await cargarEnvio()
+
   if (isAuthenticated.value) {
-    form.value.usar_otros_datos = false
-    if (authStore.user?.direccion_envio) {
-      form.value.direccion_envio = authStore.user.direccion_envio
-    }
-    if (authStore.user?.telefono) {
-      form.value.telefono = authStore.user.telefono
-    }
+    await Promise.all([cargarDirecciones(), cargarTelefonos()])
   }
 }
 

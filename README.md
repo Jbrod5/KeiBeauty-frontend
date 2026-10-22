@@ -22,6 +22,7 @@ Proyecto de Seminario de Sistemas 1 — USAC-CUNOC. Fase 2.
 | Bootstrap | ^5.3.8 | Framework CSS |
 | Bootstrap Icons | ^1.13.1 | Iconos vectoriales (sin emojis en la UI) |
 | vue-toastification | ^2.0.0-rc.5 | Toasts en español |
+| Chart.js + vue-chartjs | ^4.5.1 / ^5.3.4 | Gráficos del panel de reportes |
 | Docker + Nginx | — | Producción multi-etapa (`nginx.conf` con fallback SPA) |
 
 ## Requisitos previos
@@ -114,6 +115,7 @@ KeiBeauty-frontend/
 | `/admin/pedidos/:id` | `OrderDetailView.vue` | Sí | Sí* | Detalle con cambio de estado y subida de guía |
 | `/admin/resenas` | `AdminResenasView.vue` | Sí | Sí* | Gestión de reseñas |
 | `/admin/reportes` | `AdminReportesView.vue` | Sí | Sí* | Reportes + Excel |
+| `/admin/configuracion` | `AdminConfiguracionView.vue` | Sí | Sí* | Costo de envío y envío gratis |
 
 \* El guard exige autenticación; el rol `admin` lo verifica cada vista al
 montarse. Rutas `guest` redirigen a `/catalogo` con sesión. Con flujo 2FA
@@ -155,6 +157,66 @@ código expira a los 15 minutos y se puede reenviar cada 60 segundos.
 (`{tipo, mensaje}`) que `App.vue` muestra como toast. Si la sesión expiró por
 token vencido, el aviso es informativo en vez de "sesión cerrada".
 
+### Gráficos y exportaciones a Excel
+
+El panel de reportes (`/admin/reportes`) incluye una sección **Gráficos** con
+cinco visualizaciones que respetan el rango de fechas del filtro global:
+
+1. Ventas por mes (barras) — `/api/reportes/ventas-por-mes`
+2. Ganancias por mes (línea, ingresos vs. costos) — `/api/reportes/ganancias`
+   (usa la serie `por_mes` que devuelve el endpoint)
+3. Productos más vendidos (barras horizontales) — `/api/reportes/productos-mas-vendidos`
+4. Clientes con más compras (barras) — `/api/reportes/clientes-top`
+5. Ventas con descuento (barras) — `/api/reportes/ventas-con-descuento`
+
+Las librerías `chart.js` y `vue-chartjs` están en `package.json` y
+`package-lock.json` (sin CDN: el build es autónomo).
+
+Las descargas a Excel incluyen siempre el periodo cubierto en un subtítulo y
+el nombre del archivo lleva las fechas del filtro.
+
+### Descuentos por producto
+
+Un producto puede tener descuentos con porcentaje y rango de fechas. Solo
+aplica el descuento **vigente** (`activo` y dentro de las fechas); si dos se
+solapan gana el de mayor porcentaje.
+
+- El backend expone en cada producto `precio_descuento` (precio final),
+  `tiene_descuento` y `porcentaje_descuento`; `precio` sigue siendo el precio
+  de catálogo.
+- `CatalogView` y `ProductDetailView` muestran el precio tachado junto al
+  precio con descuento; `CartView` muestra el precio original tachado en el
+  ítem.
+- La gestión de descuentos (crear, activar/desactivar, editar y eliminar) está
+  en la sección "Descuentos" de `AdminProductoEditarView`.
+- `AdminReportesView` incluye la tarjeta "Ventas con Descuento" con las
+  unidades, ingresos, ahorro dado y la variación frente al periodo anterior.
+
+### Costo de envío y envío gratis
+
+El envío es un costo fijo (`costo_envio`) que se descuenta del total del
+pedido, salvo que el subtotal alcance `minimo_envio_gratis`, en cuyo caso el
+envío es gratis. Ambos valores se editan en `/admin/configuracion`
+(`AdminConfiguracionView.vue`).
+
+`CheckoutView` consulta `GET /configuracion/envio` (público) para mostrar el
+desglose Subtotal / Envío / Total antes de confirmar, y avisa cuánto falta para
+lograr el envío gratis. `OrderDetailView` muestra `subtotal_productos`,
+`costo_envio` y `monto_total` del pedido.
+
+### Direcciones y teléfonos guardados
+
+Una cuenta puede tener varias direcciones de envío y varios teléfonos. El
+cliente los gestiona en `ProfileView` (secciones "Mis direcciones" y "Mis
+teléfonos": agregar, editar, eliminar y marcar principal) y los elige en el
+`CheckoutView` con un selector. Si escribe una dirección o teléfono nuevo
+puede marcar "Guardar en mi cuenta"; el backend guarda el snapshot en el
+pedido (`direccion_envio`, `telefono_contacto`, `telefono_2`).
+
+Solo puede haber una principal de cada tipo: al cambiarla se actualizan
+`usuarios.direccion_envio` y `usuarios.telefono`, y `GET /auth/perfil` devuelve
+las listas `direcciones` y `telefonos`.
+
 ### Catálogo, carrito, pedidos y admin
 
 | Función | Endpoint | Envía | Recibe | Usada desde |
@@ -166,14 +228,20 @@ token vencido, el aviso es informativo en vez de "sesión cerrada".
 | `uploadProductImage/getProductoImagenes/subirImagenesGaleria/marcarImagenPrincipal/eliminarImagenGaleria` | `/products/<id>/imagen…` | `FormData` (admin) | `{data}` | edición admin, detalle |
 | `ajustarInventario(id,t,c)` | `POST /products/<id>/inventario` | `{tipo, cantidad, costo_unitario?}` (admin) | `{data}` | `AdminProductsView` |
 | `getCart/addToCart/updateCartItem/removeCartItem/clearCart` | `/carrito…` | `{producto_id, cantidad}` / `{cantidad}` | `{data: <carrito>}` | `cartStore`, `CartView` |
-| `createOrder(d)` | `POST /pedidos` | `{direccion_envio}` (+ contacto/ítems si invitado) | `{data: <pedido>}` (`201`) | `CheckoutView` |
+| `createOrder(d)` | `POST /pedidos` | cliente: `{direccion_id}` o `{direccion_envio, guardar_direccion?}`, `{telefono_id}` o `{telefono, guardar_telefono?}`, `{telefono_2?}`; invitado: `{direccion_envio, email_contacto, telefono_contacto, items?}` | `{data: <pedido>}` (`201`) | `CheckoutView` |
 | `getOrders/getOrderById/updateOrderStatus/uploadGuia` | `/pedidos…` | `{estado}` / `FormData{archivo}` | `{data}` | historial, detalle (admin: estado + guía), AdminOrdersView |
 | `getFavoritos/agregarFavorito/quitarFavorito` | `/favoritos…` | JWT | `{data}` | `favoritosStore` |
 | `getResenas/createResena/updateResena/deleteResena` | `/resenas…` | `{producto_id, calificacion 1-5, comentario?}` | `{data, promedio, total}` | detalle, admin |
 | `createCategory/updateCategory/deleteCategory` | `/categorias…` | `{nombre, descripcion?}` (admin) | `{data}` | `AdminCategoriesView` |
 | `createMarca/updateMarca/deleteMarca` | `/marcas…` | JSON o `FormData` (admin) | `{data}` | `AdminMarcasView` |
 | `getAlertaProducto/crearAlertaProducto/eliminarAlertaProducto` | `/notificaciones/producto/<id>/alerta` | JWT | `{data}` | detalle ("Avísame") |
+| `getDirecciones/crearDireccion/actualizarDireccion/eliminarDireccion` | `/usuario/direcciones…` | JWT · `{alias?, direccion, es_principal?}` | `{data: [<direccion>]}` | `ProfileView`, `CheckoutView` |
+| `getTelefonos/crearTelefono/actualizarTelefono/eliminarTelefono` | `/usuario/telefonos…` | JWT · `{telefono, es_principal?}` | `{data: [<telefono>]}` | `ProfileView`, `CheckoutView` |
 | `getReportes*` (6) + `descargarExcel` | `/reportes/*?desde&hasta&limit(&excel=1)` | query (admin) | `{data}` o `.xlsx` | `AdminReportesView` |
+| `getConfiguracion/actualizarConfiguracion` | `/configuracion` | JWT-Admin · `{clave, valor}` | `{data}` | `AdminConfiguracionView` |
+| `getConfiguracionEnvio` | `GET /configuracion/envio` | — (público) | `{data: {costo_envio, minimo_envio_gratis}}` | `CheckoutView` |
+| `getDescuentosProducto/crearDescuento/actualizarDescuento/cambiarEstadoDescuento/eliminarDescuento` | `/products/<id>/descuentos…` | JWT-Admin · `{porcentaje, fecha_inicio, fecha_fin}` | `{data}` | `AdminProductoEditarView` |
+| `getReportesVentasConDescuento` | `/reportes/ventas-con-descuento?desde&hasta` | query (admin) | `{data: {productos, totales, comparacion}}` | `AdminReportesView` |
 
 Notificaciones in-app (`GET /notificaciones`, `PUT .../leida`, `PUT /leer-todas`)
 se consumen directo con `api` desde `notificacionStore.js` (campana en `App.vue`,

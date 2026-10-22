@@ -83,7 +83,17 @@
               </div>
               <h1 class="h2 fw-bold mb-0 font-display" style="color: var(--kei-casi-negro);">{{ product.nombre }}</h1>
 
-              <div class="fs-2 fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(product.precio) }}</div>
+              <div class="d-flex align-items-baseline gap-3 flex-wrap">
+                <div v-if="product.tiene_descuento" class="d-flex align-items-baseline gap-2">
+                  <span class="fs-4 text-decoration-line-through" style="color: var(--kei-gris-medio);">{{ formatPrice(product.precio) }}</span>
+                  <span class="fs-2 fw-bold" style="color: var(--kei-rojo);">{{ formatPrice(product.precio_descuento) }}</span>
+                  <span class="badge rounded-pill" style="background: var(--kei-rojo);">-{{ product.porcentaje_descuento }}%</span>
+                </div>
+                <div v-else class="fs-2 fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(product.precio) }}</div>
+              </div>
+              <div v-if="product.tiene_descuento" class="small mb-2" style="color: var(--kei-gris-medio);">
+                <i class="bi bi-tag me-1" style="color: var(--kei-rojo);"></i>Precio con descuento aplicado
+              </div>
 
               <!-- Stock con badges + bi-circle-fill paleta -->
               <div>
