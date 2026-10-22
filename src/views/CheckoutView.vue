@@ -313,7 +313,8 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cartStore'
 import { useAuthStore } from '../stores/authStore'
-import { createOrder, getDirecciones, getTelefonos, getConfiguracionEnvio } from '../services/api'
+import { createOrder, getDirecciones, getTelefonos } from '../services/api'
+import { useEnvio } from '../composables/useEnvio'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -337,18 +338,10 @@ const telefonos = ref([])
 const seleccionDireccion = ref('')
 const seleccionTelefono = ref('')
 
-// Política de envío (costo fijo + mínimo para envío gratis)
-const envio = ref({ costo_envio: 0, minimo_envio_gratis: 0 })
-const envioGratis = computed(() =>
-  envio.value.minimo_envio_gratis > 0 && cartStore.totalPrice >= envio.value.minimo_envio_gratis
-)
-const costoEnvio = computed(() => (envioGratis.value ? 0 : envio.value.costo_envio))
-const totalPedido = computed(() => cartStore.totalPrice + costoEnvio.value)
-const faltanParaEnvioGratis = computed(() =>
-  envio.value.minimo_envio_gratis > 0 && !envioGratis.value
-    ? envio.value.minimo_envio_gratis - cartStore.totalPrice
-    : 0
-)
+// Política de envío (costo fijo + mínimo para envío gratis): la misma que
+// muestra el carrito, compartida a través del composable.
+const subtotal = computed(() => cartStore.totalPrice)
+const { envioGratis, costoEnvio, total: totalPedido, faltanParaEnvioGratis, cargarEnvio } = useEnvio(subtotal)
 
 const usarDireccionNueva = computed(() =>
   direcciones.value.length === 0 || seleccionDireccion.value === '__otra__'
@@ -560,15 +553,6 @@ async function handleSubmit() {
     submitError.value = err.response?.data?.message || 'Error al crear el pedido. Intenta de nuevo.'
   } finally {
     submitting.value = false
-  }
-}
-
-async function cargarEnvio() {
-  try {
-    const r = await getConfiguracionEnvio()
-    envio.value = r.data || { costo_envio: 0, minimo_envio_gratis: 0 }
-  } catch (e) {
-    console.error('Error cargando la configuración de envío:', e)
   }
 }
 

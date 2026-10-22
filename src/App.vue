@@ -9,21 +9,46 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarKei">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+        <ul class="navbar-nav mb-2 mb-lg-0 align-items-lg-center">
           <li class="nav-item"><router-link to="/catalogo" class="nav-link">Catálogo</router-link></li>
-          <li class="nav-item"><router-link to="/sobre-nosotros" class="nav-link">Sobre nosotros</router-link></li>
-          <li v-if="!isAdmin" class="nav-item">
-            <router-link to="/carrito" class="nav-link position-relative">
-              <i class="bi bi-bag me-1"></i>Carrito
-              <span v-if="cartCount > 0" class="badge rounded-pill ms-1" style="background: var(--kei-oliva);">{{ cartCount }}</span>
-            </router-link>
-          </li>
-          <li v-if="isAdmin" class="nav-item">
-            <router-link to="/admin" class="nav-link fw-semibold" style="color: var(--kei-oliva) !important;"><i class="bi bi-speedometer2 me-1"></i>Panel Admin</router-link>
-          </li>
         </ul>
-        <div class="d-flex align-items-center gap-2">
+
+        <!-- Buscador de productos: en la barra superior para buscar desde cualquier página -->
+        <div class="buscador-navbar flex-grow-1 px-0 px-lg-3">
+          <div class="input-group">
+            <span class="input-group-text" style="background-color: var(--kei-fondo); border-color: var(--kei-gris-claro);">
+              <i class="bi bi-search" style="color: var(--kei-beige-medio);"></i>
+            </span>
+            <input
+              type="search"
+              v-model="busqueda"
+              @input="alEscribirBusqueda"
+              @keyup.enter="aplicarBusqueda"
+              @keyup.esc="limpiarBusqueda"
+              placeholder="Buscar productos..."
+              class="form-control"
+              aria-label="Buscar productos"
+            />
+            <button v-if="busqueda" type="button" class="btn btn-light" @click="limpiarBusqueda" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 ms-auto">
           <template v-if="!isAuthenticated">
+            <!-- Carrito (el invitado también puede usar el carrito con token de invitado) -->
+            <router-link
+              v-if="!isAdmin"
+              to="/carrito"
+              class="btn btn-light position-relative rounded-circle d-flex align-items-center justify-content-center"
+              style="width:38px;height:38px; border:1px solid var(--kei-gris-claro);"
+              title="Carrito"
+              aria-label="Carrito"
+            >
+              <i class="bi bi-bag" style="color: var(--kei-oliva); font-size:1.1rem;"></i>
+              <span v-if="cartCount > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background: var(--kei-oliva); font-size:0.6rem;">{{ cartCount }}</span>
+            </router-link>
             <router-link to="/login" class="btn btn-outline-primary btn-sm rounded-pill px-3">Iniciar sesión</router-link>
             <router-link to="/registro" class="btn btn-primary btn-sm rounded-pill px-3">Registrarse</router-link>
           </template>
@@ -54,6 +79,18 @@
                 </li>
               </ul>
             </div>
+            <!-- Carrito -->
+            <router-link
+              v-if="!isAdmin"
+              to="/carrito"
+              class="btn btn-light position-relative rounded-circle d-flex align-items-center justify-content-center"
+              style="width:38px;height:38px; border:1px solid var(--kei-gris-claro);"
+              title="Carrito"
+              aria-label="Carrito"
+            >
+              <i class="bi bi-bag" style="color: var(--kei-oliva); font-size:1.1rem;"></i>
+              <span v-if="cartCount > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background: var(--kei-oliva); font-size:0.6rem;">{{ cartCount }}</span>
+            </router-link>
             <!-- Avatar -->
             <div class="dropdown">
               <button class="btn rounded-circle d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width:40px;height:40px;background: var(--kei-oliva);color:#fff;border:none;">
@@ -70,16 +107,7 @@
                   <li><router-link to="/perfil/favoritos" class="dropdown-item"><i class="bi bi-heart me-2"></i>Mis favoritos</router-link></li>
                 </template>
                 <template v-if="isAdmin">
-                  <li><hr class="dropdown-divider" /></li>
-                  <li><h6 class="dropdown-header">Administración</h6></li>
-                  <li><router-link to="/admin" class="dropdown-item"><i class="bi bi-speedometer2 me-2"></i>Dashboard</router-link></li>
-                  <li><router-link to="/admin/productos" class="dropdown-item"><i class="bi bi-box-seam me-2"></i>Productos</router-link></li>
-                  <li><router-link to="/admin/productos/crear" class="dropdown-item ps-4 small"><i class="bi bi-plus-lg me-1"></i>Crear producto</router-link></li>
-                  <li><router-link to="/admin/marcas" class="dropdown-item"><i class="bi bi-award me-2"></i>Marcas</router-link></li>
-                  <li><router-link to="/admin/categorias" class="dropdown-item"><i class="bi bi-tags me-2"></i>Categorías</router-link></li>
-                <li><router-link to="/admin/pedidos" class="dropdown-item"><i class="bi bi-receipt me-2"></i>Pedidos</router-link></li>
-                <li><router-link to="/admin/resenas" class="dropdown-item"><i class="bi bi-star me-2"></i>Reseñas</router-link></li>
-                <li><router-link to="/admin/reportes" class="dropdown-item"><i class="bi bi-bar-chart-line me-2"></i>Reportes</router-link></li>
+                  <li><router-link to="/admin" class="dropdown-item"><i class="bi bi-speedometer2 me-2"></i>Panel de administración</router-link></li>
                 </template>
                 <li><hr class="dropdown-divider" /></li>
                 <li><button @click="logout" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</button></li>
@@ -95,6 +123,10 @@
   </main>
   <footer class="footer-kei text-center py-4 mt-auto">
     <div class="container">
+      <nav class="d-flex justify-content-center flex-wrap gap-3 mb-2">
+        <router-link to="/catalogo" class="footer-enlace">Catálogo</router-link>
+        <router-link to="/sobre-nosotros" class="footer-enlace">Sobre nosotros</router-link>
+      </nav>
       <p class="mb-1 font-display"><i class="bi bi-stars me-1"></i> KeiBeauty — Tu ritual esencial</p>
       <small style="color: var(--kei-beige-claro)">Cuidado de la piel coreano · Xela, Guatemala · WhatsApp 3971 8418</small>
     </div>
@@ -106,8 +138,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useCartStore } from './stores/cartStore'
 import { useAuthStore } from './stores/authStore'
@@ -115,6 +147,7 @@ import { useNotificacionStore } from './stores/notificacionStore'
 import logoKei from './assets/kei-beauty.jpg'
 
 const router = useRouter()
+const route = useRoute()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 const notifStore = useNotificacionStore()
@@ -139,6 +172,42 @@ const userName = computed(() => authStore.userName)
 const userEmail = computed(() => authStore.user?.email || '')
 const userInitial = computed(() => authStore.user?.nombre?.charAt(0)?.toUpperCase() || 'U')
 const whatsappUrl = computed(() => import.meta.env.VITE_WHATSAPP_URL || 'https://wa.me/50239718418')
+
+// --- Buscador de la barra superior ---
+// La búsqueda vive en la URL (/catalogo?buscar=...) para que el catálogo la
+// aplique y se pueda compartir o recargar sin perder el filtro.
+const busqueda = ref('')
+const temporizadorBusqueda = ref(null)
+
+// El input refleja lo que hay en la URL (por ejemplo al llegar desde otra página)
+watch(() => route.query.buscar, (valor) => {
+  const texto = valor || ''
+  if (texto !== busqueda.value) busqueda.value = texto
+})
+
+function alEscribirBusqueda() {
+  clearTimeout(temporizadorBusqueda.value)
+  temporizadorBusqueda.value = setTimeout(() => aplicarBusqueda(), 350)
+}
+
+function aplicarBusqueda() {
+  clearTimeout(temporizadorBusqueda.value)
+  const texto = busqueda.value.trim()
+  const query = { ...route.query }
+  if (texto) {
+    query.buscar = texto
+  } else {
+    delete query.buscar
+  }
+  // Si ya estamos en el catálogo con la misma búsqueda no hay nada que hacer
+  if (route.path === '/catalogo' && JSON.stringify(query) === JSON.stringify(route.query)) return
+  router.push({ path: '/catalogo', query })
+}
+
+function limpiarBusqueda() {
+  busqueda.value = ''
+  aplicarBusqueda()
+}
 
 function logout() {
   authStore.logout()
@@ -199,6 +268,21 @@ watch(isAuthenticated, (val) => {
   border-radius: 8px;
   border: 1px solid var(--kei-gris-claro);
 }
+/* El buscador ocupa el espacio disponible entre la marca y los iconos */
+.buscador-navbar .input-group { max-width: 480px; }
+/* En móvil el buscador baja a su propia línea, a lo ancho del menú */
+@media (max-width: 991.98px) {
+  .buscador-navbar { order: 3; width: 100%; padding-top: 0.5rem; }
+  .buscador-navbar .input-group { max-width: none; }
+}
+/* Enlaces del footer */
+.footer-enlace {
+  color: var(--kei-beige-claro);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.footer-enlace:hover, .footer-enlace.router-link-active { color: #fff; text-decoration: underline; }
+
 /* En móvil los desplegables del navbar (notificaciones, perfil) se muestran
    como lámina fija bajo la barra: así nunca quedan cortados por el viewport. */
 @media (max-width: 575.98px) {
