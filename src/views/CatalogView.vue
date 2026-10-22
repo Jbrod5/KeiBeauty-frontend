@@ -367,7 +367,7 @@ onMounted(async () => {
 /* Barra de filtros pegada justo debajo de la barra principal */
 .barra-filtros {
   position: sticky;
-  z-index: 1020;
+  z-index: 1010;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -380,6 +380,8 @@ onMounted(async () => {
   .barra-filtros { gap: 0.35rem; }
   .barra-filtros .dropdown-toggle { padding-left: 0.45rem; padding-right: 0.45rem; }
 }
+/* Los desplegables de la barra deben quedar por encima de la barra y del navbar */
+.barra-filtros .dropdown-menu { z-index: 1060; }
 
 /* Truncado a 2 líneas */
 .text-truncate-2 {
