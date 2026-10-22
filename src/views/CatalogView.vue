@@ -379,8 +379,9 @@ onMounted(async () => {
 @media (max-width: 991.98px) {
   .barra-filtros { gap: 0.35rem; }
   .barra-filtros .dropdown-toggle { padding-left: 0.45rem; padding-right: 0.45rem; }
-  .barra-filtros .dropdown-menu { z-index: 1060; }
 }
+/* Los desplegables de la barra deben quedar por encima de la barra y del navbar */
+.barra-filtros .dropdown-menu { z-index: 1060; }
 
 /* Truncado a 2 líneas */
 .text-truncate-2 {
