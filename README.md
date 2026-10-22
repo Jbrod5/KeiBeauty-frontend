@@ -198,7 +198,9 @@ solapan gana el de mayor porcentaje.
 El envío es un costo fijo (`costo_envio`) que se descuenta del total del
 pedido, salvo que el subtotal alcance `minimo_envio_gratis`, en cuyo caso el
 envío es gratis. Ambos valores se editan en `/admin/configuracion`
-(`AdminConfiguracionView.vue`).
+(`AdminConfiguracionView.vue`), que además tiene el interruptor
+**"Envío gratis por monto mínimo"**: apagado, el envío se cobra siempre y el
+cliente no ve ni el contador ni el aviso de envío gratis.
 
 El cálculo vive en el composable `src/composables/useEnvio.js`, que consume
 tanto `CartView` como `CheckoutView`: por eso **el carrito y el checkout
