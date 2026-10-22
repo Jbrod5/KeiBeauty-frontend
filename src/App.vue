@@ -37,6 +37,18 @@
 
         <div class="d-flex align-items-center gap-2 ms-auto">
           <template v-if="!isAuthenticated">
+            <!-- Carrito (el invitado también puede usar el carrito con token de invitado) -->
+            <router-link
+              v-if="!isAdmin"
+              to="/carrito"
+              class="btn btn-light position-relative rounded-circle d-flex align-items-center justify-content-center"
+              style="width:38px;height:38px; border:1px solid var(--kei-gris-claro);"
+              title="Carrito"
+              aria-label="Carrito"
+            >
+              <i class="bi bi-bag" style="color: var(--kei-oliva); font-size:1.1rem;"></i>
+              <span v-if="cartCount > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background: var(--kei-oliva); font-size:0.6rem;">{{ cartCount }}</span>
+            </router-link>
             <router-link to="/login" class="btn btn-outline-primary btn-sm rounded-pill px-3">Iniciar sesión</router-link>
             <router-link to="/registro" class="btn btn-primary btn-sm rounded-pill px-3">Registrarse</router-link>
           </template>
