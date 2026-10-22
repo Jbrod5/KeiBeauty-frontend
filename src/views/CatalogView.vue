@@ -126,7 +126,14 @@
               <p class="small mb-2 text-truncate-2 flex-grow-1" style="color: var(--kei-gris-medio);">{{ product.descripcion }}</p>
               <p class="small mb-2" v-if="product.tamano" style="color: var(--kei-beige-medio);">Tamaño: {{ product.tamano }}</p>
               <div class="d-flex justify-content-between align-items-center pt-2 mt-auto border-top" style="border-color: var(--kei-gris-claro) !important;">
-                <span class="fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(product.precio) }}</span>
+                <span>
+                  <span v-if="product.tiene_descuento" class="d-inline-flex align-items-baseline gap-2">
+                    <span class="small text-decoration-line-through" style="color: var(--kei-gris-medio);">{{ formatPrice(product.precio) }}</span>
+                    <span class="fw-bold" style="color: var(--kei-rojo);">{{ formatPrice(product.precio_descuento) }}</span>
+                    <span class="badge rounded-pill" style="background: var(--kei-rojo); font-size: 0.6rem;">-{{ product.porcentaje_descuento }}%</span>
+                  </span>
+                  <span v-else class="fw-bold" style="color: var(--kei-casi-negro);">{{ formatPrice(product.precio) }}</span>
+                </span>
                 <button
                   v-if="!authStore.isAdmin"
                   class="btn btn-primary btn-sm rounded-pill px-3"

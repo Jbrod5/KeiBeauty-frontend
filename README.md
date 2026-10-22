@@ -156,6 +156,23 @@ código expira a los 15 minutos y se puede reenviar cada 60 segundos.
 (`{tipo, mensaje}`) que `App.vue` muestra como toast. Si la sesión expiró por
 token vencido, el aviso es informativo en vez de "sesión cerrada".
 
+### Descuentos por producto
+
+Un producto puede tener descuentos con porcentaje y rango de fechas. Solo
+aplica el descuento **vigente** (`activo` y dentro de las fechas); si dos se
+solapan gana el de mayor porcentaje.
+
+- El backend expone en cada producto `precio_descuento` (precio final),
+  `tiene_descuento` y `porcentaje_descuento`; `precio` sigue siendo el precio
+  de catálogo.
+- `CatalogView` y `ProductDetailView` muestran el precio tachado junto al
+  precio con descuento; `CartView` muestra el precio original tachado en el
+  ítem.
+- La gestión de descuentos (crear, activar/desactivar, editar y eliminar) está
+  en la sección "Descuentos" de `AdminProductoEditarView`.
+- `AdminReportesView` incluye la tarjeta "Ventas con Descuento" con las
+  unidades, ingresos, ahorro dado y la variación frente al periodo anterior.
+
 ### Costo de envío y envío gratis
 
 El envío es un costo fijo (`costo_envio`) que se descuenta del total del
@@ -204,6 +221,8 @@ las listas `direcciones` y `telefonos`.
 | `getReportes*` (6) + `descargarExcel` | `/reportes/*?desde&hasta&limit(&excel=1)` | query (admin) | `{data}` o `.xlsx` | `AdminReportesView` |
 | `getConfiguracion/actualizarConfiguracion` | `/configuracion` | JWT-Admin · `{clave, valor}` | `{data}` | `AdminConfiguracionView` |
 | `getConfiguracionEnvio` | `GET /configuracion/envio` | — (público) | `{data: {costo_envio, minimo_envio_gratis}}` | `CheckoutView` |
+| `getDescuentosProducto/crearDescuento/actualizarDescuento/cambiarEstadoDescuento/eliminarDescuento` | `/products/<id>/descuentos…` | JWT-Admin · `{porcentaje, fecha_inicio, fecha_fin}` | `{data}` | `AdminProductoEditarView` |
+| `getReportesVentasConDescuento` | `/reportes/ventas-con-descuento?desde&hasta` | query (admin) | `{data: {productos, totales, comparacion}}` | `AdminReportesView` |
 
 Notificaciones in-app (`GET /notificaciones`, `PUT .../leida`, `PUT /leer-todas`)
 se consumen directo con `api` desde `notificacionStore.js` (campana en `App.vue`,
