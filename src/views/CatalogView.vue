@@ -6,45 +6,50 @@
       <p style="color: var(--kei-gris-medio);">Descubre nuestra selección de K-Beauty auténtico</p>
     </header>
 
+    <!-- Barra de filtros (justo debajo de la barra principal) -->
+    <div class="barra-filtros mb-3" :style="{ top: alturaNavbar + 'px' }">
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-arrow-down-up me-1"></i>{{ etiquetaOrden }}
+        </button>
+        <ul class="dropdown-menu">
+          <li><button class="dropdown-item" :class="{ 'active': ordenPrecio === '' }" @click="selectedOrden('')">Ordenar: destacados</button></li>
+          <li><button class="dropdown-item" :class="{ 'active': ordenPrecio === 'asc' }" @click="selectedOrden('asc')">Precio: menor a mayor</button></li>
+          <li><button class="dropdown-item" :class="{ 'active': ordenPrecio === 'desc' }" @click="selectedOrden('desc')">Precio: mayor a menor</button></li>
+        </ul>
+      </div>
+
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-award me-1"></i>{{ etiquetaMarca }}
+        </button>
+        <ul class="dropdown-menu">
+          <li><button class="dropdown-item" :class="{ 'active': !selectedMarca }" @click="selectedMarca = ''">Todas las marcas</button></li>
+          <li v-for="m in marcas" :key="m.id">
+            <button class="dropdown-item" :class="{ 'active': Number(selectedMarca) === m.id }" @click="selectedMarca = m.id">{{ m.nombre }}</button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-tags me-1"></i>{{ etiquetaCategoria }}
+        </button>
+        <ul class="dropdown-menu">
+          <li><button class="dropdown-item" :class="{ 'active': !selectedCategory }" @click="selectedCategory = ''">Todas las categorías</button></li>
+          <li v-for="cat in categories" :key="cat.id">
+            <button class="dropdown-item" :class="{ 'active': Number(selectedCategory) === cat.id }" @click="selectedCategory = cat.id">{{ cat.nombre }}</button>
+          </li>
+        </ul>
+      </div>
+
+      <button v-if="selectedCategory || selectedMarca || ordenPrecio" type="button" class="btn btn-link btn-sm text-decoration-none ms-1" style="color: var(--kei-beige);" @click="clearFilters">
+        <i class="bi bi-x-circle me-1"></i>Limpiar
+      </button>
+    </div>
+
     <div class="row g-4">
-      <!-- Filtros (columna izquierda) -->
-      <aside class="col-12 col-lg-3">
-        <div class="card shadow-sm position-sticky" style="top: 100px;">
-          <div class="card-body p-4">
-            <h5 class="card-title pb-3 mb-3 border-bottom fw-semibold" style="color: var(--kei-casi-negro); border-color: var(--kei-gris-claro) !important;">Filtrar productos</h5>
-
-            <label for="filtroCategoria" class="form-label small fw-medium mb-1" style="color: var(--kei-gris-medio);">Categoría</label>
-            <select id="filtroCategoria" v-model="selectedCategory" class="form-select mb-3">
-              <option value="">Todas las categorías</option>
-              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                {{ cat.nombre }}
-              </option>
-            </select>
-
-            <label for="filtroMarca" class="form-label small fw-medium mb-1" style="color: var(--kei-gris-medio);">Marca</label>
-            <select id="filtroMarca" v-model="selectedMarca" class="form-select mb-3">
-              <option value="">Todas las marcas</option>
-              <option v-for="m in marcas" :key="m.id" :value="m.id">
-                {{ m.nombre }}
-              </option>
-            </select>
-
-            <label for="filtroOrden" class="form-label small fw-medium mb-1" style="color: var(--kei-gris-medio);">Ordenar por precio</label>
-            <select id="filtroOrden" v-model="ordenPrecio" class="form-select mb-3">
-              <option value="">Ordenar: destacados</option>
-              <option value="asc">Precio: menor a mayor</option>
-              <option value="desc">Precio: mayor a menor</option>
-            </select>
-
-            <button type="button" class="btn btn-outline-secondary w-100 rounded-pill" @click="clearFilters">
-              <i class="bi bi-x-circle me-1"></i>Limpiar filtros
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Resultados (columna derecha) -->
-      <div class="col-12 col-lg-9">
+      <div class="col-12">
         <!-- Filtros activos -->
         <div v-if="selectedCategory || selectedMarca || ordenPrecio" class="d-flex flex-wrap gap-2 align-items-center mb-4 p-3 rounded" style="background-color: var(--kei-fondo); border: 1px solid var(--kei-gris-claro);">
           <span v-if="selectedCategory" class="badge rounded-pill d-inline-flex align-items-center gap-2 p-2" style="background-color: var(--kei-gris-oscuro); color: var(--kei-fondo);">
@@ -75,7 +80,7 @@
           <div
             v-for="product in productosOrdenados"
             :key="product.id"
-            class="col-12 col-sm-6 col-xl-4"
+            class="col-6 col-md-4 col-lg-3"
           >
         <router-link
           :to="`/producto/${product.id}`"
@@ -184,6 +189,18 @@ const selectedMarca = ref('')
 const ordenPrecio = ref('')
 const categories = ref([])
 const marcas = ref([])
+
+// Etiquetas de los botones de la barra de filtros
+const etiquetaOrden = computed(() => {
+  if (ordenPrecio.value === 'asc') return 'Precio ↑'
+  if (ordenPrecio.value === 'desc') return 'Precio ↓'
+  return 'Ordenar por'
+})
+const etiquetaMarca = computed(() => (selectedMarca.value ? getMarcaName(selectedMarca.value) : 'Marca'))
+const etiquetaCategoria = computed(() => (selectedCategory.value ? getCategoryName(selectedCategory.value) : 'Categoría'))
+
+// Altura de la barra principal: la barra de filtros se pega justo debajo
+const alturaNavbar = ref(64)
 
 // Orden por precio en cliente (el backend no expone ordenamiento)
 const productosOrdenados = computed(() => {
@@ -297,6 +314,10 @@ async function toggleFavorito(product, event) {
   }
 }
 
+function selectedOrden(valor) {
+  ordenPrecio.value = valor
+}
+
 async function clearFilters() {
   searchQuery.value = ''
   selectedCategory.value = ''
@@ -333,6 +354,8 @@ onMounted(async () => {
   if (route.query.marca) selectedMarca.value = route.query.marca
   if (route.query.categoria) selectedCategory.value = route.query.categoria
   if (route.query.buscar) searchQuery.value = route.query.buscar
+  const nav = document.querySelector('nav.navbar')
+  if (nav) alturaNavbar.value = nav.offsetHeight
   await loadCategories()
   await loadMarcas()
   await loadProducts()
@@ -341,6 +364,23 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Barra de filtros pegada justo debajo de la barra principal */
+.barra-filtros {
+  position: sticky;
+  z-index: 1020;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  background-color: var(--kei-fondo);
+}
+/* En móvil los tres botones de filtro deben caber en una sola línea */
+@media (max-width: 991.98px) {
+  .barra-filtros { gap: 0.35rem; }
+  .barra-filtros .dropdown-toggle { padding-left: 0.45rem; padding-right: 0.45rem; }
+}
+
 /* Truncado a 2 líneas */
 .text-truncate-2 {
   display: -webkit-box;
