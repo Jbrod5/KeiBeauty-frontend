@@ -51,6 +51,16 @@ h1, h2, h3, .font-display {
 
 /* --- Overrides Bootstrap con paleta --- */
 
+/* Interruptores (switches) con la marca de la tienda */
+.form-check-input:checked {
+  background-color: var(--kei-oliva);
+  border-color: var(--kei-oliva);
+}
+.form-check-input:focus {
+  border-color: var(--kei-oliva);
+  box-shadow: 0 0 0 0.25rem rgba(140, 176, 122, 0.35);
+}
+
 /* Botones - oliva como primario para más color */
 .btn-primary {
   background-color: var(--kei-oliva) !important;

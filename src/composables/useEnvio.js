@@ -4,7 +4,7 @@ import { getConfiguracionEnvio } from '../services/api'
 // Política de envío de la tienda (costo fijo + mínimo para envío gratis).
 // Es la misma para todo el sitio, así que el estado se comparte y se carga
 // una sola vez: carrito y checkout muestran siempre el mismo desglose.
-const envio = ref({ costo_envio: 0, minimo_envio_gratis: 0 })
+const envio = ref({ costo_envio: 0, minimo_envio_gratis: 0, envio_gratis_activo: true })
 const cargado = ref(false)
 let promesaCarga = null
 
@@ -23,7 +23,7 @@ export function useEnvio(subtotal) {
       cargando.value = true
       promesaCarga = getConfiguracionEnvio()
         .then((r) => {
-          envio.value = r.data || { costo_envio: 0, minimo_envio_gratis: 0 }
+          envio.value = r.data || { costo_envio: 0, minimo_envio_gratis: 0, envio_gratis_activo: true }
           cargado.value = true
           return envio.value
         })
@@ -39,8 +39,14 @@ export function useEnvio(subtotal) {
     return promesaCarga
   }
 
+  // La promocion de envio gratis se puede apagar desde la configuracion. Si el
+  // backend no envia la clave se asume activada (comportamiento anterior).
+  const envioGratisActivo = computed(() => envio.value.envio_gratis_activo !== false)
+
   const envioGratis = computed(() =>
-    envio.value.minimo_envio_gratis > 0 && valorSubtotal.value >= envio.value.minimo_envio_gratis
+    envioGratisActivo.value &&
+    envio.value.minimo_envio_gratis > 0 &&
+    valorSubtotal.value >= envio.value.minimo_envio_gratis
   )
 
   const costoEnvio = computed(() => (envioGratis.value ? 0 : envio.value.costo_envio))
@@ -48,6 +54,7 @@ export function useEnvio(subtotal) {
   const total = computed(() => valorSubtotal.value + costoEnvio.value)
 
   const faltanParaEnvioGratis = computed(() => {
+    if (!envioGratisActivo.value) return 0
     if (envio.value.minimo_envio_gratis <= 0 || envioGratis.value) return 0
     return envio.value.minimo_envio_gratis - valorSubtotal.value
   })
@@ -55,6 +62,7 @@ export function useEnvio(subtotal) {
   return {
     envio,
     cargando,
+    envioGratisActivo,
     envioGratis,
     costoEnvio,
     total,

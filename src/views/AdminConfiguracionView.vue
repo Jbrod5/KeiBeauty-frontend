@@ -37,6 +37,38 @@
             productos alcance el mínimo indicado; en ese caso el envío es gratis.
           </p>
 
+          <!-- Interruptor de envío gratis -->
+          <div class="card mb-4" style="background-color: var(--kei-fondo) !important;">
+            <div class="card-body py-3">
+              <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <div class="flex-grow-1 me-3">
+                  <div class="fw-medium d-flex align-items-center gap-2" style="color: var(--kei-casi-negro);">
+                    <i class="bi bi-truck"></i>
+                    Envío gratis por monto mínimo
+                    <span class="badge rounded-pill" :class="form.envio_gratis_activo ? 'bg-success' : 'bg-secondary'" style="font-size: 0.7rem;">
+                      {{ form.envio_gratis_activo ? 'Activado' : 'Desactivado' }}
+                    </span>
+                  </div>
+                  <small style="color: var(--kei-gris-medio);">
+                    Cuando está activado, los pedidos que alcanzan el mínimo se cobran sin envío
+                    y el cliente ve en el carrito cuánto le falta para lograrlo.
+                  </small>
+                </div>
+                <div class="form-check form-switch mb-0">
+                  <input
+                    id="switchEnvioGratis"
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    v-model="form.envio_gratis_activo"
+                    aria-label="Activar o desactivar el envío gratis por monto mínimo"
+                    style="width: 3rem; height: 1.6rem;"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <form @submit.prevent="guardarEnvio" novalidate>
             <div class="row g-3">
               <div class="col-12 col-md-6">
@@ -70,11 +102,19 @@
                     step="0.01"
                     required
                     class="form-control"
+                    :disabled="!form.envio_gratis_activo"
                     :class="{ 'is-invalid': errores.minimo_envio_gratis }"
                   />
                 </div>
                 <div v-if="errores.minimo_envio_gratis" class="invalid-feedback d-block">{{ errores.minimo_envio_gratis }}</div>
-                <small style="color: var(--kei-gris-medio);">Subtotal a partir del cual el envío es gratis. Usa 0 para desactivarlo.</small>
+                <small style="color: var(--kei-gris-medio);">
+                  <template v-if="form.envio_gratis_activo">
+                    Subtotal a partir del cual el envío es gratis.
+                  </template>
+                  <template v-else>
+                    El envío gratis está desactivado, así que este valor no se aplica.
+                  </template>
+                </small>
               </div>
             </div>
 
@@ -139,7 +179,7 @@ const ajustes = ref([])
 const mensaje = ref('')
 const error = ref('')
 const errores = ref({})
-const form = ref({ costo_envio: '', minimo_envio_gratis: '' })
+const form = ref({ costo_envio: '', minimo_envio_gratis: '', envio_gratis_activo: true })
 
 function formatearFecha(valor) {
   if (!valor) return '—'
@@ -158,6 +198,8 @@ async function cargar() {
     const porClave = (clave) => ajustes.value.find(a => a.clave === clave)
     form.value.costo_envio = porClave('costo_envio')?.valor ?? ''
     form.value.minimo_envio_gratis = porClave('minimo_envio_gratis')?.valor ?? ''
+    const bruto = String(porClave('envio_gratis_activo')?.valor ?? 'true').trim().toLowerCase()
+    form.value.envio_gratis_activo = !['false', '0', 'no', 'off', 'inactivo'].includes(bruto)
   } catch (err) {
     error.value = err.response?.data?.message || 'No se pudo cargar la configuración'
   } finally {
@@ -168,7 +210,8 @@ async function cargar() {
 function validar() {
   errores.value = {}
   let valido = true
-  for (const clave of ['costo_envio', 'minimo_envio_gratis']) {
+  const claves = form.value.envio_gratis_activo ? ['costo_envio', 'minimo_envio_gratis'] : ['costo_envio']
+  for (const clave of claves) {
     const valor = Number(form.value[clave])
     if (form.value[clave] === '' || Number.isNaN(valor)) {
       errores.value[clave] = 'Ingresa un valor numérico'
@@ -189,7 +232,10 @@ async function guardarEnvio() {
   guardando.value = true
   try {
     await actualizarConfiguracion('costo_envio', Number(form.value.costo_envio).toFixed(2))
-    await actualizarConfiguracion('minimo_envio_gratis', Number(form.value.minimo_envio_gratis).toFixed(2))
+    if (form.value.envio_gratis_activo) {
+      await actualizarConfiguracion('minimo_envio_gratis', Number(form.value.minimo_envio_gratis).toFixed(2))
+    }
+    await actualizarConfiguracion('envio_gratis_activo', form.value.envio_gratis_activo ? 'true' : 'false')
     await cargar()
     mensaje.value = 'Configuración de envío actualizada correctamente.'
     toast.success('Configuración guardada')

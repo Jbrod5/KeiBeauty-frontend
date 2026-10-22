@@ -71,16 +71,16 @@ KeiBeauty-frontend/
 ├── public/kei-beauty.jpg    # Logo (favicon URL estable)
 └── src/
     ├── main.js              # App + Pinia + Router + Toast + paleta + initAuth
-    ├── App.vue              # Navbar (logo, catálogo, buscador, campana, carrito,
-    │                        # avatar) + footer + WhatsApp flotante
+    ├── App.vue              # Navbar (marca, catálogo, buscador centrado, campana,
+    │                        # carrito, avatar) + footer + WhatsApp flotante
+    ├── components/         # NotificacionesLista (campana y menú del perfil)
     ├── composables/         # useEnvio (política de envío compartida)
     ├── assets/estilos/paleta.css  # Variables --kei-* + overrides Bootstrap
     ├── assets/kei-beauty.jpg      # Logo importado en el navbar
     ├── router/index.js      # Rutas, redirect / → /catalogo, guards
     ├── services/api.js      # Axios + ~40 funciones + URL dinámica
     ├── stores/              # authStore, cartStore, favoritosStore, notificacionStore
-    ├── views/               # 24 vistas (ver tabla de rutas)
-    └── components/          # Vacío: la UI vive en vistas
+    └── views/               # 25 vistas (ver tabla de rutas)
 ```
 
 ## Rutas de la aplicación
@@ -198,7 +198,9 @@ solapan gana el de mayor porcentaje.
 El envío es un costo fijo (`costo_envio`) que se descuenta del total del
 pedido, salvo que el subtotal alcance `minimo_envio_gratis`, en cuyo caso el
 envío es gratis. Ambos valores se editan en `/admin/configuracion`
-(`AdminConfiguracionView.vue`).
+(`AdminConfiguracionView.vue`), que además tiene el interruptor
+**"Envío gratis por monto mínimo"**: apagado, el envío se cobra siempre y el
+cliente no ve ni el contador ni el aviso de envío gratis.
 
 El cálculo vive en el composable `src/composables/useEnvio.js`, que consume
 tanto `CartView` como `CheckoutView`: por eso **el carrito y el checkout
@@ -209,18 +211,25 @@ del pedido.
 
 ### Barra superior y filtros del catálogo
 
-- El **buscador** está en la barra superior, entre la marca y los iconos, y
-  escribe la búsqueda en la URL (`/catalogo?buscar=...`). El catálogo la
-  aplica al instante, también si ya se está en esa página.
-- A la derecha van, en este orden, **notificaciones**, **carrito** y
-  **perfil**. El carrito solo se muestra a clientes e invitados (los
-  administradores no compran).
+- La barra superior usa una cuadrícula de tres columnas: **marca** (con el
+  enlace al catálogo), **buscador centrado** e **iconos a la derecha**
+  (notificaciones, carrito y perfil). No hay menú de hamburguesa: la barra
+  siempre está visible.
+- El **buscador** escribe la búsqueda en la URL (`/catalogo?buscar=...`). El
+  catálogo la aplica al instante, también si ya se está en esa página. En
+  móvil se oculta y se despliega con el botón de lupa, que ocupa el espacio
+  entre la marca y los iconos; la marca se muestra en dos líneas (Kei /
+  Beauty).
+- El carrito solo se muestra a clientes e invitados (los administradores no
+  compran). La campana de notificaciones está siempre en la barra de
+  escritorio y, en móvil, dentro del menú del perfil.
 - El menú del administrador quedó reducido a *Mi perfil*, *Panel de
   administración* y *Cerrar sesión*; el resto de secciones se organizan por
   grupos en `/admin`.
-- En el catálogo, los filtros (**categoría**, **marca** y **ordenar por
-  precio**) están en una columna fija a la izquierda y el grid de productos a
-  la derecha.
+- En el catálogo, los filtros (**ordenar por precio**, **marca** y
+  **categoría**) están en una mini barra bajo la barra principal, con botones
+  que abren un desplegable con las opciones. El grid de productos ocupa todo
+  el ancho: **4 por fila en escritorio, 3 en tablet y 2 en móvil**.
 
 ### Direcciones y teléfonos guardados
 
