@@ -71,8 +71,9 @@ KeiBeauty-frontend/
 ├── public/kei-beauty.jpg    # Logo (favicon URL estable)
 └── src/
     ├── main.js              # App + Pinia + Router + Toast + paleta + initAuth
-    ├── App.vue              # Navbar (logo, catálogo, sobre nosotros, carrito,
-    │                        # campana, avatar) + footer + WhatsApp flotante
+    ├── App.vue              # Navbar (logo, catálogo, buscador, campana, carrito,
+    │                        # avatar) + footer + WhatsApp flotante
+    ├── composables/         # useEnvio (política de envío compartida)
     ├── assets/estilos/paleta.css  # Variables --kei-* + overrides Bootstrap
     ├── assets/kei-beauty.jpg      # Logo importado en el navbar
     ├── router/index.js      # Rutas, redirect / → /catalogo, guards
@@ -199,10 +200,27 @@ pedido, salvo que el subtotal alcance `minimo_envio_gratis`, en cuyo caso el
 envío es gratis. Ambos valores se editan en `/admin/configuracion`
 (`AdminConfiguracionView.vue`).
 
-`CheckoutView` consulta `GET /configuracion/envio` (público) para mostrar el
-desglose Subtotal / Envío / Total antes de confirmar, y avisa cuánto falta para
-lograr el envío gratis. `OrderDetailView` muestra `subtotal_productos`,
-`costo_envio` y `monto_total` del pedido.
+El cálculo vive en el composable `src/composables/useEnvio.js`, que consume
+tanto `CartView` como `CheckoutView`: por eso **el carrito y el checkout
+muestran siempre el mismo desglose** (Subtotal / Envío / Total, el badge
+"Gratis" cuando corresponde y el aviso de cuánto falta para el envío gratis).
+`OrderDetailView` muestra `subtotal_productos`, `costo_envio` y `monto_total`
+del pedido.
+
+### Barra superior y filtros del catálogo
+
+- El **buscador** está en la barra superior, entre la marca y los iconos, y
+  escribe la búsqueda en la URL (`/catalogo?buscar=...`). El catálogo la
+  aplica al instante, también si ya se está en esa página.
+- A la derecha van, en este orden, **notificaciones**, **carrito** y
+  **perfil**. El carrito solo se muestra a clientes e invitados (los
+  administradores no compran).
+- El menú del administrador quedó reducido a *Mi perfil*, *Panel de
+  administración* y *Cerrar sesión*; el resto de secciones se organizan por
+  grupos en `/admin`.
+- En el catálogo, los filtros (**categoría**, **marca** y **ordenar por
+  precio**) están en una columna fija a la izquierda y el grid de productos a
+  la derecha.
 
 ### Direcciones y teléfonos guardados
 
