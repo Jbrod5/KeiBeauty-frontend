@@ -176,6 +176,14 @@ Las librerías `chart.js` y `vue-chartjs` están en `package.json` y
 Las descargas a Excel incluyen siempre el periodo cubierto en un subtítulo y
 el nombre del archivo lleva las fechas del filtro.
 
+Cada reporte tiene botón **Excel** (`?excel=1`) y botón **PDF** (`?pdf=1`).
+El helper `descargarReporte(url, params, formato)` en `services/api.js`
+construye la URL y `src/utils/descargas.js` aporta los metadatos
+(URL, nombre por defecto y MIME). Los tests `tests/descargas.test.js` cubren
+la construcción de URLs y `tests/avisoContrasena.test.js` el aviso de
+contraseña restablecida (`npm test` con vitest; el pipeline lo exige antes
+del deploy).
+
 ### Descuentos por producto
 
 Un producto puede tener descuentos con porcentaje y rango de fechas. Solo
