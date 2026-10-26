@@ -9,6 +9,11 @@
               <p class="mb-0" style="color: var(--kei-gris-medio);">Accede a tu cuenta KeiBeauty</p>
             </div>
 
+            <div v-if="avisoContrasena" class="alert alert-success d-flex align-items-center" role="alert">
+              <i class="bi bi-check-circle me-2 flex-shrink-0"></i>
+              <div>{{ avisoContrasena }}</div>
+            </div>
+
             <form @submit.prevent="handleLogin" novalidate>
               <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
@@ -68,13 +73,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useToast } from 'vue-toastification'
 import { useAuthStore } from '../stores/authStore'
+import { mensajeAvisoContrasena } from '../utils/descargas.js'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const form = ref({
   email: '',
@@ -83,7 +91,17 @@ const form = ref({
 
 const errors = ref({})
 const authError = ref('')
+const avisoContrasena = ref('')
 const loading = ref(false)
+
+onMounted(() => {
+  avisoContrasena.value = mensajeAvisoContrasena(route.query)
+  if (avisoContrasena.value) {
+    toast.success(avisoContrasena.value)
+    const { passwordReset, ...resto } = route.query
+    router.replace({ query: resto })
+  }
+})
 
 function validateForm() {
   errors.value = {}

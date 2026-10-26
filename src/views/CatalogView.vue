@@ -3,7 +3,6 @@
     <!-- Header -->
     <header class="text-center mb-4 py-3">
       <h1 class="fw-bold" style="color: var(--kei-casi-negro);">Catálogo de Productos</h1>
-      <p style="color: var(--kei-gris-medio);">Descubre nuestra selección de K-Beauty auténtico</p>
     </header>
 
     <!-- Barra de filtros (justo debajo de la barra principal) -->

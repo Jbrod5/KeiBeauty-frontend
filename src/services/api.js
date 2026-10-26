@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { construirDescargaReporte, extraerNombreArchivo } from '../utils/descargas.js';
 
 // URL base del backend: override manual (localStorage) > variable de entorno > defecto.
 // El override permite apuntar a un backend con URL cambiante (ej. túnel ngrok)
@@ -321,11 +322,21 @@ export async function getReportesClientesTop(params = {}) {
   const response = await api.get(`/reportes/clientes-top?${qs}`)
   return response.data
 }
-export async function descargarExcel(url, params = {}) {
-  const qs = new URLSearchParams({ ...params, excel: '1' }).toString()
-  const response = await api.get(`${url}?${qs}`, { responseType: 'blob' })
+export async function descargarReporte(url, params = {}, formato = 'excel') {
+  const { urlFinal } = construirDescargaReporte(url, params, formato)
+  const response = await api.get(urlFinal, { responseType: 'blob' })
   return response
 }
+
+export async function descargarExcel(url, params = {}) {
+  return descargarReporte(url, params, 'excel')
+}
+
+export async function descargarPDF(url, params = {}) {
+  return descargarReporte(url, params, 'pdf')
+}
+
+export { extraerNombreArchivo };
 
 export async function getProductoImagenes(productId) {
   const response = await api.get(`/products/${productId}/imagenes`)
