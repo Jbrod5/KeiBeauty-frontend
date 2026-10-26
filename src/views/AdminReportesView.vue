@@ -55,6 +55,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong style="color: var(--kei-casi-negro);"><i class="bi bi-cash-stack me-1" style="color: var(--kei-oliva);"></i>Ventas Totales</strong>
           <button @click="exportar('ventas-totales')" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+          <button @click="exportar('ventas-totales', 'pdf')" class="btn btn-outline-secondary btn-sm rounded-pill ms-2"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         </div>
         <div class="card-body row text-center">
           <div class="col-6"><div class="p-3 rounded" style="background: var(--kei-oliva-suave);"><div class="h4 mb-0" style="color: var(--kei-oliva-oscuro);">{{ ventasTotales.total_pedidos }}</div><small style="color: var(--kei-gris-medio);">Pedidos</small></div></div>
@@ -67,6 +68,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong style="color: var(--kei-casi-negro);"><i class="bi bi-calendar3 me-1" style="color: var(--kei-oliva);"></i>Ventas por Mes</strong>
           <button @click="exportar('ventas-por-mes')" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+          <button @click="exportar('ventas-por-mes', 'pdf')" class="btn btn-outline-secondary btn-sm rounded-pill ms-2"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
@@ -86,6 +88,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong style="color: var(--kei-casi-negro);"><i class="bi bi-calendar-range me-1" style="color: var(--kei-oliva);"></i>Ventas por Periodo Seleccionado</strong>
           <button @click="exportar('ventas-por-periodo')" :disabled="!filtros.desde || !filtros.hasta" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+          <button @click="exportar('ventas-por-periodo', 'pdf')" :disabled="!filtros.desde || !filtros.hasta" class="btn btn-outline-secondary btn-sm rounded-pill ms-2"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         </div>
         <div class="card-body">
           <div v-if="!filtros.desde || !filtros.hasta" class="alert alert-info"><i class="bi bi-info-circle me-1"></i>Selecciona desde y hasta para ver pedidos del periodo.</div>
@@ -108,6 +111,7 @@
         <div class="card-header d-flex justify-content-between align-items-center" style="background: var(--kei-oliva-suave);">
           <strong style="color: var(--kei-casi-negro);"><i class="bi bi-graph-up-arrow me-1" style="color: var(--kei-oliva);"></i>Ganancias (Ingresos - Costos)</strong>
           <button @click="exportar('ganancias')" class="btn btn-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+          <button @click="exportar('ganancias', 'pdf')" class="btn btn-outline-secondary btn-sm rounded-pill ms-2"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         </div>
         <div class="card-body row text-center">
           <div class="col-12 col-md-4"><div class="p-3 rounded" style="background: #EAF0E2;"><div class="h5 mb-0" style="color: var(--kei-oliva-oscuro);">{{ formatPrice(ganancias.ingresos) }}</div><small>Ingresos</small></div></div>
@@ -122,6 +126,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong style="color: var(--kei-casi-negro);"><i class="bi bi-trophy me-1" style="color: var(--kei-oliva);"></i>Productos Más Vendidos</strong>
           <button @click="exportar('productos-mas-vendidos')" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+          <button @click="exportar('productos-mas-vendidos', 'pdf')" class="btn btn-outline-secondary btn-sm rounded-pill ms-2"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
@@ -141,6 +146,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong style="color: var(--kei-casi-negro);"><i class="bi bi-percent me-1" style="color: var(--kei-oliva);"></i>Ventas con Descuento</strong>
           <button @click="exportar('ventas-con-descuento')" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+          <button @click="exportar('ventas-con-descuento', 'pdf')" class="btn btn-outline-secondary btn-sm rounded-pill ms-2"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         </div>
         <div class="card-body">
           <div class="row text-center mb-3">
@@ -182,6 +188,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong style="color: var(--kei-casi-negro);"><i class="bi bi-people me-1" style="color: var(--kei-oliva);"></i>Clientes con Más Compras</strong>
           <button @click="exportar('clientes-top')" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+          <button @click="exportar('clientes-top', 'pdf')" class="btn btn-outline-secondary btn-sm rounded-pill ms-2"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
@@ -214,7 +221,8 @@ import {
   Legend
 } from 'chart.js'
 import { useAuthStore } from '../stores/authStore'
-import { getReportesVentasTotales, getReportesVentasPorMes, getReportesVentasPorPeriodo, getReportesGanancias, getReportesProductosMasVendidos, getReportesClientesTop, getReportesVentasConDescuento, descargarExcel } from '../services/api'
+import { getReportesVentasTotales, getReportesVentasPorMes, getReportesVentasPorPeriodo, getReportesGanancias, getReportesProductosMasVendidos, getReportesClientesTop, getReportesVentasConDescuento, descargarReporte } from '../services/api'
+import { construirDescargaReporte, extraerNombreArchivo } from '../utils/descargas.js'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend)
 
@@ -345,7 +353,7 @@ async function cargarTodo(){
     }
   }catch(e){ console.error(e) } finally{ cargando.value=false }
 }
-async function exportar(tipo){
+async function exportar(tipo, formato = 'excel'){
   const params = {}
   if(filtros.value.desde) params.desde = filtros.value.desde
   if(filtros.value.hasta) params.hasta = filtros.value.hasta
@@ -364,20 +372,15 @@ async function exportar(tipo){
     return
   }
   try{
-    const res = await descargarExcel(url, params)
-    const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const res = await descargarReporte(url, params, formato)
+    const { nombrePorDefecto, mime } = construirDescargaReporte(url, params, formato)
+    const blob = new Blob([res.data], { type: mime })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    const cd = res.headers['content-disposition']
-    let filename = `${tipo}.xlsx`
-    if(cd){
-      const m = cd.match(/filename="?([^"]+)"?/)
-      if(m) filename = m[1]
-    }
-    link.download = filename
+    link.download = extraerNombreArchivo(res.headers['content-disposition'], nombrePorDefecto)
     link.click()
     URL.revokeObjectURL(link.href)
-  }catch(e){ console.error(e); alert('Error al descargar Excel') }
+  }catch(e){ console.error(e); alert(`Error al descargar ${formato === 'pdf' ? 'PDF' : 'Excel'}`) }
 }
 onMounted(async ()=>{
   if(!authStore.isAdmin){ router.push('/'); return }
